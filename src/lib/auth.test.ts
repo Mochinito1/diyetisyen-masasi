@@ -63,6 +63,36 @@ describe('hesaplar', async () => {
     a.resetLock()
   })
 
+  it('diyetisyen başvurusu: onaya kadar giriş yok, onayla açılır, reddedilirse kapanır', async () => {
+    const r = await a.submitApplication({ u: 'dytbasvuru', ad: 'Zeynep Aydın', p: 'basvuru-sifre1', p2: 'basvuru-sifre1', title: 'Dyt., Test Üniv.', note: '' })
+    expect(r.ok).toBe(true)
+    const apps = JSON.parse(localStorage.getItem(a.APPS_KEY)!)
+    expect(apps).toHaveLength(1)
+    expect(apps[0]).toMatchObject({ u: 'dytbasvuru', status: 'pending', title: 'Dyt., Test Üniv.' })
+
+    let l = await a.authenticate('dytbasvuru', 'basvuru-sifre1')
+    expect(l.ok).toBe(false)
+    expect(!l.ok && l.error).toContain('inceleniyor')
+
+    a.setApplicationStatus(apps[0].id, 'approved')
+    l = await a.authenticate('dytbasvuru', 'basvuru-sifre1')
+    expect(l.ok && l.session.kind).toBe('diyetisyen')
+
+    a.setApplicationStatus(apps[0].id, 'rejected')
+    l = await a.authenticate('dytbasvuru', 'basvuru-sifre1')
+    expect(!l.ok && l.error).toContain('onaylanmadı')
+
+    a.removeApplication(apps[0].id)
+    expect(JSON.parse(localStorage.getItem(a.APPS_KEY)!)).toHaveLength(0)
+    expect(a.loadAccounts()['dytbasvuru']).toBeUndefined()
+    a.resetLock()
+  })
+
+  it('başvuruda unvan zorunlu', async () => {
+    const r = await a.submitApplication({ u: 'dytx', ad: 'Ali Veli', p: '12345678', p2: '12345678', title: ' ', note: '' })
+    expect(r.ok).toBe(false)
+  })
+
   it('oturum kaydı', () => {
     a.saveSession({ u: 'x', label: 'X', kind: 'danisan' })
     expect(a.loadSession()?.u).toBe('x')

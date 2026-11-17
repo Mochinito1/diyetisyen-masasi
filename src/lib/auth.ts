@@ -14,6 +14,19 @@ export interface Account {
   /** Danışan hesabının bağlı olduğu danışan kaydı */
   clientId?: string
   created: number
+  /** Diyetisyen başvurusu: onaylanana kadar giriş yapılamaz (boşsa hesap etkin) */
+  status?: 'pending' | 'rejected'
+}
+/** Diyetisyen olmak isteyenlerin başvurusu; yönetici panelinde incelenir */
+export interface Application {
+  id: string
+  /** Başvuran için açılan hesabın kullanıcı adı */
+  u?: string
+  name: string
+  title: string
+  note: string
+  status: 'pending' | 'approved' | 'rejected'
+  ts: number
 }
 export interface Session {
   u: string
@@ -31,6 +44,7 @@ export const DEMO_CLIENT_ID = 'demo-danisan'
 
 const ACC_KEY = 'dm.accounts'
 const SESSION_KEY = 'dm.session'
+export const APPS_KEY = 'dm.applications'
 
 export async function hashPw(pw: string, salt: string): Promise<string> {
   const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits'])
@@ -78,6 +92,8 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
   if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok. “Hesap oluştur” ile yeni hesap açabilirsiniz.' }
   if ((await hashPw(pw, a.salt)) !== a.hash) return failed('Kullanıcı adı veya şifre hatalı.')
   fails = 0
+  if (a.status === 'pending') return { ok: false, error: 'Diyetisyen başvurunuz inceleniyor. Yönetici onayladığında bu kullanıcı adı ve şifreyle giriş yapabilirsiniz.' }
+  if (a.status === 'rejected') return { ok: false, error: 'Diyetisyen başvurunuz onaylanmadı.' }
   return { ok: true, session: { u, label: a.ad, kind: a.kind, clientId: a.clientId } }
 }
 
@@ -107,4 +123,39 @@ export async function resetPassword(i: { u: string; ad: string; p: string; p2: s
   if (pe) return { ok: false, error: pe }
   putAccount({ ...a, hash: await hashPw(i.p, a.salt) })
   return { ok: true }
+}
+/**
+ * "Diyetisyen misiniz? Başvurun": başvuran için bekleyen bir diyetisyen hesabı açılır.
+ * Yönetici onaylayınca (setApplicationStatus) hesap etkinleşir.
+ */
+export async function submitApplication(i: { u: string; ad: string; p: string; p2: string; title: string; note: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (!i.title.trim()) return { ok: false, error: 'Unvan veya diploma bilginizi yazın.' }
+  const r = await register({ u: i.u, ad: i.ad, p: i.p, p2: i.p2, kind: 'diyetisyen' })
+  if (!r.ok) return r
+  const u = normUser(i.u)
+  putAccount({ ...loadAccounts()[u], status: 'pending' })
+  const app: Application = { id: crypto.randomUUID(), u, name: r.session.label, title: i.title.trim(), note: i.note.trim(), status: 'pending', ts: Date.now() }
+  save(APPS_KEY, [app, ...load<Application[]>(APPS_KEY, [])])
+  return { ok: true }
+}
+
+/** Başvuru durumunu ve bağlı hesabı birlikte günceller */
+export function setApplicationStatus(id: string, status: Application['status']) {
+  const list = load<Application[]>(APPS_KEY, [])
+  const app = list.find((a) => a.id === id)
+  save(APPS_KEY, list.map((a) => (a.id === id ? { ...a, status } : a)))
+  const acc = app?.u ? loadAccounts()[app.u] : undefined
+  if (acc) putAccount({ ...acc, status: status === 'approved' ? undefined : status === 'rejected' ? 'rejected' : 'pending' })
+}
+
+/** Başvuruyu ve (açıldıysa) bekleyen hesabını siler */
+export function removeApplication(id: string) {
+  const list = load<Application[]>(APPS_KEY, [])
+  const app = list.find((a) => a.id === id)
+  save(APPS_KEY, list.filter((a) => a.id !== id))
+  if (app?.u) {
+    const { [app.u]: _gone, ...rest } = loadAccounts()
+    void _gone
+    save(ACC_KEY, rest)
+  }
 }

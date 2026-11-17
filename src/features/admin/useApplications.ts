@@ -1,28 +1,16 @@
 import { useState } from 'react'
-import { load, save } from '../../lib/storage'
+import { APPS_KEY, removeApplication, setApplicationStatus, type Application } from '../../lib/auth'
+import { load } from '../../lib/storage'
 
-/** Diyetisyen olmak isteyenlerin başvuruları (tarayıcıda saklanır) */
-export interface Application {
-  id: string
-  name: string
-  title: string
-  note: string
-  status: 'pending' | 'approved' | 'rejected'
-  ts: number
-}
+export type { Application }
 
-const KEY = 'dm.applications'
-
+/** Diyetisyen başvuruları (tarayıcıda saklanır); durum değişince bağlı hesap da güncellenir */
 export function useApplications() {
-  const [list, setList] = useState<Application[]>(() => load<Application[]>(KEY, []))
-  const commit = (next: Application[]) => {
-    setList(next)
-    save(KEY, next)
-  }
+  const [list, setList] = useState<Application[]>(() => load<Application[]>(APPS_KEY, []))
+  const refresh = () => setList(load<Application[]>(APPS_KEY, []))
   return {
     list,
-    add: (a: Omit<Application, 'id' | 'status' | 'ts'>) => commit([{ ...a, id: crypto.randomUUID(), status: 'pending', ts: Date.now() }, ...list]),
-    setStatus: (id: string, status: Application['status']) => commit(list.map((a) => (a.id === id ? { ...a, status } : a))),
-    remove: (id: string) => commit(list.filter((a) => a.id !== id)),
+    setStatus: (id: string, status: Application['status']) => { setApplicationStatus(id, status); refresh() },
+    remove: (id: string) => { removeApplication(id); refresh() },
   }
 }
