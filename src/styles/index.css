@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #e8f4ee;
+  --color-brand-500: #1d6a50;
+  --color-brand-600: #17563f;
+  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
+}
+
+body {
+  @apply bg-stone-50 text-stone-900 antialiased;
+  font-family: var(--font-sans);
+}
