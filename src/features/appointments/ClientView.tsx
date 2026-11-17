@@ -55,7 +55,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
     if (!day || !slot) return
     api.add({
       id: crypto.randomUUID(), clientId: me.id, clientName: me.name, dt: `${day}T${slot}`, type: 'yuz', link: '',
-      note: note.trim(), status: 'pending', by: 'danisan', created: Date.now(),
+      note: note.trim(), status: 'pending', by: 'danisan', dietitian: me.dietitian, created: Date.now(),
     })
     setDone(`${longDate(day)} ${slot} için randevu talebin iletildi.`)
     setOpen(false)

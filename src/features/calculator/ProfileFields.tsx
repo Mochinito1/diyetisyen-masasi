@@ -3,7 +3,7 @@ import type { Profile } from './profile'
 const field =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 focus:border-brand-500 focus:outline-none'
 
-export default function ProfileFields({ value, onChange }: { value: Profile; onChange: (p: Profile) => void }) {
+export default function ProfileFields({ value, onChange, hideFormula }: { value: Profile; onChange: (p: Profile) => void; hideFormula?: boolean }) {
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => onChange({ ...value, [k]: v })
   const num = (k: 'age' | 'h' | 'w') => (e: React.ChangeEvent<HTMLInputElement>) =>
     set(k, e.target.value.replace(/[^0-9.,]/g, ''))
@@ -68,6 +68,7 @@ export default function ProfileFields({ value, onChange }: { value: Profile; onC
           <option value="emz">Emzirme</option>
         </select>
       </label>
+      {!hideFormula && (
       <label className="col-span-2 block text-sm font-semibold">
         BMH formülü
         <select className={field} value={value.formula} onChange={(e) => set('formula', e.target.value as Profile['formula'])}>
@@ -77,6 +78,7 @@ export default function ProfileFields({ value, onChange }: { value: Profile; onC
           <option value="schofield">Schofield (FAO/WHO)</option>
         </select>
       </label>
+      )}
     </div>
   )
 }

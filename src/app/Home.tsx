@@ -68,7 +68,8 @@ function DietitianHome() {
   const food = useFoodData()
   const removed = useRemovedFoods()
   const evalr = useEvaluation(food, client, removed.set)
-  const aps = load<Appointment[]>('dm.appointments', [])
+  const ids = new Set(clients.map((c) => c.id))
+  const aps = load<Appointment[]>('dm.appointments', []).filter((a) => ids.has(a.clientId))
   const today = todayStr()
   const todayN = aps.filter((a) => apDay(a) === today && isBusy(a)).length
   const r = client ? calculate(toCalcInput(client.profile)) : null

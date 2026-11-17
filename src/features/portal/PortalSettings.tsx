@@ -1,15 +1,14 @@
 import PageTitle from '../../components/ui/PageTitle'
 import { card, field } from '../../components/ui/styles'
-import ConditionsCard from '../clients/ConditionsCard'
+import ConditionsSelect from '../clients/ConditionsSelect'
 import KvkkCard from '../clients/KvkkCard'
-import { useBrand } from '../settings/useBrand'
+import DietitianPicker from './DietitianPicker'
 import ClientPicker from './ClientPicker'
 import { usePortalClient } from './usePortalClient'
 
 /** Danışan ayarları: kişisel bilgiler, hastalık/diyet seçimi ve KVKK onayı */
 export default function PortalSettings() {
   const { clients, client, choose, update } = usePortalClient()
-  const { brand } = useBrand()
   if (!client)
     return (
       <>
@@ -32,10 +31,14 @@ export default function PortalSettings() {
         </div>
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Diyetisyenim</h2>
-          <p className="text-sm text-stone-500">{brand.name || brand.clinic || 'Diyetisyen bilgisi henüz girilmemiş.'} {brand.phone && `· ${brand.phone}`}</p>
+          <p className="mb-2 text-xs text-stone-500">İstediğin zaman başka bir diyetisyen seçebilirsin. Menün ve bilgilerin sende kalır; yeni randevuları seçtiğin diyetisyenin takviminden alırsın. Önceki diyetisyende kalan randevular onun takviminde durur.</p>
+          <DietitianPicker value={client.dietitian} onChange={(dietitian) => update({ dietitian })} />
         </div>
-        <ConditionsCard client={client} onChange={(conds) => update({ conds })} />
-        <KvkkCard value={client.kvkk} onChange={(kvkk) => update({ kvkk })} />
+        <div className={card}>
+          <h2 className="font-display text-lg font-bold">Hastalık ve diyet</h2>
+          <p className="mb-2 text-xs text-stone-500">Hastalığın veya özel bir diyetin yoksa “Yok” seç. Besin listesi ve menü bu seçime göre süzülür.</p>
+          <ConditionsSelect conds={client.conds} chosen={client.condsSet ?? client.conds.length > 0} onChange={(conds, condsSet) => update({ conds, condsSet })} />
+        </div>        <KvkkCard value={client.kvkk} onChange={(kvkk) => update({ kvkk })} />
       </div>
     </>
   )

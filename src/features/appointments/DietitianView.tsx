@@ -260,7 +260,7 @@ function AddForm({ clients, day, onSave, onClose }: { clients: Client[]; day: st
           disabled={!client || !date || !time}
           onClick={() => client && onSave({
             id: crypto.randomUUID(), clientId: client.id, clientName: client.name, dt: `${date}T${time}`,
-            type, link: type === 'online' ? link.trim() : '', note: note.trim(), status: 'plan', by: 'diyetisyen', created: Date.now(),
+            type, link: type === 'online' ? link.trim() : '', note: note.trim(), status: 'plan', by: 'diyetisyen', dietitian: client.dietitian, created: Date.now(),
           })}
         >
           Kaydet

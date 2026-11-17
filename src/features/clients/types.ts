@@ -19,8 +19,13 @@ export interface Client {
   kvkk: { ay: string; riza: string }
   /** Danışan portalı takibi: gün -> yenen öğünler ve su (bardak) */
   trk: Record<string, { m: string[]; su: number }>
+  /** Danışanın bağlı olduğu diyetisyenin kullanıcı adı (boşsa demo diyetisyen) */
+  dietitian?: string
   /** Seçili hastalık, alerji ve diyet kimlikleri (rules.ts) */
   conds: string[]
+  /** Hastalık/diyet seçimi yapıldı mı? (Yok da bir seçimdir) */
+  condsSet?: boolean
+  /** Hastalık/diyet seçimi yapıldı mı? (\
   /** Danışan dosyası */
   an: Anamnesis
   meas: Measurement[]

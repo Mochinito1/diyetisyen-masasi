@@ -13,6 +13,8 @@ export interface Appointment {
   status: ApStatus
   /** Randevuyu kim oluşturdu */
   by: 'diyetisyen' | 'danisan'
+  /** Randevunun ait olduğu diyetisyen (boşsa demo diyetisyen) */
+  dietitian?: string
   created: number
 }
 
