@@ -8,6 +8,7 @@ import {
 } from '../../lib/menu'
 import type { useFoodData } from '../../lib/useFoodData'
 import type { Client } from '../clients/types'
+import SwapPanel from './SwapPanel'
 import TemplatePanel from './TemplatePanel'
 
 type FoodCtx = NonNullable<ReturnType<typeof useFoodData>>
@@ -34,6 +35,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
   const [meal, setMeal] = useState<Meal>('Öğle')
   const [micro, setMicro] = useState(false)
   const [tplOpen, setTplOpen] = useState(false)
+  const [swapIdx, setSwapIdx] = useState<number | null>(null)
   const [toast, setToast] = useState('')
 
   const T = totals(menu, food.byCode, food.idx)
@@ -127,6 +129,19 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
         </ul>
       )}
 
+      {swapIdx !== null && menu[swapIdx] && (
+        <SwapPanel
+          key={swapIdx}
+          food={food}
+          item={menu[swapIdx]}
+          onClose={() => setSwapIdx(null)}
+          onApply={(next) => {
+            setMenu(menu.map((x, k) => (k === swapIdx ? next : x)))
+            setSwapIdx(null)
+            flash('Besin değiştirildi')
+          }}
+        />
+      )}
       {tplOpen && (
         <TemplatePanel
           food={food}
@@ -242,7 +257,8 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
                         <select className={field} aria-label="Öğün" value={it.meal} onChange={(e) => edit(i, { meal: e.target.value as Meal })}>
                           {MEALS.map((x) => <option key={x}>{x}</option>)}
                         </select>
-                        <button className={btn} aria-label="Kaldır" onClick={() => setMenu(menu.filter((_, k) => k !== i))}>Kaldır</button>
+                        <button className={btn} onClick={() => setSwapIdx(i)}>Değiştir</button>
+                        <button className={btn} aria-label="Kaldır" onClick={() => { setSwapIdx(null); setMenu(menu.filter((_, k) => k !== i)) }}>Kaldır</button>
                       </div>
                     </div>
                   )
