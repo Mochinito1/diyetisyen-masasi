@@ -1,8 +1,10 @@
 name: Deploy to GitHub Pages
 
+# Şimdilik otomatik yayın KAPALI: site yalnızca elle (Actions > Run workflow) yayınlanır.
+# Herkese açmaya hazır olunca aşağıdaki "push" satırlarının başındaki # işaretini kaldır.
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   workflow_dispatch:
 
 permissions:
