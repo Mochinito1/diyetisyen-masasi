@@ -1,7 +1,12 @@
 import { NavLink, Link, Outlet } from 'react-router-dom'
+import NavIcon from './NavIcon'
 import { navFor } from './nav'
 import { ROLES, useRole } from './role'
 import { useTheme } from './theme'
+
+const item = ({ isActive }: { isActive: boolean }) =>
+  `flex min-w-14 flex-1 flex-col items-center gap-0.5 px-0.5 py-1 text-[11.5px] font-semibold ${isActive ? 'text-brand-500' : 'text-stone-500'}`
+const pill = (active: boolean) => `grid h-7 w-[46px] place-items-center rounded-2xl ${active ? 'bg-brand-50' : ''}`
 
 export default function Layout() {
   const { role, setRole } = useRole()
@@ -10,17 +15,16 @@ export default function Layout() {
   return (
     <div className="min-h-screen">
       <div className="bg-[#0a0f0d] text-[#e5eee8]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-1.5 text-xs">
-          <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span><span className="font-semibold opacity-70 sm:hidden">Rol:</span>
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-1 text-xs">
+          <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span>
+          <span className="font-semibold opacity-70 sm:hidden">Rol:</span>
           <div className="flex overflow-hidden rounded-full border border-[#3a4b42]">
             {ROLES.map((r) => (
               <button
                 key={r.id}
                 onClick={() => setRole(r.id)}
                 aria-pressed={role === r.id}
-                className={`px-3 py-1 font-semibold transition ${
-                  role === r.id ? 'bg-brand-500 text-white' : 'text-[#b3c2b9] hover:bg-[#1b2923]'
-                }`}
+                className={`px-3 py-0.5 font-semibold transition ${role === r.id ? 'bg-brand-500 text-white' : 'text-[#b3c2b9] hover:bg-[#1b2923]'}`}
               >
                 {r.label}
               </button>
@@ -29,45 +33,37 @@ export default function Layout() {
           <span className="ml-auto hidden opacity-50 sm:inline">Test modu</span>
         </div>
       </div>
-      <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 md:gap-x-6 md:py-3">
-          <Link to="/" className="font-display text-xl font-bold text-brand-500">
-            Diyetisyen Masası
-          </Link>
-          <nav aria-label="Ana menü" className="order-last -mx-4 flex w-[calc(100%+2rem)] gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:order-none md:mx-0 md:w-auto md:flex-1 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden">
+
+      <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50">
+        <div className="mx-auto max-w-6xl px-4">
+          <div className="relative flex items-center justify-center pt-2.5">
+            <Link to="/" className="font-display text-[17px] font-bold leading-tight text-stone-900 md:text-xl" aria-label="Anasayfa">Diyetisyen Masası</Link>
+            <button
+              onClick={toggle}
+              aria-label={dark ? 'Açık temaya geç' : 'Karanlık temaya geç'}
+              title="Tema"
+              className="absolute right-0 top-1.5 grid h-[38px] w-[38px] place-items-center rounded-full border border-stone-200 bg-white text-stone-900 hover:border-brand-500 hover:text-brand-500"
+            >
+              {dark ? (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+              ) : (
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
+              )}
+            </button>
+          </div>
+          <nav aria-label="Ana menü" className="mx-auto flex max-w-3xl gap-0.5 overflow-x-auto pb-1.5 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <NavLink to="/" end className={item}>
+              {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name="home" /></span><span>Anasayfa</span></>)}
+            </NavLink>
             {navFor(role).map((n) => (
-              <NavLink
-                key={n.to}
-                to={n.to}
-                className={({ isActive }) =>
-                  `shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition ${
-                    isActive ? 'bg-brand-500 text-white' : 'text-stone-600 hover:bg-stone-100'
-                  }`
-                }
-              >
-                {n.label}
+              <NavLink key={n.to} to={n.to} className={item}>
+                {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name={n.icon} /></span><span className="max-w-full truncate">{n.short}</span></>)}
               </NavLink>
             ))}
           </nav>
-          <button
-            onClick={toggle}
-            aria-label={dark ? 'Açık temaya geç' : 'Karanlık temaya geç'}
-            title="Tema"
-            className="ml-auto grid h-9 w-9 place-items-center rounded-full border border-stone-300 text-stone-600 hover:border-brand-500 hover:text-brand-500"
-          >
-            {dark ? (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="4" />
-                <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-              </svg>
-            ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
-              </svg>
-            )}
-          </button>
         </div>
       </header>
+
       <main className="mx-auto max-w-6xl px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-8">
         <Outlet />
       </main>

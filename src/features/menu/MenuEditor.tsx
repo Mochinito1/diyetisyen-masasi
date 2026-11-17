@@ -104,7 +104,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
 
   return (
     <div className="space-y-4">
-      <div className="sticky top-[92px] z-[5] md:top-[60px] rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
+      <div className="sticky top-[112px] z-[5] rounded-2xl border border-stone-200 bg-white p-4 shadow-sm">
         {goals ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {goals.map(([label, v, target, unit]) => {

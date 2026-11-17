@@ -7,7 +7,7 @@ import CalcResults from '../calculator/CalcResults'
 import ProfileFields from '../calculator/ProfileFields'
 import { EMPTY_PROFILE, toCalcInput } from '../calculator/profile'
 import { EMPTY_ANAMNESIS, fmtDay, lastVisit, latestWeight } from '../../lib/dossier'
-import { load } from '../../lib/storage'
+import { load, save } from '../../lib/storage'
 import type { Appointment } from '../../lib/appointments'
 import ConditionsCard from './ConditionsCard'
 import KvkkCard from './KvkkCard'
@@ -44,8 +44,14 @@ const blank = (): Client => ({
 
 export default function Clients() {
   const { clients, upsert, remove } = useClients()
-  const [editing, setEditing] = useState<Client | null>(null)
-  const [isNew, setIsNew] = useState(false)
+  // Ana sayfadan "Danışanı aç" / "Yeni danışan" ile gelindiyse editörü doğrudan aç
+  const [pending] = useState(() => {
+    const id = load<string>('dm.openClient', '')
+    if (id) save('dm.openClient', '')
+    return id
+  })
+  const [editing, setEditing] = useState<Client | null>(() => (pending === 'new' ? blank() : (clients.find((c) => c.id === pending) ?? null)))
+  const [isNew, setIsNew] = useState(pending === 'new')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<'upd' | 'name' | 'bmi'>('upd')
   const aps = useMemo(() => load<Appointment[]>('dm.appointments', []), [])

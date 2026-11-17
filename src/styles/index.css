@@ -1,15 +1,38 @@
 @import "tailwindcss";
 
+/* Görünüm: orijinal "Diyetisyen Masası" artifact'ının renk, köşe ve gölge değerleri.
+   Bileşenler stone/amber/emerald/red sınıflarını kullanır; burada yeşil tonlu karşılıklarına bağlanır. */
 @theme {
-  --color-brand-50: #e8f4ee;
+  --color-brand-50: #daeee4;
   --color-brand-500: #1d6a50;
   --color-brand-600: #17563f;
-  --font-display: "Bricolage Grotesque", system-ui, sans-serif;
-  --font-sans: "Manrope", system-ui, sans-serif;
+  --color-stone-50: #f4f7f4;
+  --color-stone-100: #ebf0ec;
+  --color-stone-200: #d6dfd8;
+  --color-stone-300: #c3cfc7;
+  --color-stone-400: #8c9d93;
+  --color-stone-500: #58695f;
+  --color-stone-600: #47574e;
+  --color-stone-700: #33423a;
+  --color-stone-800: #232f29;
+  --color-stone-900: #16221d;
+  --color-amber-100: #fbebc8;
+  --color-amber-700: #8f5600;
+  --color-amber-800: #8f5600;
+  --color-emerald-100: #daeee4;
+  --color-emerald-800: #1d6a50;
+  --color-red-100: #f8dfd9;
+  --color-red-700: #a3301f;
+  --color-red-800: #a3301f;
+  --radius-lg: 0.4375rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.625rem;
+  --shadow-sm: 0 1px 2px rgba(22, 34, 29, 0.06), 0 4px 14px rgba(22, 34, 29, 0.05);
+  --font-display: "Bricolage Grotesque", "Manrope", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
 }
 
-/* Karanlık tema: bileşenler stone/white/amber/red/emerald sınıflarını kullanır,
-   burada yalnızca renk değişkenleri değiştirilir. Tema html[data-theme] ile seçilir. */
+/* Karanlık tema (orijinaldeki değerler). Tema html[data-theme] ile seçilir. */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --color-white: #15201b;
@@ -34,22 +57,27 @@
   --color-red-100: #40201a;
   --color-red-700: #f29380;
   --color-red-800: #f29380;
+  --shadow-sm: none;
 }
 
 html { -webkit-text-size-adjust: 100%; }
 
 body {
   overflow-x: hidden;
+  font-size: 14px;
+  line-height: 1.5;
   @apply bg-stone-50 text-stone-900 antialiased;
   font-family: var(--font-sans);
 }
-@media print {
-  #root { display: none !important; }
-  body { background: #fff !important; }
-  .print-overlay { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
-  .no-print { display: none !important; }
-  @page { margin: 12mm; }
+
+h1, h2, h3 { text-wrap: balance; letter-spacing: -0.01em; }
+
+/* Orijinaldeki gibi: giriş alanları sayfa zemini renginde */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):not([type='file']), select, textarea {
+  background-color: var(--color-stone-50);
+  border-radius: 7px;
 }
+:focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; }
 
 /* Dokunmatik ekranlar: rahat dokunma alanı, iOS'ta girişe odaklanınca sayfanın yakınlaşmasını önleyen 16px yazı */
 @media (pointer: coarse) {
@@ -58,4 +86,12 @@ body {
 }
 @media (max-width: 640px) {
   input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select, textarea { font-size: 16px; }
+}
+
+@media print {
+  #root { display: none !important; }
+  body { background: #fff !important; }
+  .print-overlay { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  @page { margin: 12mm; }
 }
