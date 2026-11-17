@@ -36,8 +36,8 @@ export default function PortalSettings() {
         </div>
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Hastalık ve diyet</h2>
-          <p className="mb-2 text-xs text-stone-500">Hastalığın veya özel bir diyetin yoksa “Yok” seç. Besin listesi ve menü bu seçime göre süzülür.</p>
-          <ConditionsSelect conds={client.conds} chosen={client.condsSet ?? client.conds.length > 0} onChange={(conds, condsSet) => update({ conds, condsSet })} />
+          <p className="mb-2 text-xs text-stone-500">Hastalığın veya özel bir diyetin yoksa "Yok" seç; bilmiyorsan olduğu gibi bırak. Besin listesi ve menü bu seçime göre süzülür.</p>
+          <ConditionsSelect client={client} onChange={(conds, condsDone) => update({ conds, condsDone })} />
         </div>        <KvkkCard value={client.kvkk} onChange={(kvkk) => update({ kvkk })} />
       </div>
     </>

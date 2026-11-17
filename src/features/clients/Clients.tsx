@@ -80,7 +80,7 @@ export default function Clients() {
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <ProfileFields value={editing.profile} onChange={(p) => set({ profile: p })} />
             </div>
-            <ConditionsCard client={editing} onChange={(conds) => set({ conds })} />
+            <ConditionsCard client={editing} onChange={(conds, condsDone) => set({ conds, condsDone })} />
             <KvkkCard value={editing.kvkk} onChange={(kvkk) => set({ kvkk })} />
             <AnamnesisCard value={editing.an} onChange={(an) => set({ an })} />
             <div className="rounded-2xl border border-stone-200 bg-white p-5">

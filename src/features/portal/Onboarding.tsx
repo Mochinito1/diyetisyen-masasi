@@ -11,9 +11,9 @@ import DietitianPicker from './DietitianPicker'
 /** İlk giriş: danışan bilgileri, diyetisyen, hastalık/diyet seçimi ve KVKK onayı (bir kez) */
 export default function Onboarding({ client, onDone }: { client: Client; onDone: (c: Client) => void }) {
   const dts = listDietitians()
-  const [c, setC] = useState<Client>({ ...client, dietitian: client.dietitian ?? (dts.length === 1 ? dts[0].u : undefined), condsSet: client.condsSet ?? client.conds.length > 0 })
+  const [c, setC] = useState<Client>({ ...client, dietitian: client.dietitian ?? (dts.length === 1 ? dts[0].u : undefined) })
   const inp = toCalcInput(c.profile)
-  const ok = c.profile.sex !== '' && inp.age != null && inp.heightCm != null && inp.weightKg != null && !!c.dietitian && !!c.condsSet && !!c.kvkk.ay
+  const ok = c.profile.sex !== '' && inp.age != null && inp.heightCm != null && inp.weightKg != null && !!c.dietitian && !!c.kvkk.ay
   return (
     <div className="max-w-2xl space-y-4">
       <div className="rounded-2xl bg-brand-50 p-5 text-brand-600">
@@ -23,9 +23,10 @@ export default function Onboarding({ client, onDone }: { client: Client; onDone:
       <div className={card}>
         <h2 className="mb-3 font-display text-lg font-bold">Bilgilerin</h2>
         <ProfileFields hideFormula value={c.profile} onChange={(profile) => setC({ ...c, profile })} />
-        <div className="mt-3 text-sm font-semibold">Hastalık ve diyet
-          <div className="mt-1 font-normal"><ConditionsSelect conds={c.conds} chosen={!!c.condsSet} onChange={(conds, condsSet) => setC({ ...c, conds, condsSet })} /></div>
-          <p className="mt-1 text-xs font-normal text-stone-500">Hastalığın veya özel bir diyetin yoksa “Yok” seç. Besin listesi bu seçime göre süzülür.</p>
+        <div className="mt-4 border-t border-stone-100 pt-3">
+          <h3 className="font-display text-base font-bold">Hastalık ve diyet seçimi</h3>
+          <p className="mb-3 text-xs text-stone-500">Hastalığın veya özel bir diyetin yoksa "Yok" seç; bilmiyorsan olduğu gibi bırak. Besin listesi bu seçime göre süzülür.</p>
+          <ConditionsSelect client={c} onChange={(conds, condsDone) => setC({ ...c, conds, condsDone })} />
         </div>
       </div>
       <div className={card}>
@@ -36,7 +37,7 @@ export default function Onboarding({ client, onDone }: { client: Client; onDone:
       <KvkkCard value={c.kvkk} onChange={(kvkk) => setC({ ...c, kvkk })} />
       <div className="flex items-center gap-3">
         <button className={btnPrimary} disabled={!ok} onClick={() => onDone({ ...c, onb: true })}>Kaydet ve devam et</button>
-        {!ok && <span className="text-sm text-stone-500">Cinsiyet, yaş, boy, kilo, diyetisyen, hastalık/diyet seçimi ve aydınlatma metni onayı gerekli.</span>}
+        {!ok && <span className="text-sm text-stone-500">Cinsiyet, yaş, boy, kilo, diyetisyen ve aydınlatma metni onayı gerekli.</span>}
       </div>
     </div>
   )

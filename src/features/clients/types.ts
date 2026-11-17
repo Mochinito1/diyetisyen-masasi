@@ -23,8 +23,11 @@ export interface Client {
   dietitian?: string
   /** Seçili hastalık, alerji ve diyet kimlikleri (rules.ts) */
   conds: string[]
-  /** Hastalık/diyet seçimi yapıldı mı? (Yok da bir seçimdir) */
+  /** Hastalık/diyet seçiminde yanıtlanan gruplar ("Yok" da bir yanıttır); yanıtlanmayan grup "Bilinmiyor" sayılır */
+  condsDone?: string[]
+  /** Eski kayıtlar: tüm gruplar yanıtlandı mı? */
   condsSet?: boolean
+  /** Hastalık/diyet seçimi yanıtlanan gruplar (\
   /** Hastalık/diyet seçimi yapıldı mı? (\
   /** Danışan dosyası */
   an: Anamnesis
