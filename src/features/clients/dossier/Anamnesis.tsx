@@ -8,11 +8,11 @@ const FIELDS: [keyof Anamnesis, string, string][] = [
   ['alisk', 'Beslenme alışkanlıkları', 'Öğün düzeni, dışarıda yeme, su tüketimi, sevmediği besinler, uyku, aktivite'],
 ]
 
-export default function AnamnesisCard({ value, onChange }: { value: Anamnesis; onChange: (a: Anamnesis) => void }) {
+export default function AnamnesisCard({ value, onChange, title = 'Anamnez', hint = 'İlk görüşmede hastalık ve diyet seçiminin ayrıntısını buraya yazın. Danışanla birlikte kaydedilir.' }: { value: Anamnesis; onChange: (a: Anamnesis) => void; title?: string; hint?: string }) {
   return (
     <div className={card}>
-      <h2 className="font-display text-lg font-bold">Anamnez</h2>
-      <p className="mb-3 text-xs text-stone-500">İlk görüşmede hastalık ve diyet seçiminin ayrıntısını buraya yazın. Danışanla birlikte kaydedilir.</p>
+      <h2 className="font-display text-lg font-bold">{title}</h2>
+      <p className="mb-3 text-xs text-stone-500">{hint}</p>
       <div className="space-y-3">
         {FIELDS.map(([k, label, ph]) => (
           <label key={k} className="block text-xs font-bold uppercase tracking-wider text-stone-500">

@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import Modal from '../components/ui/Modal'
+import { kvkkAydinlatma } from '../lib/brand'
+import { DEMO_DIETITIAN } from '../lib/dietitians'
+import { loadBrandOf } from '../features/settings/useBrand'
 import { useAuth } from './auth'
 
 type Mode = 'login' | 'create' | 'forgot' | 'apply'
@@ -21,6 +25,8 @@ export default function Login() {
   const [err, setErr] = useState('')
   const [msg, setMsg] = useState('')
   const [busy, setBusy] = useState(false)
+  const [kvkk, setKvkk] = useState(false)
+  const [readKvkk, setReadKvkk] = useState(false)
   const set = (k: keyof typeof v, x: string) => setV((prev) => ({ ...prev, [k]: x }))
 
   const go = (m: Mode) => { setMode(m); setErr(''); setMsg(''); setV((prev) => ({ ...prev, p: '', p2: '' })) }
@@ -34,7 +40,7 @@ export default function Login() {
         const r = await auth.login(v.u, v.p)
         if (r) setErr(r)
       } else if (mode === 'create') {
-        const r = await auth.register({ u: v.u, ad: v.ad, p: v.p, p2: v.p2 })
+        const r = await auth.register({ u: v.u, ad: v.ad, p: v.p, p2: v.p2, kvkk })
         if (r) setErr(r)
       } else if (mode === 'apply') {
         const r = await auth.apply({ u: v.u, ad: v.ad, p: v.p, p2: v.p2, title: v.title, note: v.note })
@@ -68,7 +74,10 @@ export default function Login() {
               {input('u', 'Kullanıcı adı (3-20 harf, rakam, . _ -)', 'text', 'username')}
               {input('p', 'Şifre (en az 8 karakter)', 'password', 'new-password')}
               {input('p2', 'Şifre tekrar', 'password', 'new-password')}
-            </>
+              <label className="flex cursor-pointer items-start gap-2 text-left text-sm">
+                <input type="checkbox" className="mt-0.5 h-4 w-4 accent-brand-500" checked={kvkk} onChange={(e) => setKvkk(e.target.checked)} />
+                <span><button type="button" className="font-semibold text-brand-500 underline" onClick={() => setReadKvkk(true)}>KVKK aydınlatma metnini</button> okudum ve onaylıyorum.</span>
+              </label>            </>
           )}
           {mode === 'apply' && (
             <>
@@ -112,6 +121,15 @@ export default function Login() {
           </div>
         )}
 
+        {readKvkk && (
+          <Modal title="KVKK aydınlatma metni" onClose={() => setReadKvkk(false)}>
+            <pre className="max-h-[52vh] overflow-auto whitespace-pre-wrap rounded-lg border border-stone-200 bg-stone-50 p-3 text-left text-sm">{kvkkAydinlatma(loadBrandOf(DEMO_DIETITIAN))}</pre>
+            <div className="mt-4 flex gap-2">
+              <button type="button" className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white" onClick={() => { setKvkk(true); setReadKvkk(false) }}>Okudum, onaylıyorum</button>
+              <button type="button" className="rounded-lg border border-stone-300 bg-white px-4 py-2 font-semibold" onClick={() => setReadKvkk(false)}>Kapat</button>
+            </div>
+          </Modal>
+        )}
         <p className="mt-4 text-xs text-stone-500">Eğitim sürümü: hesaplar ve veriler yalnızca bu tarayıcıda saklanır, şifre hiçbir yere gönderilmez. Gerçek danışan verisi girmeyin.</p>
       </form>
     </div>

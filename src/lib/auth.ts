@@ -159,3 +159,16 @@ export function removeApplication(id: string) {
     save(ACC_KEY, rest)
   }
 }
+
+/** Oturumdaki hesabın şifresini değiştirir (mevcut şifre doğrulanır). Demo hesapların şifresi sabittir. */
+export async function changePassword(i: { u: string; current: string; p: string; p2: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const a = loadAccounts()[normUser(i.u)]
+  if (!a) return { ok: false, error: 'Demo hesabın şifresi değiştirilemez. Kendi hesabınızı oluşturarak deneyebilirsiniz.' }
+  if (!i.current) return { ok: false, error: 'Mevcut şifrenizi yazın.' }
+  if ((await hashPw(i.current, a.salt)) !== a.hash) return { ok: false, error: 'Mevcut şifre hatalı.' }
+  const pe = pwError(i.p, i.p2)
+  if (pe) return { ok: false, error: pe }
+  if (i.p === i.current) return { ok: false, error: 'Yeni şifre mevcut şifreden farklı olmalı.' }
+  putAccount({ ...a, hash: await hashPw(i.p, a.salt) })
+  return { ok: true }
+}

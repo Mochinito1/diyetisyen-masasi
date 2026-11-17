@@ -34,7 +34,7 @@ export default function Onboarding({ client, onDone }: { client: Client; onDone:
         <p className="mb-2 text-xs text-stone-500">Programını hazırlayacak diyetisyeni seç. Sonra Ayarlar'dan değiştirebilirsin.</p>
         <DietitianPicker value={c.dietitian} onChange={(dietitian) => setC({ ...c, dietitian })} />
       </div>
-      <KvkkCard value={c.kvkk} onChange={(kvkk) => setC({ ...c, kvkk })} />
+      {!client.kvkk.ay && <KvkkCard value={c.kvkk} onChange={(kvkk) => setC({ ...c, kvkk })} />}
       <div className="flex items-center gap-3">
         <button className={btnPrimary} disabled={!ok} onClick={() => onDone({ ...c, onb: true })}>Kaydet ve devam et</button>
         {!ok && <span className="text-sm text-stone-500">Cinsiyet, yaş, boy, kilo, diyetisyen ve aydınlatma metni onayı gerekli.</span>}

@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { makeClient } from '../features/clients/factory'
+import { todayStr } from '../lib/appointments'
 import { DEMO_DIETITIAN } from '../lib/dietitians'
 import { sampleClients } from '../lib/samples'
 import {
@@ -12,7 +13,7 @@ import type { Client } from '../features/clients/types'
 interface AuthCtx {
   session: Session | null
   login: (u: string, p: string) => Promise<string>
-  register: (i: { u: string; ad: string; p: string; p2: string }) => Promise<string>
+  register: (i: { u: string; ad: string; p: string; p2: string; kvkk: boolean }) => Promise<string>
   apply: (i: { u: string; ad: string; p: string; p2: string; title: string; note: string }) => Promise<string>
   reset: (i: { u: string; ad: string; p: string; p2: string }) => Promise<string>
   logout: () => void
@@ -25,7 +26,7 @@ function ensureDemoClient() {
   const list = load<Client[]>('dm.clients', [])
   if (list.some((c) => c.id === DEMO_CLIENT_ID)) return
   const s = sampleClients()[0]
-  save('dm.clients', [{ ...s, id: DEMO_CLIENT_ID, name: 'Demo Danışan', onb: true, dietitian: DEMO_DIETITIAN }, ...list])
+  save('dm.clients', [{ ...s, id: DEMO_CLIENT_ID, name: 'Demo Danışan', onb: true, dietitian: DEMO_DIETITIAN, kvkk: { ay: todayStr(), riza: '' } }, ...list])
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -50,11 +51,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return ''
     },
     register: async (i) => {
+      if (!i.kvkk) return 'Hesap oluşturmak için KVKK aydınlatma metnini okuyup onaylayın.'
       // Hesap danışan hesabıdır; ona bağlı bir danışan kaydı oluşturulur
       const clientId = crypto.randomUUID()
       const r = await doRegister({ ...i, kind: 'danisan', clientId })
       if (!r.ok) return r.error
-      save('dm.clients', [makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), ...load<Client[]>('dm.clients', [])])
+      // KVKK onayı hesap açılırken alınır; danışan formlarında tekrar sorulmaz
+      const created = { ...makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), kvkk: { ay: todayStr(), riza: '' } }
+      save('dm.clients', [created, ...load<Client[]>('dm.clients', [])])
       start(r.session)
       return ''
     },

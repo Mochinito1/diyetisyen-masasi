@@ -18,8 +18,8 @@ export const NAV: NavItem[] = [
   { to: '/menu', label: 'Menü Planı', short: 'Menü', desc: 'Günlük plan', icon: 'menu', roles: ['admin', 'diyetisyen', 'danisan'] },
   { to: '/randevu', label: 'Randevu ve Takip', short: 'Randevu', desc: 'Takvim', icon: 'randevu', roles: ['admin', 'diyetisyen', 'danisan'] },
   { to: '/profil', label: 'Profil', short: 'Profil', desc: 'Hedefin ve ölçülerin', icon: 'danisan', roles: ['danisan'] },
-  { to: '/ayarlar', label: 'Kliniğim', short: 'Ayarlar', desc: 'Klinik, mesajlar, KVKK, yedek', icon: 'ayar', roles: ['admin', 'diyetisyen', 'danisan'] },
-  { to: '/yonetim', label: 'Yönetim', short: 'Yönetim', desc: 'Hesaplar ve başvurular', icon: 'ayar', roles: ['admin'] },
+  { to: '/ayarlar', label: 'Kliniğim', short: 'Ayarlar', desc: 'Klinik, mesajlar, KVKK, yedek', icon: 'disli', roles: ['admin', 'diyetisyen', 'danisan'] },
+  { to: '/yonetim', label: 'Yönetim', short: 'Yönetim', desc: 'Hesaplar ve başvurular', icon: 'kalkan', roles: ['admin'] },
 ]
 
 export const navFor = (role: Role) => NAV.filter((n) => n.roles.includes(role))

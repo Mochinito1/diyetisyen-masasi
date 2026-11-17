@@ -93,6 +93,21 @@ describe('hesaplar', async () => {
     expect(r.ok).toBe(false)
   })
 
+  it('şifre değişikliği: mevcut şifre doğrulanır', async () => {
+    await a.register({ u: 'sifreci', ad: 'Sifre Ci', p: 'eski-sifre-1', p2: 'eski-sifre-1', kind: 'danisan' })
+    expect((await a.changePassword({ u: 'sifreci', current: 'yanlis-sifre', p: 'yeni-sifre-1', p2: 'yeni-sifre-1' })).ok).toBe(false)
+    expect((await a.changePassword({ u: 'sifreci', current: 'eski-sifre-1', p: 'kisa', p2: 'kisa' })).ok).toBe(false)
+    expect((await a.changePassword({ u: 'sifreci', current: 'eski-sifre-1', p: 'eski-sifre-1', p2: 'eski-sifre-1' })).ok).toBe(false)
+    expect((await a.changePassword({ u: 'sifreci', current: 'eski-sifre-1', p: 'yeni-sifre-1', p2: 'yeni-sifre-1' })).ok).toBe(true)
+    expect((await a.authenticate('sifreci', 'yeni-sifre-1')).ok).toBe(true)
+    expect((await a.authenticate('sifreci', 'eski-sifre-1')).ok).toBe(false)
+    a.resetLock()
+  })
+
+  it('demo hesabın şifresi değiştirilemez', async () => {
+    expect((await a.changePassword({ u: 'danisan', current: 'Danisan2026!', p: 'yeni-sifre-1', p2: 'yeni-sifre-1' })).ok).toBe(false)
+  })
+
   it('oturum kaydı', () => {
     a.saveSession({ u: 'x', label: 'X', kind: 'danisan' })
     expect(a.loadSession()?.u).toBe('x')
