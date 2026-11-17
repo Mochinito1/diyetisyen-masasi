@@ -1,4 +1,4 @@
-import { C, fold, type Food } from './foods'
+import { C, foodMatch, type Food } from './foods'
 import { foodUnits, makeItem, portion, type MenuItem } from './menu'
 
 export type SwapMode = 'kcal' | 'prot' | 'same'
@@ -21,17 +21,15 @@ const EXCLUDE = /^(yumurta, (devekuşu|bıldırcın))|konserve|dondurulmuş|kuru
 export function swapCandidates(
   foods: Food[], old: Food, query: string, hidden?: (f: Food) => boolean,
 ): Food[] {
-  const tk = fold(query).trim().split(/\s+/).filter(Boolean)
+  const q = query.trim()
   const os = macroShare(old)
   const oldKcal = old.v[C.kcal] ?? 0
   const out: [number, Food][] = []
   for (const F of foods) {
     const kcal = F.v[C.kcal] ?? 0
     if (F.code === old.code || !kcal || hidden?.(F)) continue
-    if (tk.length) {
-      const name = fold(F.name)
-      if (!tk.every((t) => `${name} ${fold(F.sci)} ${fold(F.local)}`.includes(t))) continue
-      out.push([name.length, F])
+    if (q) {
+      if (foodMatch(F, q)) out.push([F.name.length, F])
       continue
     }
     if (F.groups[0] !== old.groups[0]) continue

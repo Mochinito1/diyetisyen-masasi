@@ -9,6 +9,7 @@ import { EMPTY_PROFILE, toCalcInput } from '../calculator/profile'
 import { EMPTY_ANAMNESIS, fmtDay, lastVisit, latestWeight } from '../../lib/dossier'
 import { load } from '../../lib/storage'
 import type { Appointment } from '../../lib/appointments'
+import ConditionsCard from './ConditionsCard'
 import AnamnesisCard from './dossier/Anamnesis'
 import LabsCard from './dossier/Labs'
 import MeasurementsCard from './dossier/Measurements'
@@ -28,6 +29,7 @@ const blank = (): Client => ({
   notes: '',
   menu: [],
   mnote: '',
+  conds: [],
   an: EMPTY_ANAMNESIS,
   meas: [],
   lab: [],
@@ -86,6 +88,7 @@ export default function Clients() {
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <ProfileFields value={editing.profile} onChange={(p) => set({ profile: p })} />
             </div>
+            <ConditionsCard client={editing} onChange={(conds) => set({ conds })} />
             <AnamnesisCard value={editing.an} onChange={(an) => set({ an })} />
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <label className="block text-sm font-semibold">

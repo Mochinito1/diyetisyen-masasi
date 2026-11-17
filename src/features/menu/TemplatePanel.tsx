@@ -13,6 +13,7 @@ const btn = 'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm fon
 
 interface Props {
   food: FoodCtx
+  hidden: (f: import('../../lib/foods').Food) => boolean
   result: CalcResult | null
   sex: string
   phys: string
@@ -21,7 +22,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function TemplatePanel({ food, result, sex, phys, menu, onApply, onClose }: Props) {
+export default function TemplatePanel({ food, hidden, result, sex, phys, menu, onApply, onClose }: Props) {
   const custom = useCustomTemplates()
   const all: AnyTemplate[] = [...TEMPLATES, ...custom.list]
   const rec = recommendTemplate(sex, phys)
@@ -39,7 +40,7 @@ export default function TemplatePanel({ food, result, sex, phys, menu, onApply, 
   const apply = () => {
     const t = all.find((x) => x.id === sel)
     if (!t) return
-    const r = buildTemplate(t, target, { byCode: food.byCode, groups: food.groups, idx: food.idx, macro: { c: 50, p: 20 } })
+    const r = buildTemplate(t, target, { byCode: food.byCode, groups: food.groups, idx: food.idx, macro: { c: 50, p: 20 }, hidden })
     onApply(r.items, mode)
     setDone(r)
   }

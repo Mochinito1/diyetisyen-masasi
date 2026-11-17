@@ -13,6 +13,8 @@ export interface Client {
   /** Danışanın menüsü ve danışana not */
   menu: MenuItem[]
   mnote: string
+  /** Seçili hastalık, alerji ve diyet kimlikleri (rules.ts) */
+  conds: string[]
   /** Danışan dosyası */
   an: Anamnesis
   meas: Measurement[]

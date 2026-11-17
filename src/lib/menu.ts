@@ -1,5 +1,6 @@
 import type { Food, FoodData } from './foods'
-import { C, fold } from './foods'
+import { C, fold, foodMatch } from './foods'
+import { synStartsWith } from './synonyms'
 import { macros, sodiumLimit, type CalcResult } from './formulas'
 import { fmt, fmtMax } from './format'
 import { unitsFor } from './units'
@@ -116,16 +117,16 @@ export function warnList(r: CalcResult | null, age: number | null, T: Totals, it
   return W
 }
 
-/** Menüde besin arama: her kelime ad, bilimsel veya yöresel adda geçmeli; ad başı eşleşme öne çıkar. */
-export function searchForMenu(foods: Food[], query: string, limit = 10): Food[] {
-  const tk = fold(query).trim().split(/\s+/).filter(Boolean)
-  if (!tk.length) return []
+/** Menüde besin arama (eş anlamlılı); ad başı ve eş anlamlı başlangıç eşleşmeleri öne çıkar. */
+export function searchForMenu(foods: Food[], query: string, limit = 10, hidden?: (f: Food) => boolean): Food[] {
+  const q = fold(query).trim()
+  if (!q) return []
+  const first = q.split(/\s+/)[0]
   const scored: [number, Food][] = []
   for (const f of foods) {
+    if (!foodMatch(f, query) || hidden?.(f)) continue
     const name = fold(f.name)
-    const hay = `${name} ${fold(f.sci)} ${fold(f.local)}`
-    if (!tk.every((t) => hay.includes(t))) continue
-    scored.push([(name.startsWith(tk[0]) ? 0 : 1) + name.length / 500, f])
+    scored.push([(synStartsWith(name, query) ? -1 : name.startsWith(first) ? 0 : 1) + name.length / 500, f])
   }
   scored.sort((a, b) => a[0] - b[0])
   return scored.slice(0, limit).map((s) => s[1])

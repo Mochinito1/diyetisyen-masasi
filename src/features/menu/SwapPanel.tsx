@@ -18,8 +18,9 @@ const MODES: [SwapMode, string][] = [
 
 const amount = (it: MenuItem) => (it.u === 'g' ? `${fmt(it.g)} g` : `${fmtMax(it.q, 2)} ${it.u} · ${fmt(it.g)} g`)
 
-export default function SwapPanel({ food, item, onApply, onClose }: {
+export default function SwapPanel({ food, hidden, item, onApply, onClose }: {
   food: FoodCtx
+  hidden: (f: Food) => boolean
   item: MenuItem
   onApply: (next: MenuItem) => void
   onClose: () => void
@@ -34,7 +35,7 @@ export default function SwapPanel({ food, item, onApply, onClose }: {
     ref.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }, [])
 
-  const cands = useMemo(() => swapCandidates(food.foods, O, q), [food.foods, O, q])
+  const cands = useMemo(() => swapCandidates(food.foods, O, q, hidden), [food.foods, O, q, hidden])
   const next = sel ? swapItem(item, O, sel, food.groups, mode) : null
   const a = portion(O, item.g)
   const b = next && sel ? portion(sel, next.g) : null

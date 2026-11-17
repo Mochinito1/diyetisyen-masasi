@@ -7,6 +7,8 @@ import {
   type Meal, type MenuItem,
 } from '../../lib/menu'
 import type { useFoodData } from '../../lib/useFoodData'
+import type { Evaluation } from '../../lib/rules'
+import ReasonChips from '../foods/ReasonChips'
 import type { Client } from '../clients/types'
 import SwapPanel from './SwapPanel'
 import TemplatePanel from './TemplatePanel'
@@ -23,10 +25,12 @@ interface Props {
   result: CalcResult | null
   age: number | null
   food: FoodCtx
+  /** Besin kodu -> danışana uygunluk */
+  ev: Map<string, Evaluation>
   onChange: (patch: Partial<Client>) => void
 }
 
-export default function MenuEditor({ client, result, age, food, onChange }: Props) {
+export default function MenuEditor({ client, result, age, food, ev, onChange }: Props) {
   const { menu } = client
   const [q, setQ] = useState('')
   const [picked, setPicked] = useState<Food | null>(null)
@@ -36,11 +40,16 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
   const [micro, setMicro] = useState(false)
   const [tplOpen, setTplOpen] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
+  const [showHidden, setShowHidden] = useState(false)
   const [toast, setToast] = useState('')
 
+  const isHidden = (f: Food) => ev.get(f.code)?.st === 'hide'
   const T = totals(menu, food.byCode, food.idx)
-  const results = searchForMenu(food.foods, q)
+  const results = searchForMenu(food.foods, q, 10, showHidden ? undefined : isHidden)
   const warns = warnList(result, age, T, menu.length)
+  const badItems = menu.filter((it) => ev.get(it.code)?.st === 'hide')
+  if (badItems.length)
+    warns.push({ tone: 'bad', text: `Bu danışan için uygun olmayan ${badItems.length} ürün var: ${badItems.map((it) => shortName(food.byCode.get(it.code)?.name ?? '')).join(', ')}` })
   const ready = result && !result.infant && result.target != null
 
   const setMenu = (next: MenuItem[]) => onChange({ menu: next })
@@ -133,6 +142,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
         <SwapPanel
           key={swapIdx}
           food={food}
+          hidden={isHidden}
           item={menu[swapIdx]}
           onClose={() => setSwapIdx(null)}
           onApply={(next) => {
@@ -145,6 +155,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
       {tplOpen && (
         <TemplatePanel
           food={food}
+          hidden={isHidden}
           result={result}
           sex={client.profile.sex}
           phys={client.profile.phys}
@@ -161,6 +172,10 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
           value={q}
           onChange={(e) => { setQ(e.target.value); setPicked(null) }}
         />
+        <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
+          <input type="checkbox" className="accent-brand-500" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
+          Bu danışan için uygun olmayanları da göster
+        </label>
         {q.trim() && !picked && (
           <div className="mt-2 space-y-1.5">
             {results.length === 0 && <p className="text-sm text-stone-500">Eşleşen besin yok.</p>}
@@ -168,6 +183,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
               <button key={f.id} onClick={() => pick(f)} className="flex w-full flex-wrap items-baseline gap-x-3 rounded-lg border border-stone-200 px-3 py-2 text-left hover:border-brand-500">
                 <b className="w-full text-sm">{shortName(f.name)}</b>
                 <span className="text-xs text-stone-500">{food.groups[f.groups[0]]} · {fmt(f.v[C.kcal] ?? 0)} kcal/100 g</span>
+                {ev.get(f.code)!.st !== 'ok' && <span className="w-full"><ReasonChips ev={ev.get(f.code)!} max={2} /></span>}
               </button>
             ))}
           </div>
@@ -175,6 +191,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
         {picked && draft && draftT && (
           <div className="mt-3 rounded-xl border border-brand-500 bg-brand-50 p-4">
             <b>{shortName(picked.name)}</b>
+            {ev.get(picked.code) && <ReasonChips ev={ev.get(picked.code)!} max={2} />}
             <div className="mt-3 flex flex-wrap items-end gap-3">
               <label className="block w-24 text-xs font-semibold">
                 Miktar
@@ -235,6 +252,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
                     <div key={i} className="mt-3 grid gap-2 border-t border-stone-100 pt-3 md:grid-cols-[1fr_auto_auto] md:items-center">
                       <div>
                         <b>{shortName(F.name)}</b>
+                        {ev.get(F.code) && ev.get(F.code)!.st !== 'ok' && <ReasonChips ev={ev.get(F.code)!} max={2} />}
                         <div className="text-xs text-stone-500">
                           {fmt(t.kcal)} kcal · P {fmt(t.p, 1)} · K {fmt(t.c, 1)} · Y {fmt(t.f, 1)}{it.u !== 'g' && ` · ${fmt(it.g)} g`}
                         </div>
