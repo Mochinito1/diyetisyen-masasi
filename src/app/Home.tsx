@@ -1,16 +1,25 @@
 import { Link } from 'react-router-dom'
-import { NAV } from './nav'
+import { navFor } from './nav'
+import { ROLES, useRole } from './role'
+
+const GREET = {
+  admin: 'Yönetici paneli',
+  diyetisyen: 'Diyetisyen paneli',
+  danisan: 'Danışan portalı',
+} as const
 
 export default function Home() {
+  const { role } = useRole()
+  const label = ROLES.find((r) => r.id === role)!.label
   return (
     <div>
-      <h1 className="font-display text-4xl font-bold tracking-tight">Hoş geldin</h1>
+      <p className="text-sm font-semibold text-brand-500">{label} olarak görüntülüyorsunuz</p>
+      <h1 className="font-display text-4xl font-bold tracking-tight">{GREET[role]}</h1>
       <p className="mt-2 max-w-prose text-stone-600">
-        Danışan takibi, kalori hesabı ve menü planlama için eğitim amaçlı bir araç. Veriler
-        yalnızca bu tarayıcıda saklanır.
+        Eğitim amaçlı bir araç. Veriler yalnızca bu tarayıcıda saklanır.
       </p>
       <div className="mt-8 grid grid-cols-2 gap-4 md:grid-cols-3">
-        {NAV.map((n) => (
+        {navFor(role).map((n) => (
           <Link
             key={n.to}
             to={n.to}
