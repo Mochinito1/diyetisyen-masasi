@@ -8,6 +8,7 @@ import {
 } from '../../lib/menu'
 import type { useFoodData } from '../../lib/useFoodData'
 import type { Client } from '../clients/types'
+import TemplatePanel from './TemplatePanel'
 
 type FoodCtx = NonNullable<ReturnType<typeof useFoodData>>
 
@@ -32,6 +33,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
   const [unit, setUnit] = useState('g')
   const [meal, setMeal] = useState<Meal>('Öğle')
   const [micro, setMicro] = useState(false)
+  const [tplOpen, setTplOpen] = useState(false)
   const [toast, setToast] = useState('')
 
   const T = totals(menu, food.byCode, food.idx)
@@ -125,6 +127,17 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
         </ul>
       )}
 
+      {tplOpen && (
+        <TemplatePanel
+          food={food}
+          result={result}
+          sex={client.profile.sex}
+          phys={client.profile.phys}
+          menu={menu}
+          onClose={() => setTplOpen(false)}
+          onApply={(items, mode) => setMenu(mode === 'replace' ? items : [...menu, ...items])}
+        />
+      )}
       <div className="rounded-2xl border border-stone-200 bg-white p-5">
         <h2 className="font-display text-lg font-bold">Besin ekle</h2>
         <input
@@ -184,7 +197,8 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
       {menu.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center">
           <h3 className="font-display text-lg font-bold">Menü henüz boş</h3>
-          <p className="mt-1 text-stone-500">Yukarıdan besin arayıp ev ölçüsüyle ekleyin. Hazır şablonlar sonraki aşamada eklenecek.</p>
+          <p className="mt-1 text-stone-500">Yukarıdan besin arayıp ev ölçüsüyle ekleyin ya da hazır bir şablonu danışanın hedefine göre uyarlayın.</p>
+          <button className="mt-3 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white" onClick={() => setTplOpen(true)}>Şablon seç</button>
         </div>
       ) : (
         <>
@@ -252,6 +266,7 @@ export default function MenuEditor({ client, result, age, food, onChange }: Prop
         <p className="mb-2 text-xs text-stone-500">Yazdırılabilir listenin altında görünür (su, hareket, pişirme önerileri gibi).</p>
         <textarea className={`${field} min-h-24 w-full`} value={client.mnote} onChange={(e) => onChange({ mnote: e.target.value })} />
         <div className="mt-3 flex flex-wrap gap-2">
+          <button className={btn} onClick={() => setTplOpen(true)}>Şablon uygula</button>
           <button
             className={btn}
             disabled={!menu.length}
