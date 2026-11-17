@@ -14,6 +14,7 @@ export const NAV: NavItem[] = [
   { to: '/menu', label: 'Menü', desc: 'Haftalık plan', roles: ['admin', 'diyetisyen', 'danisan'] },
   { to: '/randevu', label: 'Randevu', desc: 'Takvim', roles: ['admin', 'diyetisyen', 'danisan'] },
   { to: '/profil', label: 'Profil', desc: 'Hedefin ve ölçülerin', roles: ['danisan'] },
+  { to: '/ayarlar', label: 'Ayarlar', desc: 'Klinik, mesajlar, KVKK, yedek', roles: ['admin', 'diyetisyen'] },
   { to: '/yonetim', label: 'Yönetim', desc: 'Hesaplar ve başvurular', roles: ['admin'] },
 ]
 

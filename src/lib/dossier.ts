@@ -141,3 +141,6 @@ export function lastVisit(
 }
 
 export const fmtDay = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString('tr-TR')
+/** İki tarih arası gün farkı (bugüne göre) */
+export const daysAgo = (d: string, now = new Date()) =>
+  Math.floor((new Date(`--T12:00:00`).getTime() - new Date(`T12:00:00`).getTime()) / 86400000)

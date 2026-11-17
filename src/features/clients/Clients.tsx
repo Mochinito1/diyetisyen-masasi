@@ -10,6 +10,7 @@ import { EMPTY_ANAMNESIS, fmtDay, lastVisit, latestWeight } from '../../lib/doss
 import { load } from '../../lib/storage'
 import type { Appointment } from '../../lib/appointments'
 import ConditionsCard from './ConditionsCard'
+import KvkkCard from './KvkkCard'
 import AnamnesisCard from './dossier/Anamnesis'
 import LabsCard from './dossier/Labs'
 import MeasurementsCard from './dossier/Measurements'
@@ -30,6 +31,8 @@ const blank = (): Client => ({
   menu: [],
   mnote: '',
   conds: [],
+  kvkk: { ay: '', riza: '' },
+  trk: {},
   an: EMPTY_ANAMNESIS,
   meas: [],
   lab: [],
@@ -89,6 +92,7 @@ export default function Clients() {
               <ProfileFields value={editing.profile} onChange={(p) => set({ profile: p })} />
             </div>
             <ConditionsCard client={editing} onChange={(conds) => set({ conds })} />
+            <KvkkCard value={editing.kvkk} onChange={(kvkk) => set({ kvkk })} />
             <AnamnesisCard value={editing.an} onChange={(an) => set({ an })} />
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <label className="block text-sm font-semibold">

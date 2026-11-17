@@ -6,7 +6,7 @@ import type { Client } from './types'
 const KEY = 'dm.clients'
 
 export function useClients() {
-  const [clients, setClients] = useState<Client[]>(() => load<Client[]>(KEY, []).map((c) => ({ ...c, menu: c.menu ?? [], mnote: c.mnote ?? '', an: { ...EMPTY_ANAMNESIS, ...c.an }, conds: c.conds ?? [], meas: c.meas ?? [], lab: c.lab ?? [], sess: c.sess ?? [] })))
+  const [clients, setClients] = useState<Client[]>(() => load<Client[]>(KEY, []).map((c) => ({ ...c, menu: c.menu ?? [], mnote: c.mnote ?? '', an: { ...EMPTY_ANAMNESIS, ...c.an }, conds: c.conds ?? [], kvkk: { ay: c.kvkk?.ay ?? '', riza: c.kvkk?.riza ?? '' }, trk: c.trk ?? {}, meas: c.meas ?? [], lab: c.lab ?? [], sess: c.sess ?? [] })))
 
   const commit = useCallback((next: Client[]) => {
     setClients(next)

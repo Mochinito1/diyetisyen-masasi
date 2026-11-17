@@ -40,3 +40,10 @@ body {
   @apply bg-stone-50 text-stone-900 antialiased;
   font-family: var(--font-sans);
 }
+@media print {
+  #root { display: none !important; }
+  body { background: #fff !important; }
+  .print-overlay { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
+  .no-print { display: none !important; }
+  @page { margin: 12mm; }
+}

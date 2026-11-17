@@ -11,6 +11,7 @@ import Menu from '../features/menu/Menu'
 import Appointments from '../features/appointments/Appointments'
 import Profile from '../features/portal/Profile'
 import Admin from '../features/admin/Admin'
+import Settings from '../features/settings/Settings'
 
 const PAGES: Record<string, ReactElement> = {
   '/danisanlar': <Clients />,
@@ -19,6 +20,7 @@ const PAGES: Record<string, ReactElement> = {
   '/menu': <Menu />,
   '/randevu': <Appointments />,
   '/profil': <Profile />,
+  '/ayarlar': <Settings />,
   '/yonetim': <Admin />,
 }
 

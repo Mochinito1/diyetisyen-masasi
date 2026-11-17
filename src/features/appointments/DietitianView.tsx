@@ -4,6 +4,10 @@ import {
   apDay, apTime, dateStr, effectiveStatus, isBusy, longDate, sortByDt, todayStr,
   type ApStatus, type ApType, type Appointment,
 } from '../../lib/appointments'
+import { daysAgo, fmtDay, lastVisit } from '../../lib/dossier'
+import { fillTemplate, firstName, smsHref, waHref } from '../../lib/brand'
+import { load, save } from '../../lib/storage'
+import { useBrand } from '../settings/useBrand'
 import type { Client } from '../clients/types'
 import MonthCalendar from './MonthCalendar'
 import type { ApApi } from './useAppointments'
@@ -24,6 +28,9 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
   const [month, setMonth] = useState(todayStr().slice(0, 7))
   const [day, setDay] = useState<string>(todayStr())
   const [adding, setAdding] = useState(false)
+  const [view, setView] = useState<'gun' | 'hafta' | 'ay'>('ay')
+  const { brand } = useBrand()
+  const [copied, setCopied] = useState('')
 
   const now = Date.now()
   const today = todayStr()
@@ -35,6 +42,17 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
   const end = new Date()
   end.setDate(end.getDate() + 14)
   const upcoming = sortByDt(aps.filter((a) => isBusy(a) && apDay(a) >= today && apDay(a) <= dateStr(end)))
+
+  const remind = (a: Appointment): Remind => {
+    const c = clients.find((x) => x.id === a.clientId)
+    const text = fillTemplate(brand.tpl, { ad: firstName(a.clientName), tarih: longDate(apDay(a)), saat: apTime(a), link: a.type === 'online' ? a.link || brand.link : '', klinik: brand.clinic || brand.name })
+    return {
+      text, wa: c ? waHref(c.tel, text) : null, sms: c ? smsHref(c.tel, text) : null,
+      onCopy: () => { navigator.clipboard?.writeText(text); setCopied('Mesaj kopyalandı'); setTimeout(() => setCopied(''), 1800) },
+    }
+  }
+  const weekStart = isoAdd(day, -((new Date(day + 'T12:00:00').getDay() + 6) % 7))
+  const dayRows = (d: string) => sortByDt(aps.filter((a) => apDay(a) === d && a.status !== 'cancel'))
 
   return (
     <>
@@ -60,38 +78,97 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
           </div>
         )}
 
-        <div className="grid gap-4 md:grid-cols-[360px_1fr]">
-          <div className="h-fit rounded-2xl border border-stone-200 bg-white p-4">
-            <MonthCalendar month={month} onMonth={setMonth} selected={day} onSelect={setDay} count={countOn} />
-          </div>
-          <div className="rounded-2xl border border-stone-200 bg-white p-5">
-            <h2 className="font-display text-lg font-bold capitalize">{longDate(day)}</h2>
-            {dayList.length === 0 ? <p className="mt-2 text-stone-500">Bu gün için randevu yok.</p> : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} />)}
-          </div>
+        <div className="flex gap-1.5" role="tablist" aria-label="Görünüm">
+          {([['gun', 'Gün'], ['hafta', 'Hafta'], ['ay', 'Ay']] as const).map(([v, l]) => (
+            <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-full border px-4 py-1 text-sm font-semibold ${view === v ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white text-stone-600'}`}>{l}</button>
+          ))}
         </div>
 
+        {view === 'ay' && (
+          <div className="grid gap-4 md:grid-cols-[360px_1fr]">
+            <div className="h-fit rounded-2xl border border-stone-200 bg-white p-4">
+              <MonthCalendar month={month} onMonth={setMonth} selected={day} onSelect={setDay} count={countOn} />
+            </div>
+            <div className="rounded-2xl border border-stone-200 bg-white p-5">
+              <h2 className="font-display text-lg font-bold capitalize">{longDate(day)}</h2>
+              {dayList.length === 0 ? <p className="mt-2 text-stone-500">Bu gün için randevu yok.</p> : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
+            </div>
+          </div>
+        )}
+
+        {view === 'gun' && (
+          <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <div className="flex items-center justify-between gap-2">
+              <button className={btn} aria-label="Önceki gün" onClick={() => setDay(isoAdd(day, -1))}>‹</button>
+              <h2 className="font-display text-lg font-bold capitalize">{longDate(day)}</h2>
+              <button className={btn} aria-label="Sonraki gün" onClick={() => setDay(isoAdd(day, 1))}>›</button>
+            </div>
+            <div className="mt-2"><button className={btn} onClick={() => setDay(today)}>Bugün</button></div>
+            {dayList.length === 0 ? <p className="mt-3 text-stone-500">Bu gün için randevu yok.</p> : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
+          </div>
+        )}
+
+        {view === 'hafta' && (
+          <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <div className="flex items-center justify-between gap-2">
+              <button className={btn} aria-label="Önceki hafta" onClick={() => setDay(isoAdd(day, -7))}>‹</button>
+              <h2 className="font-display text-lg font-bold">{fmtShort(weekStart)} – {fmtShort(isoAdd(weekStart, 6))}</h2>
+              <button className={btn} aria-label="Sonraki hafta" onClick={() => setDay(isoAdd(day, 7))}>›</button>
+            </div>
+            {Array.from({ length: 7 }, (_, i) => isoAdd(weekStart, i)).map((d) => {
+              const rows = dayRows(d)
+              return (
+                <div key={d} className="mt-2 border-t border-stone-100 pt-2">
+                  <button className={`flex w-full items-center justify-between py-1 text-left font-bold capitalize ${d === today ? 'text-brand-500' : ''}`} onClick={() => { setDay(d); setView('gun') }}>
+                    <span>{longDate(d)}</span>
+                    {rows.length > 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">{rows.length} randevu</span>}
+                  </button>
+                  {rows.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
+                </div>
+              )
+            })}
+          </div>
+        )}
         <div className="rounded-2xl border border-stone-200 bg-white p-5">
           <h2 className="font-display text-lg font-bold">Önümüzdeki 14 gün</h2>
           {upcoming.length === 0 ? <p className="mt-2 text-stone-500">Yaklaşan randevu yok.</p> : upcoming.map((a) => (
             <div key={a.id} className="mt-2 border-t border-stone-100 pt-2">
               <div className="text-xs capitalize text-stone-500">{longDate(apDay(a))}</div>
-              <Row a={a} showName onChange={api.patch} onRemove={api.remove} />
+              <Row a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />
             </div>
           ))}
         </div>
 
+        <GapCard clients={clients} aps={aps} tpl={brand.tpl2} clinic={brand.clinic || brand.name} onNew={() => setAdding(true)} />
+
         <Hours api={api} />
       </div>
+      {copied && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg" role="status">{copied}</div>}
     </>
   )
 }
 
-function Row({ a, showName, onChange, onRemove, actions }: {
+const isoAdd = (s: string, n: number) => {
+  const d = new Date(s + 'T12:00:00')
+  d.setDate(d.getDate() + n)
+  return dateStr(d)
+}
+const fmtShort = (s: string) => new Date(s + 'T12:00:00').toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' })
+
+interface Remind {
+  text: string
+  wa: string | null
+  sms: string | null
+  onCopy: () => void
+}
+
+function Row({ a, showName, onChange, onRemove, actions, remind }: {
   a: Appointment
   showName?: boolean
   onChange: ApApi['patch']
   onRemove: ApApi['remove']
   actions?: React.ReactNode
+  remind?: Remind
 }) {
   const st = effectiveStatus(a)
   const [label, tone] = ST[st]
@@ -113,6 +190,11 @@ function Row({ a, showName, onChange, onRemove, actions }: {
           <>
             {st === 'plan' || st === 'pending' ? (
               <>
+                {remind && (remind.wa
+                  ? <a className={btn} href={remind.wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+                  : <button className={btn + ' opacity-50'} disabled title="Geçerli telefon yok">WhatsApp</button>)}
+                {remind?.sms && <a className={btn} href={remind.sms}>SMS</a>}
+                {remind && <button className={btn} onClick={remind.onCopy}>Mesajı kopyala</button>}
                 <button className={btn} onClick={() => onChange(a.id, { status: 'done' })}>Geldi</button>
                 <button className={btn} onClick={() => onChange(a.id, { status: 'miss' })}>Gelmedi</button>
                 <button className={btn} onClick={() => onChange(a.id, { status: 'cancel' })}>İptal</button>
@@ -211,6 +293,48 @@ function Hours({ api }: { api: ApApi }) {
           </select>
         </label>
       </div>
+    </div>
+  )
+}
+
+const GAP_KEY = 'dm.gap'
+
+/** Uzun süredir gelmeyen ve randevusu olmayan danışanlar */
+function GapCard({ clients, aps, tpl, clinic, onNew }: { clients: Client[]; aps: Appointment[]; tpl: string; clinic: string; onNew: () => void }) {
+  const [th, setTh] = useState<number>(() => load<number>(GAP_KEY, 21))
+  const today = todayStr()
+  const list = clients
+    .map((c) => {
+      const lv = lastVisit(c, aps)
+      const fut = aps.some((a) => a.clientId === c.id && isBusy(a) && apDay(a) >= today)
+      return { c, lv, days: lv ? daysAgo(lv) : 0, fut }
+    })
+    .filter((x) => x.lv && x.days >= th && !x.fut)
+    .sort((a, b) => b.days - a.days)
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white p-5">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-lg font-bold">Uzun süredir gelmeyenler</h2>
+        <select className={field} aria-label="Süre" value={th} onChange={(e) => { setTh(+e.target.value); save(GAP_KEY, +e.target.value) }}>
+          {[14, 21, 30, 60, 90].map((n) => <option key={n} value={n}>{n} gün ve üzeri</option>)}
+        </select>
+      </div>
+      {list.length === 0 ? (
+        <p className="mt-2 text-stone-500">{th} gündür görüşülmeyen ve randevusu olmayan danışan yok.</p>
+      ) : list.map(({ c, lv, days }) => {
+        const text = fillTemplate(tpl, { ad: firstName(c.name), klinik: clinic })
+        const wa = waHref(c.tel, text)
+        return (
+          <div key={c.id} className="mt-3 flex flex-wrap items-center gap-3 border-t border-stone-100 pt-3">
+            <b className="w-14 text-center font-display text-xl tabular-nums">{days}<span className="block text-xs font-normal text-stone-500">gün</span></b>
+            <div className="min-w-0 flex-1"><b>{c.name}</b><div className="text-xs text-stone-500">Son görüşme: {fmtDay(lv)}</div></div>
+            {wa ? <a className={btn} href={wa} target="_blank" rel="noopener noreferrer">WhatsApp</a> : <button className={`${btn} opacity-50`} disabled title="Geçerli telefon yok">WhatsApp</button>}
+            <button className={btn} onClick={() => navigator.clipboard?.writeText(text)}>Mesajı kopyala</button>
+            <button className={btn} onClick={onNew}>Randevu ver</button>
+          </div>
+        )
+      })}
+      <p className="mt-3 text-xs text-stone-500">Son görüşme; “Geldi” işaretli randevulardan, seans notlarından, ölçümlerden veya elle işaretlemeden hesaplanır. Mesajlar kendiliğinden gönderilmez: WhatsApp düğmesi hazır mesajla sohbeti açar, gönder tuşuna siz basarsınız.</p>
     </div>
   )
 }

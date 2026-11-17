@@ -11,7 +11,9 @@ import type { Evaluation } from '../../lib/rules'
 import ReasonChips from '../foods/ReasonChips'
 import type { Client } from '../clients/types'
 import SwapPanel from './SwapPanel'
+import PrintMenu from './PrintMenu'
 import TemplatePanel from './TemplatePanel'
+import { useBrand } from '../settings/useBrand'
 
 type FoodCtx = NonNullable<ReturnType<typeof useFoodData>>
 
@@ -41,6 +43,8 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   const [tplOpen, setTplOpen] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
   const [showHidden, setShowHidden] = useState(false)
+  const [printing, setPrinting] = useState(false)
+  const { brand } = useBrand()
   const [toast, setToast] = useState('')
 
   const isHidden = (f: Food) => ev.get(f.code)?.st === 'hide'
@@ -300,6 +304,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
         <p className="mb-2 text-xs text-stone-500">Yazdırılabilir listenin altında görünür (su, hareket, pişirme önerileri gibi).</p>
         <textarea className={`${field} min-h-24 w-full`} value={client.mnote} onChange={(e) => onChange({ mnote: e.target.value })} />
         <div className="mt-3 flex flex-wrap gap-2">
+          <button className="rounded-lg bg-brand-500 px-4 py-2 text-sm font-semibold text-white disabled:opacity-40" disabled={!menu.length} onClick={() => setPrinting(true)}>PDF liste oluştur</button>
           <button className={btn} onClick={() => setTplOpen(true)}>Şablon uygula</button>
           <button
             className={btn}
@@ -325,6 +330,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
         </div>
       </div>
 
+      {printing && <PrintMenu client={client} menu={menu} food={food} brand={brand} target={result?.target ?? null} onClose={() => setPrinting(false)} />}
       {toast && (
         <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg">{toast}</div>
       )}
