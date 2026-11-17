@@ -2,6 +2,7 @@ import { NavLink, Link, Outlet } from 'react-router-dom'
 import NavIcon from './NavIcon'
 import { navFor } from './nav'
 import { ROLES, useRole } from './role'
+import { useAuth } from './auth'
 import { useTheme } from './theme'
 
 const item = ({ isActive }: { isActive: boolean }) =>
@@ -9,12 +10,13 @@ const item = ({ isActive }: { isActive: boolean }) =>
 const pill = (active: boolean) => `grid h-7 w-[46px] place-items-center rounded-2xl ${active ? 'bg-brand-50' : ''}`
 
 export default function Layout() {
-  const { role, setRole } = useRole()
+  const { role, setRole, canSwitch } = useRole()
+  const { session, logout } = useAuth()
   const { theme, toggle } = useTheme()
   const dark = theme === 'dark'
   return (
     <div className="min-h-screen">
-      <div className="bg-[#0a0f0d] text-[#e5eee8]">
+      {canSwitch && <div className="bg-[#0a0f0d] text-[#e5eee8]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-1 text-xs">
           <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span>
           <span className="font-semibold opacity-70 sm:hidden">Rol:</span>
@@ -30,14 +32,18 @@ export default function Layout() {
               </button>
             ))}
           </div>
-          <span className="ml-auto hidden opacity-50 sm:inline">Test modu</span>
+          <span className="ml-auto hidden opacity-50 sm:inline">Yönetici: başka hesap olarak görüntüleme</span>
         </div>
-      </div>
+      </div>}
 
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50">
         <div className="mx-auto max-w-6xl px-4">
           <div className="relative flex items-center justify-center pt-2.5">
             <Link to="/" className="font-display text-[17px] font-bold leading-tight text-stone-900 md:text-xl" aria-label="Anasayfa">Diyetisyen Masası</Link>
+            <div className="absolute left-0 top-1.5 flex items-center gap-2">
+              <button onClick={logout} className="rounded-lg border border-stone-200 bg-white px-2.5 py-1.5 text-xs font-semibold hover:border-brand-500 hover:text-brand-500">Çıkış</button>
+              <span className="hidden max-w-40 truncate text-xs font-semibold text-stone-500 md:inline">{session?.label}</span>
+            </div>
             <button
               onClick={toggle}
               aria-label={dark ? 'Açık temaya geç' : 'Karanlık temaya geç'}

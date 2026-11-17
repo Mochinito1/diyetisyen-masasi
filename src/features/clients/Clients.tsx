@@ -10,6 +10,7 @@ import { EMPTY_ANAMNESIS, fmtDay, lastVisit, latestWeight } from '../../lib/doss
 import { load, save } from '../../lib/storage'
 import type { Appointment } from '../../lib/appointments'
 import ConditionsCard from './ConditionsCard'
+import { makeClient as blank } from './factory'
 import KvkkCard from './KvkkCard'
 import PortalTrackCard from './PortalTrackCard'
 import AnamnesisCard from './dossier/Anamnesis'
@@ -22,25 +23,6 @@ import { useClients } from './useClients'
 const field =
   'w-full rounded-lg border border-stone-300 bg-white px-3 py-2 focus:border-brand-500 focus:outline-none'
 
-const blank = (): Client => ({
-  id: crypto.randomUUID(),
-  name: '',
-  tel: '',
-  email: '',
-  profile: EMPTY_PROFILE,
-  notes: '',
-  menu: [],
-  mnote: '',
-  conds: [],
-  kvkk: { ay: '', riza: '' },
-  trk: {},
-  an: EMPTY_ANAMNESIS,
-  meas: [],
-  lab: [],
-  sess: [],
-  created: Date.now(),
-  updated: Date.now(),
-})
 
 export default function Clients() {
   const { clients, upsert, remove } = useClients()

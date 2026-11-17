@@ -1,0 +1,110 @@
+import { load, save } from './storage'
+
+/**
+ * Eğitim sürümü hesapları: şifre PBKDF2-SHA256 ile özetlenip yalnızca bu tarayıcıda saklanır.
+ * Sunucu olmadığı için bu gerçek bir güvenlik katmanı değildir; veriyi koruyan şey tarayıcının kendisidir.
+ */
+export type AccountKind = 'diyetisyen' | 'danisan'
+export interface Account {
+  u: string
+  salt: string
+  hash: string
+  ad: string
+  kind: AccountKind
+  /** Danışan hesabının bağlı olduğu danışan kaydı */
+  clientId?: string
+  created: number
+}
+export interface Session {
+  u: string
+  label: string
+  kind: 'admin' | 'diyetisyen' | 'danisan'
+  clientId?: string
+}
+
+export const DEMO = {
+  dyt: ['diyetisyen', 'Diyet2026!'],
+  dan: ['danisan', 'Danisan2026!'],
+  adm: ['admin', 'Yonetim-Kx7#2026'],
+} as const
+export const DEMO_CLIENT_ID = 'demo-danisan'
+
+const ACC_KEY = 'dm.accounts'
+const SESSION_KEY = 'dm.session'
+
+export async function hashPw(pw: string, salt: string): Promise<string> {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits'])
+  const b = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 100000, hash: 'SHA-256' }, k, 256)
+  return [...new Uint8Array(b)].map((x) => x.toString(16).padStart(2, '0')).join('')
+}
+
+const newSalt = () => crypto.randomUUID().replace(/-/g, '')
+export const normUser = (u: string) => u.trim().toLowerCase()
+export const userError = (u: string) =>
+  /^[a-z0-9._-]{3,20}$/.test(u) ? '' : 'Kullanıcı adı 3-20 karakter olmalı; yalnızca harf, rakam, nokta, alt çizgi ve tire.'
+export const pwError = (p: string, p2: string) => (p.length < 8 ? 'Şifre en az 8 karakter olmalı.' : p !== p2 ? 'Şifreler aynı değil.' : '')
+
+export const loadAccounts = () => load<Record<string, Account>>(ACC_KEY, {})
+const putAccount = (a: Account) => save(ACC_KEY, { ...loadAccounts(), [a.u]: a })
+
+export const loadSession = (): Session | null => {
+  try { return JSON.parse(sessionStorage.getItem(SESSION_KEY) ?? 'null') } catch { return null }
+}
+export const saveSession = (s: Session | null) => {
+  try { s ? sessionStorage.setItem(SESSION_KEY, JSON.stringify(s)) : sessionStorage.removeItem(SESSION_KEY) } catch { /* gizli sekme */ }
+}
+
+// Art arda hatalı denemeyi sınırla: 5 hatadan sonra 30 sn bekleme
+let fails = 0
+let lockedUntil = 0
+const failed = (error: string) => {
+  if (++fails >= 5) { lockedUntil = Date.now() + 30000; fails = 0 }
+  return { ok: false as const, error }
+}
+export const resetLock = () => { fails = 0; lockedUntil = 0 }
+
+type Result = { ok: true; session: Session } | { ok: false; error: string }
+
+/** Kullanıcı adı ve şifreyle giriş: demo hesaplar ve bu tarayıcıda açılmış hesaplar */
+export async function authenticate(userRaw: string, pw: string): Promise<Result> {
+  const u = normUser(userRaw)
+  if (Date.now() < lockedUntil) return { ok: false, error: `Çok fazla hatalı deneme. ${Math.ceil((lockedUntil - Date.now()) / 1000)} sn sonra tekrar deneyin.` }
+  if (!u || !pw) return { ok: false, error: 'Kullanıcı adı ve şifre yazın.' }
+  fails = Math.min(fails, 4)
+  if (u === DEMO.adm[0]) return pw === DEMO.adm[1] ? { ok: true, session: { u, label: 'Yönetici', kind: 'admin' } } : failed('Kullanıcı adı veya şifre hatalı.')
+  if (u === DEMO.dyt[0]) return pw === DEMO.dyt[1] ? { ok: true, session: { u, label: 'Dyt. Demo Diyetisyen', kind: 'diyetisyen' } } : failed('Kullanıcı adı veya şifre hatalı.')
+  if (u === DEMO.dan[0]) return pw === DEMO.dan[1] ? { ok: true, session: { u, label: 'Demo Danışan', kind: 'danisan', clientId: DEMO_CLIENT_ID } } : failed('Kullanıcı adı veya şifre hatalı.')
+  const a = loadAccounts()[u]
+  if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok. “Hesap oluştur” ile yeni hesap açabilirsiniz.' }
+  if ((await hashPw(pw, a.salt)) !== a.hash) return failed('Kullanıcı adı veya şifre hatalı.')
+  fails = 0
+  return { ok: true, session: { u, label: a.ad, kind: a.kind, clientId: a.clientId } }
+}
+
+export async function register(i: { u: string; ad: string; p: string; p2: string; kind: AccountKind; clientId?: string }): Promise<Result> {
+  const u = normUser(i.u)
+  const ue = userError(u)
+  if (ue) return { ok: false, error: ue }
+  if (Object.values(DEMO).some((d) => d[0] === u)) return { ok: false, error: 'Bu kullanıcı adı demo hesaba ayrılmış.' }
+  const ad = i.ad.trim().replace(/\s+/g, ' ')
+  if (ad.length < 3) return { ok: false, error: 'Ad soyad yazın.' }
+  const pe = pwError(i.p, i.p2)
+  if (pe) return { ok: false, error: pe }
+  if (loadAccounts()[u]) return { ok: false, error: 'Bu kullanıcı adı kullanımda. Başka bir kullanıcı adı seçin ya da giriş yapın.' }
+  const salt = newSalt()
+  const acc: Account = { u, salt, hash: await hashPw(i.p, salt), ad, kind: i.kind, clientId: i.clientId, created: Date.now() }
+  putAccount(acc)
+  return { ok: true, session: { u, label: ad, kind: acc.kind, clientId: acc.clientId } }
+}
+
+/** Şifre yenileme: kullanıcı adı ve hesap açılırken yazılan ad soyad eşleşmeli */
+export async function resetPassword(i: { u: string; ad: string; p: string; p2: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  const u = normUser(i.u)
+  const a = loadAccounts()[u]
+  if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok.' }
+  if (a.ad.toLocaleLowerCase('tr') !== i.ad.trim().replace(/\s+/g, ' ').toLocaleLowerCase('tr')) return { ok: false, error: 'Ad soyad hesapla eşleşmiyor.' }
+  const pe = pwError(i.p, i.p2)
+  if (pe) return { ok: false, error: pe }
+  putAccount({ ...a, hash: await hashPw(i.p, a.salt) })
+  return { ok: true }
+}

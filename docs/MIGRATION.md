@@ -36,7 +36,7 @@ Durum: ✅ yapıldı · 🟡 farklı biçimde · ⬜ yapılmadı
 | Ayarlar: kişisel bilgiler, hastalık/diyet seçimi, KVKK onayı | ✅ |
 | Diyetisyen olmak için başvuru | ✅ |
 | Diyetisyen seçme / değiştirme | ⬜ tek diyetisyen |
-| Şifre, gerçek giriş | ⬜ rol geçişi (test modu) ile karşılandı |
+| Giriş ekranı: kullanıcı adı + şifre, hesap oluşturma, şifre yenileme, demo hesaplar | ✅ hesaplar bu tarayıcıda (şifre PBKDF2 ile özetlenir); sunucu yok |
 
 ## Yönetici paneli
 
@@ -53,7 +53,7 @@ Durum: ✅ yapıldı · 🟡 farklı biçimde · ⬜ yapılmadı
 |---|---|
 | Karanlık / açık tema | ✅ |
 | Telefon, tablet, masaüstü (duyarlı düzen) | ✅ |
-| Rol geçişi (Yönetici / Diyetisyen / Danışan), test modu | ✅ |
+| Roller hesaba bağlı; yönetici "şu rol olarak görüntüle" ile diğer rollere geçer | ✅ |
 | JSON yedek alma ve geri yükleme | ✅ |
 | Uçtan uca şifreleme, çok hesaplı paylaşım | ⬜ gerekmiyor: veri zaten tarayıcıda kalır |
 | Pişmiş besin değerleri (TürKomp'ta yok) | ⬜ veri sınırı |

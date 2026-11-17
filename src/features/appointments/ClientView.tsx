@@ -5,6 +5,7 @@ import {
   isBusy, isDayAvailable, longDate, slotRange, slotsFor, sortByDt, todayStr, type Appointment,
 } from '../../lib/appointments'
 import { load, save } from '../../lib/storage'
+import { useAuth } from '../../app/auth'
 import type { Client } from '../clients/types'
 import MonthCalendar from './MonthCalendar'
 import type { ApApi } from './useAppointments'
@@ -14,6 +15,7 @@ const btn = 'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm fon
 const KEY = 'dm.asClient'
 
 export default function ClientView({ api, clients }: { api: ApApi; clients: Client[] }) {
+  const { session } = useAuth()
   const [asId, setAsId] = useState<string>(() => load<string>(KEY, ''))
   const [open, setOpen] = useState(false)
   const [month, setMonth] = useState(todayStr().slice(0, 7))
@@ -65,12 +67,14 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
   return (
     <>
       <PageTitle title="Randevu" sub="Randevularını buradan oluşturabilirsin" />
+      {session?.kind === 'admin' && (
       <label className="mb-4 block max-w-xs text-xs font-semibold text-stone-500">
         Test: hangi danışan olarak görüntüleniyor?
         <select className={`${field} mt-1 w-full`} value={me.id} onChange={(e) => choose(e.target.value)}>
           {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
       </label>
+      )}
 
       <div className="space-y-4">
         {done && <div className="rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800">{done}</div>}

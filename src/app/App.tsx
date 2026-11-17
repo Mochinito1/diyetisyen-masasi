@@ -1,6 +1,8 @@
 import type { ReactElement } from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
+import { useAuth } from './auth'
 import Layout from './Layout'
+import Login from './Login'
 import Home from './Home'
 import { NAV } from './nav'
 import { useRole } from './role'
@@ -26,6 +28,8 @@ const PAGES: Record<string, ReactElement> = {
 
 export default function App() {
   const { role } = useRole()
+  const { session } = useAuth()
+  if (!session) return <Login />
   return (
     <Routes>
       <Route element={<Layout />}>
