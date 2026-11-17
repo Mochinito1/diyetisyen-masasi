@@ -2,17 +2,18 @@ import PageTitle from '../../components/ui/PageTitle'
 import { card } from '../../components/ui/styles'
 import { latestWeight } from '../../lib/dossier'
 import { parseNum } from '../../lib/format'
-import CalcResults from '../calculator/CalcResults'
 import { toCalcInput } from '../calculator/profile'
 import MeasurementsCard from '../clients/dossier/Measurements'
 import { useBrand } from '../settings/useBrand'
 import ClientPicker from './ClientPicker'
+import ProfileSummary from './ProfileSummary'
 import NextAppointment from './NextAppointment'
 import Onboarding from './Onboarding'
 import { usePortalClient } from './usePortalClient'
 
 const ACT: Record<string, string> = { '1.2': 'Hareketsiz', '1.375': 'Hafif aktif', '1.55': 'Orta aktif', '1.725': 'Çok aktif', '1.9': 'Aşırı aktif' }
-const GOAL: Record<string, string> = { '0': 'Kiloyu koru', '-250': 'Yavaş ver', '-500': 'Kilo ver', '-750': 'Hızlı ver', '250': 'Yavaş al', '500': 'Kilo al' }
+const GOAL: Record<string, string> = { '0': 'Kiloyu koru', '-250': 'Yavaş ver (−250 kcal)', '-500': 'Kilo ver (−500 kcal)', '-750': 'Hızlı ver (−750 kcal)', '250': 'Yavaş al (+250 kcal)', '500': 'Kilo al (+500 kcal)' }
+const PHYS: Record<string, string> = { g1: 'Gebelik, 1. trimester', g2: 'Gebelik, 2. trimester', g3: 'Gebelik, 3. trimester', emz: 'Emzirme' }
 
 export default function Profile() {
   const { clients, client, choose, update } = usePortalClient()
@@ -34,22 +35,28 @@ export default function Profile() {
       ) : (
         <>
           <NextAppointment clientId={client.id} />
-          <div className="grid gap-4 lg:grid-cols-[320px_1fr]">
-            <div className={`${card} h-fit`}>
-              <h2 className="font-display text-lg font-bold">Bilgilerin</h2>
-              <p className="mb-2 text-xs text-stone-500">Bu değerleri diyetisyenin belirler. Değişiklik için ona danış.</p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+          <div className="grid items-start gap-4 lg:grid-cols-[360px_1fr]">
+            <div className="rounded-xl border border-stone-200 bg-white p-4 md:p-5">
+              <h2 className="font-display text-lg font-bold">Diyetisyeninizin belirlediği değerler</h2>
+              <p className="mb-2 text-xs text-stone-500">Hedefiniz diyetisyeniniz tarafından hesaplanır ve güncellenir.</p>
+              <dl className="text-sm">
                 {([
-                  ['Cinsiyet', p.sex === 'K' ? 'Kadın' : p.sex === 'E' ? 'Erkek' : '–'], ['Yaş', p.age || '–'], ['Boy', p.h ? `${p.h} cm` : '–'],
-                  ['Kilo', p.w ? `${p.w} kg` : '–'], ['Aktivite', ACT[p.act] ?? p.act], ['Hedef', GOAL[p.goal] ?? p.goal],
+                  ['Cinsiyet', p.sex === 'K' ? 'Kadın' : p.sex === 'E' ? 'Erkek' : '–'],
+                  ['Yaş', p.age || '–'],
+                  ['Boy', p.h ? `${p.h} cm` : '–'],
+                  ['Kilo', p.w ? `${p.w} kg` : '–'],
+                  ['Fiziksel aktivite', ACT[p.act] ?? p.act],
+                  ['Hedef', GOAL[p.goal] ?? p.goal],
+                  ...(p.phys !== 'none' ? [['Fizyolojik durum', PHYS[p.phys]] as const] : []),
                 ] as const).map(([k, v]) => (
-                  <div key={k} className="contents"><dt className="text-stone-500">{k}</dt><dd className="text-right font-semibold">{v}</dd></div>
+                  <div key={k} className="flex justify-between gap-3 border-b border-stone-200 py-2 last:border-0">
+                    <dt className="text-stone-500">{k}</dt><dd className="text-right font-semibold">{v}</dd>
+                  </div>
                 ))}
               </dl>
             </div>
-            <CalcResults input={toCalcInput(client.profile)} />
-          </div>
-          <div className="mt-4">
+            <ProfileSummary input={toCalcInput(client.profile)} />
+          </div>          <div className="mt-4">
             <MeasurementsCard
               meas={client.meas}
               sex={client.profile.sex}
