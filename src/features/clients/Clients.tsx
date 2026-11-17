@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { bmi } from '../../lib/formulas'
 import { fmt, fmtDate, parseNum } from '../../lib/format'
@@ -19,6 +19,8 @@ const blank = (): Client => ({
   email: '',
   profile: EMPTY_PROFILE,
   notes: '',
+  menu: [],
+  mnote: '',
   created: Date.now(),
   updated: Date.now(),
 })

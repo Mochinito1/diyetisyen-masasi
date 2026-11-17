@@ -1,4 +1,4 @@
-/** TürKomp satırı: [ad, kod, grupİndeksleri, bilimselAd, yöresel, sınıfİndeksleri, id, {bileşenİndeksi: değer}] */
+﻿/** TürKomp satırı: [ad, kod, grupİndeksleri, bilimselAd, yöresel, sınıfİndeksleri, id, {bileşenİndeksi: değer}] */
 export type FoodRow = [string, string, number[], string, string, number[], string, Record<string, number>]
 
 export interface FoodData {
@@ -10,6 +10,7 @@ export interface FoodData {
 
 export interface Food {
   id: string
+  code: string
   name: string
   sci: string
   local: string
@@ -21,7 +22,7 @@ export interface Food {
 export const C = { kcal: 0, protein: 4, fat: 6, carb: 7, fiber: 8 } as const
 
 export function toFoods(d: FoodData): Food[] {
-  return d.foods.map((r) => ({ name: r[0], groups: r[2], sci: r[3], local: r[4], id: r[6], v: r[7] }))
+  return d.foods.map((r) => ({ code: r[1], name: r[0], groups: r[2], sci: r[3], local: r[4], id: r[6], v: r[7] }))
 }
 
 /** Türkçe karakterleri sadeleştirip küçük harfe çevirir: "Şeker" -> "seker" */

@@ -8,3 +8,6 @@ export function parseNum(s: string): number | null {
   const n = parseFloat(s.replace(',', '.'))
   return Number.isFinite(n) ? n : null
 }
+/** En fazla digits ondalık (gereksiz sıfır yok): 2 -> "2", 1,5 -> "1,5" */
+export const fmtMax = (n: number, digits = 2) =>
+  n.toLocaleString('tr-TR', { minimumFractionDigits: 0, maximumFractionDigits: digits })

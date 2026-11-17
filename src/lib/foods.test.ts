@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
+﻿import { describe, expect, it } from 'vitest'
 import { fold, searchFoods, type Food } from './foods'
 
 const foods: Food[] = [
-  { id: 'a', name: 'Çavdar unu', sci: '', local: '', groups: [6], v: {} },
-  { id: 'b', name: 'Acur', sci: 'Cucumis melo', local: 'Hıtta', groups: [0], v: {} },
+  { id: 'a', code: 'a', name: 'Çavdar unu', sci: '', local: '', groups: [6], v: {} },
+  { id: 'b', code: 'b', name: 'Acur', sci: 'Cucumis melo', local: 'Hıtta', groups: [0], v: {} },
 ]
 
 describe('foods', () => {

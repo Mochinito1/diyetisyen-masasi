@@ -8,6 +8,34 @@
   --font-sans: "Manrope", system-ui, sans-serif;
 }
 
+/* Karanlık tema: bileşenler stone/white/amber/red/emerald sınıflarını kullanır,
+   burada yalnızca renk değişkenleri değiştirilir. Tema html[data-theme] ile seçilir. */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --color-white: #15201b;
+  --color-stone-50: #0e1613;
+  --color-stone-100: #1b2923;
+  --color-stone-200: #293930;
+  --color-stone-300: #3a4b42;
+  --color-stone-400: #6b7c72;
+  --color-stone-500: #94a69c;
+  --color-stone-600: #b3c2b9;
+  --color-stone-700: #cdd9d1;
+  --color-stone-800: #dbe6df;
+  --color-stone-900: #e5eee8;
+  --color-brand-50: #1b3a2d;
+  --color-brand-500: #5cc49b;
+  --color-brand-600: #7fd6b4;
+  --color-amber-100: #3b2e12;
+  --color-amber-700: #e6b45e;
+  --color-amber-800: #e6b45e;
+  --color-emerald-100: #1b3a2d;
+  --color-emerald-800: #5cc49b;
+  --color-red-100: #40201a;
+  --color-red-700: #f29380;
+  --color-red-800: #f29380;
+}
+
 body {
   @apply bg-stone-50 text-stone-900 antialiased;
   font-family: var(--font-sans);

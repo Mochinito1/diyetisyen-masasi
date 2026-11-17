@@ -1,3 +1,4 @@
+import type { MenuItem } from '../../lib/menu'
 import type { Profile } from '../calculator/profile'
 
 export interface Client {
@@ -7,6 +8,9 @@ export interface Client {
   email: string
   profile: Profile
   notes: string
+  /** Danışanın menüsü ve danışana not */
+  menu: MenuItem[]
+  mnote: string
   created: number
   updated: number
 }
