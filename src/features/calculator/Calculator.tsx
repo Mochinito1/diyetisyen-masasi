@@ -9,7 +9,7 @@ export default function Calculator() {
   return (
     <>
       <PageTitle title="Hesaplama" sub="BMH, günlük enerji ihtiyacı, hedef kalori ve makro dağılımı. Danışan seçmeden de kullanabilirsiniz." />
-      <div className="grid gap-6 md:grid-cols-[380px_1fr]">
+      <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
         <div className="h-fit rounded-2xl border border-stone-200 bg-white p-5">
           <ProfileFields value={profile} onChange={setProfile} />
         </div>

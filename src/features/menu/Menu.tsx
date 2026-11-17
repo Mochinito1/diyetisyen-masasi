@@ -10,6 +10,7 @@ import { useClients } from '../clients/useClients'
 import { useSelectedClient } from '../clients/useSelectedClient'
 import { useEvaluation } from '../foods/useEvaluation'
 import { useRemovedFoods } from '../foods/useRemovedFoods'
+import PortalMenu from '../portal/PortalMenu'
 import MenuEditor from './MenuEditor'
 
 export default function Menu() {
@@ -20,15 +21,7 @@ export default function Menu() {
   const removed = useRemovedFoods()
   const evalr = useEvaluation(food, client, removed.set)
 
-  if (role === 'danisan')
-    return (
-      <>
-        <PageTitle title="Menü" sub="Diyetisyeninin hazırladığı menü burada görünecek" />
-        <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center text-stone-500">
-          Danışan portalındaki menü (öğün tikleri, su takibi) sonraki aşamada eklenecek.
-        </div>
-      </>
-    )
+  if (role === 'danisan') return <PortalMenu />
 
   if (!client)
     return (

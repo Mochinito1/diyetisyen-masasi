@@ -85,7 +85,7 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
         </div>
 
         {view === 'ay' && (
-          <div className="grid gap-4 md:grid-cols-[360px_1fr]">
+          <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
             <div className="h-fit rounded-2xl border border-stone-200 bg-white p-4">
               <MonthCalendar month={month} onMonth={setMonth} selected={day} onSelect={setDay} count={countOn} />
             </div>

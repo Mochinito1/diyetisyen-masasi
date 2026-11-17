@@ -13,6 +13,8 @@ export interface Client {
   /** Danışanın menüsü ve danışana not */
   menu: MenuItem[]
   mnote: string
+  /** Danışan ilk giriş bilgilerini tamamladı mı */
+  onb?: boolean
   /** KVKK onay tarihleri (boşsa onaylanmadı) */
   kvkk: { ay: string; riza: string }
   /** Danışan portalı takibi: gün -> yenen öğünler ve su (bardak) */

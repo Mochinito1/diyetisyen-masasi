@@ -3,6 +3,8 @@ import PageTitle from '../../components/ui/PageTitle'
 import { btn, card, field } from '../../components/ui/styles'
 import { exportData, importData } from '../../lib/backup'
 import { kvkkAydinlatma, kvkkRiza, type Brand } from '../../lib/brand'
+import { useRole } from '../../app/role'
+import PortalSettings from '../portal/PortalSettings'
 import { useBrand } from './useBrand'
 
 /** Logoyu en çok 240 px genişliğe küçültüp PNG data URL'ine çevirir */
@@ -25,6 +27,11 @@ function logoFromFile(file: File): Promise<string> {
 }
 
 export default function Settings() {
+  const { role } = useRole()
+  return role === 'danisan' ? <PortalSettings /> : <DietitianSettings />
+}
+
+function DietitianSettings() {
   const { brand, update } = useBrand()
   const [msg, setMsg] = useState('')
   const flash = (t: string) => { setMsg(t); setTimeout(() => setMsg(''), 2500) }

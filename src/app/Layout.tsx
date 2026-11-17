@@ -11,7 +11,7 @@ export default function Layout() {
     <div className="min-h-screen">
       <div className="bg-[#0a0f0d] text-[#e5eee8]">
         <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-1.5 text-xs">
-          <span className="font-semibold opacity-70">Şu rol olarak görüntüle:</span>
+          <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span><span className="font-semibold opacity-70 sm:hidden">Rol:</span>
           <div className="flex overflow-hidden rounded-full border border-[#3a4b42]">
             {ROLES.map((r) => (
               <button
@@ -26,21 +26,21 @@ export default function Layout() {
               </button>
             ))}
           </div>
-          <span className="ml-auto opacity-50">Test modu</span>
+          <span className="ml-auto hidden opacity-50 sm:inline">Test modu</span>
         </div>
       </div>
       <header className="sticky top-0 z-10 border-b border-stone-200 bg-white/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-6 gap-y-2 px-4 py-3">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5 md:gap-x-6 md:py-3">
           <Link to="/" className="font-display text-xl font-bold text-brand-500">
             Diyetisyen Masası
           </Link>
-          <nav className="flex flex-wrap gap-1">
+          <nav aria-label="Ana menü" className="order-last -mx-4 flex w-[calc(100%+2rem)] gap-1 overflow-x-auto px-4 pb-1 [scrollbar-width:none] md:order-none md:mx-0 md:w-auto md:flex-1 md:flex-wrap md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden">
             {navFor(role).map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 className={({ isActive }) =>
-                  `rounded-full px-3 py-1.5 text-sm font-semibold transition ${
+                  `shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-sm font-semibold transition ${
                     isActive ? 'bg-brand-500 text-white' : 'text-stone-600 hover:bg-stone-100'
                   }`
                 }
@@ -68,7 +68,7 @@ export default function Layout() {
           </button>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-4 py-8">
+      <main className="mx-auto max-w-6xl px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-8">
         <Outlet />
       </main>
     </div>

@@ -1,58 +1,59 @@
 # Eski uygulamadan React'a taşıma planı
 
-Kaynak: `docs/legacy/index.html` (4052 satır, ~280 fonksiyon; claude.ai'deki "Diyetisyen Masası" artifact'ı).
-Hedef: eski uygulamadaki **tüm özellikler**. Veri (TürKomp) ayrıldı: `src/data/turkomp.json`.
-Kayıtlar tarayıcıda (localStorage) tutulur; eski `window.claude.db` çağrıları statik sitede karşılığı olmadığı için yerel taklitle değiştirilir.
+Kaynak: `docs/legacy/index.html` (claude.ai'deki "Diyetisyen Masası" artifact'ı, 4052 satır).
+Hedef: eski uygulamadaki tüm özellikler. Kayıtlar tarayıcıda (localStorage) tutulur; eski `window.claude.db` çağrıları
+statik sitede karşılığı olmadığı için yerel taklitle değiştirildi.
 Site şimdilik **herkese açık değil**: otomatik yayın kapalı, `npm run dev` ile yerelde test edilir.
 
-Durum: ✅ yapıldı · 🟡 kısmen · ⬜ bekliyor
+Durum: ✅ yapıldı · 🟡 farklı biçimde · ⬜ yapılmadı
 
 ## Diyetisyen paneli
 
-| Özellik | Eski kod (satır) | Durum |
-|---|---|---|
-| Hesaplama: BMH (Mifflin, Harris, Schofield), TDEE, hedef, makro, sodyum, uyarılar | 749-870 | ✅ |
-| Yaş kuralları ve hastalık/diyet seçimi, besin uygunluğu (gizle/uyar) | 600-870 | ⬜ |
-| Besinler tablosu: arama, grup, sıralama | 971-1027 | 🟡 |
-| Besinler: değer sütunu seçimi, değer filtresi, miktar (g), listeyi kopyala, besin detay penceresi | 960-1120 | ⬜ |
-| Danışan listesi, kayıt, düzenleme, silme, arama, sıralama | 1654-1830 | ✅ |
-| Danışan dosyası: anamnez, tahlil (referans bayrakları), antropometri geçmişi ve grafik, seans notları | 1841-1960 | ⬜ |
-| Ana sayfa: kısayollar, son danışanlar, örnek danışan yükleme | 1802-1840 | 🟡 (kısayollar var) |
-| Menü: besin ekle, ev ölçüleri, öğünler, hedef çubukları, uyarılar, mikro tablo, not, kopyala | 1121-1310 | ✅ |
-| Menü: öğün değişimi (swap) | 1310-1362 | ✅ |
-| Menü: şablonlar (5 hazır), kaloriye ölçekleme, kendi şablonum | 1364-1491, 2115-2135 | ✅ |
-| Besin arama eş anlamlıları (tavuk → piliç eti ...) | SYN_RAW | ⬜ |
-| PDF / yazdırma, klinik markası (logo, ad), paylaşım | 2214-2410 | ⬜ |
-| KVKK aydınlatma ve rıza metinleri | 2139-2183 | ⬜ |
-| Randevu: takvim, gün listesi, ekle, onayla/reddet, geldi/gelmedi/iptal, çalışma saatleri, 14 gün | 1988-2062 | ✅ |
-| Randevu: WhatsApp/SMS hatırlatma mesajı, "uzun süredir gelmeyenler" | 1992-2002, 2056 | ⬜ |
-| Danışan aktarımı, besin ekle/gizle | 3288-3460 | ⬜ |
+| Özellik | Durum |
+|---|---|
+| Hesaplama: BMH (Mifflin, Harris, Schofield), TDEE, hedef, makro, sodyum, uyarılar | ✅ |
+| Hastalık/alerji/diyet seçimi (20 koşul), yaş kuralları, gebelik otomatiği, besin uygunluğu (gizle/uyar/öne çıkar) | ✅ |
+| Besinler: arama (eş anlamlılı), grup, sıralama, değer sütunu seçimi ve hazır setler, değer filtresi, miktar, kopyala, ayrıntı penceresi, menüye ekle, listeden kaldır/geri al | ✅ |
+| Danışan listesi, kayıt, düzenleme, silme, arama, sıralama, son görüşme | ✅ |
+| Danışan dosyası: anamnez, tahlil (bayraklı), antropometri geçmişi + grafik + CSV içe aktarma, seans notları, genel not | ✅ |
+| KVKK: aydınlatma metni okuma/onay, açık rıza kaydı, metin şablonları | ✅ |
+| Menü: besin ekle, ev ölçüleri, öğünler, hedef çubukları, uyarılar, mikro tablo, not, kopyala | ✅ |
+| Menü: öğün değişimi (swap), 5 hazır şablon + kaloriye ölçekleme, kendi şablonum | ✅ |
+| PDF / yazdırma (klinik logosu, rengi, alt not) | 🟡 tarayıcının yazdır penceresi, "PDF olarak kaydet" ile |
+| Klinik markası, mesaj şablonları (WhatsApp / SMS / kopyala) | ✅ |
+| Randevu: gün/hafta/ay görünümü, ekle, onayla/reddet, geldi/gelmedi/iptal, çalışma saatleri, 14 gün, hatırlatma mesajı, uzun süredir gelmeyenler | ✅ |
+| Danışan portalı kartı: son 7 gün öğün ve su takibi | ✅ |
+| Ana sayfa: özet kartlar, son danışanlar, örnek danışan | ✅ |
+| Danışan aktarımı (diyetisyen hesapları arası) | ⬜ tek diyetisyenli yerel sürümde anlamsız |
 
 ## Danışan portalı
 
-| Özellik | Eski kod | Durum |
-|---|---|---|
-| Randevu: takvimden gün ve saat, talep, 24 saat kuralı, iptal | 3086-3140 | ✅ |
-| Onboarding (ilk giriş), Profil (hedefler salt okunur, antropometri takibi) | 2923-3050 | ⬜ |
-| Menü: öğün "Yedim" tiki, su takibi, diyetisyen son 7 günü görür | 3062-3086 | ⬜ |
-| Ayarlar çekmecesi: diyetisyen seçme, KVKK onayı, diyetisyen değiştirme, şifre | 3582-3640 | ⬜ |
-| Başvuru (diyetisyen olmak isteyen) | 3787-3830 | ⬜ |
+| Özellik | Durum |
+|---|---|
+| Randevu: takvimden gün ve saat, talep, 24 saat kuralı, iptal | ✅ |
+| İlk giriş (onboarding), profil, hedefler salt okunur, antropometri takibi | ✅ |
+| Menü: öğün "Yedim" tiki, su takibi (8 bardak), diyetisyen notu | ✅ |
+| Ayarlar: kişisel bilgiler, hastalık/diyet seçimi, KVKK onayı | ✅ |
+| Diyetisyen olmak için başvuru | ✅ |
+| Diyetisyen seçme / değiştirme | ⬜ tek diyetisyen |
+| Şifre, gerçek giriş | ⬜ rol geçişi (test modu) ile karşılandı |
 
 ## Yönetici paneli
 
-| Özellik | Eski kod | Durum |
-|---|---|---|
-| Diyetisyenler / danışanlar listesi, rol değiştirme | 3709-3770 | ⬜ |
-| Başvurular: onayla / reddet | 3769-3830 | ⬜ |
-| Besin dosyası içe aktarma (xlsx) | 3826-3926 | ⬜ |
-| Hesap silme | 3927-3990 | ⬜ |
+| Özellik | Durum |
+|---|---|
+| Diyetisyenler / danışanlar listesi, "hesabına gir" | ✅ |
+| Başvurular: onayla / reddet | ✅ |
+| Besin dosyası: besin ekle ve CSV içe aktarma | 🟡 eski sürümde xlsx; burada CSV |
+| Hesap sil | ✅ |
 
 ## Altyapı
 
 | Özellik | Durum |
 |---|---|
 | Karanlık / açık tema | ✅ |
+| Telefon, tablet, masaüstü (duyarlı düzen) | ✅ |
 | Rol geçişi (Yönetici / Diyetisyen / Danışan), test modu | ✅ |
-| Gerçek giriş (kullanıcı adı + şifre), hesaplar | ⬜ (yerel taklit düşünülecek) |
-| Uçtan uca şifreleme, çok hesaplı paylaşım | gerekmiyor: statik sitede veri zaten tarayıcıda kalır |
-| Dışa / içe aktarma (JSON yedek) | ⬜ |
+| JSON yedek alma ve geri yükleme | ✅ |
+| Uçtan uca şifreleme, çok hesaplı paylaşım | ⬜ gerekmiyor: veri zaten tarayıcıda kalır |
+| Pişmiş besin değerleri (TürKomp'ta yok) | ⬜ veri sınırı |

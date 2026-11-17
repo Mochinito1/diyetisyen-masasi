@@ -11,6 +11,7 @@ import { load } from '../../lib/storage'
 import type { Appointment } from '../../lib/appointments'
 import ConditionsCard from './ConditionsCard'
 import KvkkCard from './KvkkCard'
+import PortalTrackCard from './PortalTrackCard'
 import AnamnesisCard from './dossier/Anamnesis'
 import LabsCard from './dossier/Labs'
 import MeasurementsCard from './dossier/Measurements'
@@ -70,7 +71,7 @@ export default function Clients() {
           ← Danışan listesi
         </button>
         <PageTitle title={isNew ? 'Yeni danışan' : editing.name || 'Danışan'} />
-        <div className="grid gap-6 md:grid-cols-[380px_1fr]">
+        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
           <div className="space-y-4">
             <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
               <label className="block text-sm font-semibold">
@@ -114,6 +115,7 @@ export default function Clients() {
             />
             <LabsCard labs={editing.lab} sex={editing.profile.sex} onChange={(lab) => set({ lab })} />
             <SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} />
+            <PortalTrackCard client={editing} />
           </div>
         </div>
         <div className="sticky bottom-3 mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">

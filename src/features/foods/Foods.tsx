@@ -122,7 +122,7 @@ export default function Foods() {
 
   const th = (key: string, label: string, unit = '') => (
     <th key={key} onClick={() => setSort(sort.k === key ? { k: key, d: (sort.d * -1) as 1 | -1 } : { k: key, d: key === 'name' ? 1 : -1 })}
-      className={`cursor-pointer whitespace-nowrap px-3 py-2 ${key === 'name' ? 'sticky left-0 z-10 min-w-60 bg-stone-100 text-left' : 'text-right'} ${sort.k === key ? 'text-brand-500' : ''}`}>
+      className={`cursor-pointer whitespace-nowrap px-3 py-2 ${key === 'name' ? 'sticky left-0 z-10 min-w-40 bg-stone-100 sm:min-w-60 text-left' : 'text-right'} ${sort.k === key ? 'text-brand-500' : ''}`}>
       {label} {unit && <span className="font-medium">{unit}</span>} {sort.k === key && (sort.d > 0 ? '▲' : '▼')}
     </th>
   )
@@ -158,14 +158,14 @@ export default function Foods() {
           <label className="min-w-56 flex-1 text-xs font-bold uppercase tracking-wider text-stone-500">Ara
             <input className={`${field} mt-1 w-full text-sm font-normal normal-case text-stone-900`} placeholder="Besin, bilimsel veya yöresel isim" value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }} />
           </label>
-          <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Besin grubu
-            <select className={`${field} mt-1 block text-sm font-normal normal-case text-stone-900`} value={group ?? ''} onChange={(e) => { setGroup(e.target.value === '' ? null : +e.target.value); setShown(PAGE) }}>
+          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Besin grubu
+            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={group ?? ''} onChange={(e) => { setGroup(e.target.value === '' ? null : +e.target.value); setShown(PAGE) }}>
               <option value="">Tüm gruplar</option>
               {food.groups.map((g, i) => <option key={g} value={i}>{g}</option>)}
             </select>
           </label>
-          <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Gösterim
-            <select className={`${field} mt-1 block text-sm font-normal normal-case text-stone-900`} value={status} onChange={(e) => { setStatus(e.target.value as Status); setShown(PAGE) }}>
+          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Gösterim
+            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={status} onChange={(e) => { setStatus(e.target.value as Status); setShown(PAGE) }}>
               <option value="visible">Uygun ve uyarılı</option>
               <option value="ok">Yalnızca uyarısız</option>
               <option value="all">Gizlenenler dahil tümü</option>
@@ -180,8 +180,8 @@ export default function Foods() {
         </div>
 
         <div className="mt-3 flex flex-wrap items-end gap-3">
-          <label className="text-xs font-bold uppercase tracking-wider text-stone-500">Değer filtresi
-            <select className={`${field} mt-1 block text-sm font-normal normal-case text-stone-900`} value={rn} onChange={(e) => { setRn(e.target.value); setShown(PAGE) }}>
+          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Değer filtresi
+            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={rn} onChange={(e) => { setRn(e.target.value); setShown(PAGE) }}>
               <option value="">Yok</option>
               {CATS.map((cat) => <optgroup key={cat} label={cat}>{comps.filter((c) => c[2] === cat).map((c) => <option key={c[0]} value={c[0]}>{c[0]} ({c[1]})</option>)}</optgroup>)}
             </select>
@@ -226,7 +226,7 @@ export default function Foods() {
             <tbody>
               {rows.slice(0, shown).map(({ f, e }) => (
                 <tr key={f.id} className={`hover:bg-stone-50 ${e.st === 'hide' ? 'opacity-55' : ''}`}>
-                  <td className="sticky left-0 z-10 min-w-60 max-w-80 border-b border-stone-100 bg-white px-3 py-2">
+                  <td className="sticky left-0 z-10 min-w-40 max-w-56 sm:min-w-60 sm:max-w-80 border-b border-stone-100 bg-white px-3 py-2">
                     <button className="text-left font-bold hover:text-brand-500 hover:underline" onClick={() => setDetail(f.code)}>{f.name}</button>
                     <div className="text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
                     <ReasonChips ev={e} max={3} />

@@ -36,7 +36,10 @@
   --color-red-800: #f29380;
 }
 
+html { -webkit-text-size-adjust: 100%; }
+
 body {
+  overflow-x: hidden;
   @apply bg-stone-50 text-stone-900 antialiased;
   font-family: var(--font-sans);
 }
@@ -46,4 +49,13 @@ body {
   .print-overlay { position: static !important; background: none !important; padding: 0 !important; overflow: visible !important; }
   .no-print { display: none !important; }
   @page { margin: 12mm; }
+}
+
+/* Dokunmatik ekranlar: rahat dokunma alanı, iOS'ta girişe odaklanınca sayfanın yakınlaşmasını önleyen 16px yazı */
+@media (pointer: coarse) {
+  select, input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), textarea { min-height: 44px; font-size: 16px; }
+  button:not([aria-label='Kapat']) { min-height: 40px; }
+}
+@media (max-width: 640px) {
+  input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']), select, textarea { font-size: 16px; }
 }
