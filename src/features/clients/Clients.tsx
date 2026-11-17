@@ -1,4 +1,4 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { bmi } from '../../lib/formulas'
 import { fmt, fmtDate, parseNum } from '../../lib/format'
@@ -6,6 +6,13 @@ import { fold } from '../../lib/foods'
 import CalcResults from '../calculator/CalcResults'
 import ProfileFields from '../calculator/ProfileFields'
 import { EMPTY_PROFILE, toCalcInput } from '../calculator/profile'
+import { EMPTY_ANAMNESIS, fmtDay, lastVisit, latestWeight } from '../../lib/dossier'
+import { load } from '../../lib/storage'
+import type { Appointment } from '../../lib/appointments'
+import AnamnesisCard from './dossier/Anamnesis'
+import LabsCard from './dossier/Labs'
+import MeasurementsCard from './dossier/Measurements'
+import SessionsCard from './dossier/Sessions'
 import type { Client } from './types'
 import { useClients } from './useClients'
 
@@ -21,6 +28,10 @@ const blank = (): Client => ({
   notes: '',
   menu: [],
   mnote: '',
+  an: EMPTY_ANAMNESIS,
+  meas: [],
+  lab: [],
+  sess: [],
   created: Date.now(),
   updated: Date.now(),
 })
@@ -31,6 +42,7 @@ export default function Clients() {
   const [isNew, setIsNew] = useState(false)
   const [q, setQ] = useState('')
   const [sort, setSort] = useState<'upd' | 'name' | 'bmi'>('upd')
+  const aps = useMemo(() => load<Appointment[]>('dm.appointments', []), [])
 
   const rows = useMemo(() => {
     const list = clients.filter((c) => fold(c.name).includes(fold(q.trim())))
@@ -74,14 +86,28 @@ export default function Clients() {
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <ProfileFields value={editing.profile} onChange={(p) => set({ profile: p })} />
             </div>
+            <AnamnesisCard value={editing.an} onChange={(an) => set({ an })} />
             <div className="rounded-2xl border border-stone-200 bg-white p-5">
               <label className="block text-sm font-semibold">
-                Notlar
+                Genel notlar (tarihsiz, kalıcı)
                 <textarea className={`${field} min-h-28`} value={editing.notes} onChange={(e) => set({ notes: e.target.value })} />
               </label>
             </div>
           </div>
-          <CalcResults input={toCalcInput(editing.profile)} />
+          <div className="space-y-4">
+            <CalcResults input={toCalcInput(editing.profile)} />
+            <MeasurementsCard
+              meas={editing.meas}
+              sex={editing.profile.sex}
+              heightCm={parseNum(editing.profile.h)}
+              onChange={(meas) => {
+                const w = latestWeight(meas)
+                set({ meas, ...(w != null ? { profile: { ...editing.profile, w: String(w) } } : {}) })
+              }}
+            />
+            <LabsCard labs={editing.lab} sex={editing.profile.sex} onChange={(lab) => set({ lab })} />
+            <SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} />
+          </div>
         </div>
         <div className="sticky bottom-3 mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">
           {!valid && <span className="text-sm text-amber-700">Kaydetmek için ad soyad girin.</span>}
@@ -149,7 +175,7 @@ export default function Clients() {
                 <th className="px-3 py-2 text-left">Ad soyad</th>
                 <th className="px-3 py-2 text-right">Yaş</th>
                 <th className="px-3 py-2 text-right">BKİ</th>
-                <th className="px-3 py-2 text-right">Güncelleme</th>
+                <th className="px-3 py-2 text-right">Son görüşme</th>
               </tr>
             </thead>
             <tbody>
@@ -161,7 +187,7 @@ export default function Clients() {
                     <td className="px-3 py-3 font-semibold">{c.name}</td>
                     <td className="px-3 py-3 text-right tabular-nums">{c.profile.age || '—'}</td>
                     <td className="px-3 py-3 text-right tabular-nums">{h && w ? fmt(bmi(w, h), 1) : '—'}</td>
-                    <td className="px-3 py-3 text-right text-stone-500">{fmtDate(c.updated)}</td>
+                    <td className="px-3 py-3 text-right text-stone-500">{(() => { const lv = lastVisit(c, aps); return lv ? fmtDay(lv) : fmtDate(c.updated) })()}</td>
                   </tr>
                 )
               })}
