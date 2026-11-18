@@ -4,7 +4,7 @@ import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
-import { DEMO, UNVANLAR, demoTitle, loadAccounts, removeAccountsOfClient, setDietitianTitle } from '../../lib/auth'
+import { DEMO, UNVANLAR, demoTitle, loadAccounts, removeAccountsOfClient, saveSession, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -48,44 +48,58 @@ function Dietitians({ apps }: { apps: Application[] }) {
   const [, setTick] = useState(0)
   const bump = () => setTick((t) => t + 1)
   const accs = Object.values(loadAccounts()).filter((a) => a.kind === 'diyetisyen' && !a.status)
+  // Yönetici başka bir diyetisyen hesabına geçer (çıkış yapıp yeniden girerek yönetime döner)
+  const enter = (a: Account) => {
+    if (!confirm(`${withTitle(a)} hesabına geçilsin mi? Yönetime dönmek için çıkış yapıp yeniden giriş yapın.`)) return
+    saveSession({ u: a.u, label: withTitle(a), kind: 'diyetisyen' })
+    try { sessionStorage.removeItem('dm.impRole') } catch { /* gizli sekme */ }
+    location.hash = '#/'
+    location.reload()
+  }
   return (
-    <div className="grid items-start gap-3 md:grid-cols-2">
-      <div className={card}>
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="min-w-0 flex-1">
-            <b>{brand.name || brand.clinic || 'Diyetisyen (adı girilmemiş)'}</b>
-            <div className="text-xs text-stone-500">Bu tarayıcıdaki ana diyetisyen hesabı · {clients.length} danışan · {aps.length} randevu</div>
-          </div>
-          <button className={btn} onClick={() => setRole('diyetisyen')}>Hesabına gir</button>
-        </div>
-      </div>
-      <TitleRow name="Demo Diyetisyen" sub="Demo hesap" unvan={demoTitle()} onSave={(t) => { setDietitianTitle(DEMO.dyt[0], t); bump() }} />
+    <div className={`${card} divide-y divide-stone-200 !p-0`}>
+      <TitleRow
+        name={brand.name || 'Demo Diyetisyen'}
+        sub={`Demo hesap · ${clients.length} danışan · ${aps.length} randevu`}
+        unvan={demoTitle()}
+        onSave={(t) => { setDietitianTitle(DEMO.dyt[0], t); bump() }}
+        onEnter={() => setRole('diyetisyen')}
+      />
       {accs.map((a) => (
-        <TitleRow key={a.u} name={a.ad} sub={`${approved.find((x) => x.u === a.u)?.title ?? 'Onaylı diyetisyen'} · @${a.u}`} unvan={a.unvan} onSave={(t) => { setDietitianTitle(a.u, t); bump() }} />
+        <TitleRow
+          key={a.u}
+          name={a.ad}
+          sub={`${approved.find((x) => x.u === a.u)?.title ?? 'Onaylı diyetisyen'} · @${a.u}`}
+          unvan={a.unvan}
+          onSave={(t) => { setDietitianTitle(a.u, t); bump() }}
+          onEnter={() => enter(a)}
+        />
       ))}
     </div>
   )
 }
 
-/** Diyetisyen kartı: yönetim unvanı istediği zaman değiştirir */
-function TitleRow({ name, sub, unvan, onSave }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void }) {
+/** Tek tip diyetisyen satırı: unvan seçimi, isim soyisim, Unvanı kaydet ve Hesabına gir yan yana */
+function TitleRow({ name, sub, unvan, onSave, onEnter }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void; onEnter: () => void }) {
   const [t, setT] = useState(unvan ?? '')
   const cur = unvan ?? ''
   return (
-    <div className={card}>
-      <div className="flex flex-wrap items-center gap-2">
-        <select aria-label="Unvan" className={`${field} w-auto`} value={t} onChange={(e) => setT(e.target.value)}>
-          <option value="">(unvansız)</option>
-          {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
-        </select>
-        <b className="min-w-0 flex-1 basis-32">{name}</b>
-        <button className={btn} disabled={t === cur} onClick={() => onSave(t)}>Unvanı kaydet</button>
+    <div className="grid items-center gap-x-3 gap-y-2 p-4 md:grid-cols-[150px_minmax(0,1fr)_auto]">
+      <select aria-label="Unvan" className={`${field} w-full`} value={t} onChange={(e) => setT(e.target.value)}>
+        <option value="">(unvansız)</option>
+        {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
+      </select>
+      <div className="min-w-0">
+        <b className="block truncate">{name}</b>
+        <div className="truncate text-xs text-stone-500">{sub}</div>
       </div>
-      <div className="mt-1 text-xs text-stone-500">{sub}</div>
+      <div className="flex gap-2">
+        <button className={btn} disabled={t === cur} onClick={() => onSave(t)}>Unvanı kaydet</button>
+        <button className={btn} onClick={onEnter}>Hesabına gir</button>
+      </div>
     </div>
   )
 }
-
 function ClientsTab() {
   const { clients } = useClients()
   const { setRole } = useRole()
