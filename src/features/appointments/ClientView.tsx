@@ -112,36 +112,53 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
                   const isFree = (s: string) => !busy.has(`${day}T${s}`)
                   const hours = [...new Set(all.map((s) => s.slice(0, 2)))]
                   const inHour = hour ? all.filter((s) => s.startsWith(`${hour}:`)) : []
-                  const chipCls = (on: boolean) => `rounded-full border px-4 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400 disabled:opacity-60 disabled:line-through ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white hover:border-brand-500'}`
+                  const parts: [string, (h: number) => boolean][] = [['Sabah', (h) => h < 12], ['Öğleden sonra', (h) => h >= 12 && h < 17], ['Akşam', (h) => h >= 17]]
+                  const tile = 'rounded-xl border text-center transition disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400 disabled:opacity-60 disabled:line-through'
+                  const on = 'border-brand-500 bg-brand-500 text-white shadow-sm'
+                  const off = 'border-stone-200 bg-white hover:border-brand-500 hover:bg-brand-50'
                   return (
                     <>
-                      <div className="mt-2 text-xs font-semibold text-stone-500">1. Saati seç</div>
-                      <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Saat">
-                        {hours.map((h) => {
-                          const opts = all.filter((s) => s.startsWith(`${h}:`))
-                          const freeOpts = opts.filter(isFree)
-                          const full = freeOpts.length === 0
-                          return (
-                            <button key={h} disabled={full} title={full ? 'Bu saat dolu' : undefined} aria-pressed={hour === h} className={chipCls(hour === h)}
-                              onClick={() => { setHour(h); setSlot(freeOpts.length === 1 ? freeOpts[0] : null) }}>
-                              {h}
-                            </button>
-                          )
-                        })}
+                      <div className="mt-3 flex items-center gap-2 text-sm font-bold">
+                        <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-xs text-white">1</span> Saati seç
                       </div>
+                      {parts.map(([label, test]) => {
+                        const hs = hours.filter((h) => test(+h))
+                        if (!hs.length) return null
+                        return (
+                          <div key={label} className="mt-2.5">
+                            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500">{label}</div>
+                            <div className="grid grid-cols-4 gap-2" role="group" aria-label={`Saat, ${label}`}>
+                              {hs.map((h) => {
+                                const opts = all.filter((s) => s.startsWith(`${h}:`))
+                                const freeOpts = opts.filter(isFree)
+                                const full = freeOpts.length === 0
+                                return (
+                                  <button key={h} disabled={full} title={full ? 'Bu saat dolu' : undefined} aria-pressed={hour === h} className={`${tile} py-2 ${hour === h ? on : off}`}
+                                    onClick={() => { setHour(h); setSlot(freeOpts.length === 1 ? freeOpts[0] : null) }}>
+                                    <span className="block font-display text-lg font-bold leading-tight tabular-nums">{h}<span className="text-xs font-semibold opacity-60">:00</span></span>
+                                    <span className={`block text-[11px] font-semibold ${hour === h ? 'text-white/80' : 'text-stone-500'}`}>{full ? 'dolu' : `${freeOpts.length} boş`}</span>
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      })}
                       {hour && (
                         <>
-                          <div className="mt-3 text-xs font-semibold text-stone-500">2. Dakikayı seç</div>
-                          <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Dakika">
+                          <div className="mt-4 flex items-center gap-2 text-sm font-bold">
+                            <span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-xs text-white">2</span> Dakikayı seç
+                          </div>
+                          <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-label="Dakika">
                             {inHour.map((s) => (
-                              <button key={s} disabled={!isFree(s)} title={isFree(s) ? undefined : 'Bu saat dolu'} aria-pressed={slot === s} className={chipCls(slot === s)} onClick={() => setSlot(s)}>{s}</button>
+                              <button key={s} disabled={!isFree(s)} title={isFree(s) ? undefined : 'Bu saat dolu'} aria-pressed={slot === s} className={`${tile} py-2.5 font-display text-base font-bold tabular-nums ${slot === s ? on : off}`} onClick={() => setSlot(s)}>{s}</button>
                             ))}
                           </div>
                         </>
                       )}
                     </>
                   )
-                })()}                <div className="mt-4 text-xs font-semibold text-stone-500">3. Görüşme şeklini seç</div>
+                })()}                <div className="mt-4 flex items-center gap-2 text-sm font-bold"><span className="grid h-6 w-6 place-items-center rounded-full bg-brand-500 text-xs text-white">3</span> Görüşme şeklini seç</div>
                 <div className="mt-1.5 grid grid-cols-2 gap-2" role="group" aria-label="Görüşme şekli">
                   {([['yuz', 'Yüz yüze', 'Klinikte'], ['online', 'Uzaktan', 'Online görüşme']] as const).map(([t, label, sub]) => (
                     <button key={t} aria-pressed={type === t} onClick={() => setType(t)}
