@@ -7,6 +7,7 @@ import {
   type Session,
 } from '../lib/auth'
 import { cloudEnabled, cloudFlush, cloudLogout, cloudRestore } from '../lib/cloud'
+import { runMigrations } from '../lib/migrations'
 import { load, save } from '../lib/storage'
 import type { Client } from '../features/clients/types'
 
@@ -53,6 +54,7 @@ function ensureOwnClient(s: Session) {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [real, setReal] = useState<Session | null>(() => {
+    runMigrations()
     if (cloudEnabled) return null
     resetAccountsOnce()
     return loadSession()

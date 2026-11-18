@@ -2,8 +2,8 @@ import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { btn, field } from '../../components/ui/styles'
 import { fold, foodMatch, type Food } from '../../lib/foods'
-import { fmtVal, parseNum } from '../../lib/format'
-import { foodUnits, makeItem } from '../../lib/menu'
+import { fmt, fmtVal, parseNum } from '../../lib/format'
+import { MEALS, foodUnits, makeItem, shortName, type Meal } from '../../lib/menu'
 import { synStartsWith } from '../../lib/synonyms'
 import { useFoodData } from '../../lib/useFoodData'
 import { useClients } from '../clients/useClients'
@@ -13,7 +13,7 @@ import ReasonChips from './ReasonChips'
 import { useEvaluation } from './useEvaluation'
 import { useRemovedFoods } from './useRemovedFoods'
 
-type Status = 'visible' | 'ok' | 'all' | 'hidden'
+type Status = 'visible' | 'ok' | 'all' | 'hidden' | 'removed'
 const DEFAULT_COLS = ['Enerji (kcal)', 'Protein', 'Karbonhidrat', 'Yağ, toplam', 'Lif, toplam diyet', 'Sodyum, Na', 'Kalsiyum, Ca', 'Demir, Fe']
 const PRESETS: [string, string[]][] = [
   ['Makro', ['Enerji (kcal)', 'Protein', 'Karbonhidrat', 'Yağ, toplam', 'Lif, toplam diyet']],
@@ -23,7 +23,12 @@ const PRESETS: [string, string[]][] = [
   ['Şekerler', ['Karbonhidrat', 'Glukoz', 'Fruktoz', 'Sakaroz', 'Laktoz', 'Nişasta']],
 ]
 const CATS = ['Temel', 'Mineraller', 'Vitaminler ve karotenoidler', 'Şekerler ve tatlandırıcılar', 'Yağ asitleri', 'Amino asitler']
-const PAGE = 80
+const SORTS: [string, string][] = [['name', 'Ada göre (A-Z)'], ['Enerji (kcal)', 'Enerji (çoktan aza)'], ['Protein', 'Protein (çoktan aza)'], ['Karbonhidrat', 'Karbonhidrat (çoktan aza)'], ['Yağ, toplam', 'Yağ (çoktan aza)'], ['Lif, toplam diyet', 'Lif (çoktan aza)']]
+const PAGE = 48
+const lbl = 'text-[11px] font-bold uppercase tracking-wider text-stone-500'
+
+const pill = (on: boolean) =>
+  `whitespace-nowrap rounded-full border px-3 py-1.5 text-sm font-semibold transition ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white text-stone-600 hover:border-brand-500 hover:text-brand-500'}`
 
 export default function Foods() {
   const food = useFoodData()
@@ -35,7 +40,10 @@ export default function Foods() {
   const [q, setQ] = useState('')
   const [group, setGroup] = useState<number | null>(null)
   const [status, setStatus] = useState<Status>('visible')
+  const [view, setView] = useState<'cards' | 'table'>('cards')
+  const [adv, setAdv] = useState(false)
   const [portionG, setPortionG] = useState('100')
+  const [meal, setMeal] = useState<Meal>('Öğle')
   const [cols, setCols] = useState<string[]>(DEFAULT_COLS)
   const [colsOpen, setColsOpen] = useState(false)
   const [rn, setRn] = useState('')
@@ -56,9 +64,12 @@ export default function Foods() {
     const rnI = rn ? ci.get(rn) : undefined
     const lo = parseNum(rmin), hi = parseNum(rmax)
     let list = food.foods.map((f) => ({ f, e: evalr.map.get(f.code)! })).filter(({ f, e }) => {
-      if (status === 'visible' && e.st === 'hide') return false
-      if (status === 'ok' && e.st !== 'ok') return false
-      if (status === 'hidden' && e.st !== 'hide') return false
+      if (status === 'removed') { if (!removed.set.has(f.code)) return false }
+      else {
+        if (status === 'visible' && e.st === 'hide') return false
+        if (status === 'ok' && e.st !== 'ok') return false
+        if (status === 'hidden' && e.st !== 'hide') return false
+      }
       if (group !== null && !f.groups.includes(group)) return false
       if (q.trim() && !foodMatch(f, q)) return false
       if (rnI != null && (lo != null || hi != null)) {
@@ -95,19 +106,21 @@ export default function Foods() {
       })
     }
     return list
-  }, [food, evalr, q, group, status, k, rn, rmin, rmax, sort])
+  }, [food, evalr, q, group, status, k, rn, rmin, rmax, sort, removed.set])
 
   if (!food || !evalr) return <p className="text-stone-500">Besin listesi yükleniyor…</p>
 
-  const colIdx = cols.map((n) => food.data.comps.findIndex((c) => c[0] === n)).filter((i) => i >= 0)
   const comps = food.data.comps
+  const ci = (n: string) => comps.findIndex((c) => c[0] === n)
+  const colIdx = cols.map(ci).filter((i) => i >= 0)
+  const I = { kcal: ci('Enerji (kcal)'), p: ci('Protein'), c: ci('Karbonhidrat'), f: ci('Yağ, toplam') }
   const counts = { ok: 0, warn: 0, hide: 0 }
   evalr.map.forEach((e) => counts[e.st]++)
 
-  const addToMenu = (f: Food, item = makeItem(f, food.groups, 1, foodUnits(f, food.groups)[0].u, 'Öğle')) => {
+  const addToMenu = (f: Food, item = makeItem(f, food.groups, 1, foodUnits(f, food.groups)[0].u, meal)) => {
     if (!client) return
     upsert({ ...client, menu: [...client.menu, item], updated: Date.now() })
-    flash(`Menüye eklendi: ${f.name.replace(/\s*\(.*$/, '')}`)
+    flash(`${meal} öğününe eklendi: ${shortName(f.name)}`)
   }
 
   const copyList = async () => {
@@ -128,79 +141,114 @@ export default function Foods() {
   )
 
   const detailFood = detail ? food.byCode.get(detail) : null
+  const STATUSES: [Status, string][] = [['visible', 'Uygun ve uyarılı'], ['ok', 'Yalnızca uyarısız'], ['all', 'Tümü'], ['hidden', 'Gizlenenler'], ...(removed.canEdit ? [['removed', `Kaldırılanlar (${removed.set.size})`] as [Status, string]] : [])]
+
+  /** Yönetici: besini listeden kaldırır / geri alır. Diyetisyen bu düğmeleri görmez. */
+  const adminBtn = (f: Food) => !removed.canEdit ? null : removed.set.has(f.code)
+    ? <button className="h-8 rounded-full border border-brand-500 px-3 text-xs font-bold text-brand-500 hover:bg-brand-50" title="Listeye geri al" onClick={() => { removed.restore(f.code); flash('Besin geri alındı') }}>↺ Geri al</button>
+    : <button className="h-8 w-8 rounded-full border border-stone-300 font-bold text-stone-500 hover:bg-red-100 hover:text-red-800" title="Listeden kaldır (yalnızca yönetici)" aria-label="Listeden kaldır" onClick={() => confirm(`“${shortName(f.name)}” tüm diyetisyenler için listeden kaldırılsın mı? Daha sonra geri alabilirsiniz.`) && removed.remove(f.code)}>×</button>
 
   return (
     <>
       <PageTitle title="Besin listesi" sub="TürKomp verileri. Danışan seçiliyse hastalık, diyet ve yaşa göre süzülür." />
 
-      <div className="mb-4 rounded-2xl border border-stone-200 bg-white p-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <label className="text-xs font-semibold text-stone-500">Danışan
-            <select className={`${field} mt-1 block`} value={client?.id ?? ''} onChange={(e) => choose(e.target.value)} disabled={clients.length === 0}>
+      {/* 1. Bağlam: danışan, durum özeti ve eklenecek öğün */}
+      <section className="mb-4 rounded-2xl border border-stone-200 bg-white p-4" aria-label="Danışan ve öğün">
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          <label className={lbl}>Danışan
+            <select className={`${field} mt-1 block min-w-48 text-sm font-normal normal-case text-stone-900`} value={client?.id ?? ''} onChange={(e) => choose(e.target.value)} disabled={clients.length === 0}>
               {clients.length === 0 && <option value="">Danışan yok</option>}
               {clients.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </label>
           {client && (
-            <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
-              {evalr.conds.length === 0 && evalr.age == null && <span className="text-stone-500">Hastalık veya yaş bilgisi girilmemiş, süzme uygulanmıyor.</span>}
-              {evalr.conds.map((c) => <span key={c.id} className="rounded-full bg-stone-100 px-2.5 py-1">{c.short}</span>)}
-              <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">{counts.ok} uygun</span>
-              <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">{counts.warn} uyarılı</span>
-              <span className="rounded-full bg-red-100 px-2.5 py-1 text-red-800">{counts.hide} gizli</span>
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+                {evalr.conds.length === 0 && evalr.age == null && <span className="py-1 text-stone-500">Hastalık veya yaş bilgisi girilmemiş, süzme uygulanmıyor.</span>}
+                {evalr.conds.map((c) => <span key={c.id} className="rounded-full bg-stone-100 px-2.5 py-1">{c.short}</span>)}
+                <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">{counts.ok} uygun</span>
+                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">{counts.warn} uyarılı</span>
+                <span className="rounded-full bg-red-100 px-2.5 py-1 text-red-800">{counts.hide} gizli</span>
+              </div>
             </div>
           )}
         </div>
-      </div>
+        {client && (
+          <div className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-stone-100 pt-3" role="tablist" aria-label="Eklenecek öğün">
+            <span className={`${lbl} mr-1`}>Menüye eklenecek öğün</span>
+            {MEALS.map((m) => <button key={m} role="tab" aria-selected={meal === m} className={pill(meal === m)} onClick={() => setMeal(m)}>{m}</button>)}
+          </div>
+        )}
+      </section>
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-4">
+      {/* 2. Arama ve süzgeçler */}
+      <section className="rounded-2xl border border-stone-200 bg-white p-4" aria-label="Arama ve süzgeçler">
         <div className="flex flex-wrap items-end gap-3">
-          <label className="min-w-56 flex-1 text-xs font-bold uppercase tracking-wider text-stone-500">Ara
-            <input className={`${field} mt-1 w-full text-sm font-normal normal-case text-stone-900`} placeholder="Besin, bilimsel veya yöresel isim" value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }} />
+          <label className="relative min-w-56 flex-1">
+            <span className="sr-only">Besin ara</span>
+            <svg className="pointer-events-none absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
+            <input className={`${field} w-full py-3 pl-10 text-[15px]`} placeholder="Besin, bilimsel veya yöresel isim ara…" value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }} />
           </label>
-          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Besin grubu
-            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={group ?? ''} onChange={(e) => { setGroup(e.target.value === '' ? null : +e.target.value); setShown(PAGE) }}>
-              <option value="">Tüm gruplar</option>
-              {food.groups.map((g, i) => <option key={g} value={i}>{g}</option>)}
-            </select>
-          </label>
-          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Gösterim
-            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={status} onChange={(e) => { setStatus(e.target.value as Status); setShown(PAGE) }}>
-              <option value="visible">Uygun ve uyarılı</option>
-              <option value="ok">Yalnızca uyarısız</option>
-              <option value="all">Gizlenenler dahil tümü</option>
-              <option value="hidden">Yalnızca gizlenenler</option>
-            </select>
-          </label>
-          <label className="w-28 text-xs font-bold uppercase tracking-wider text-stone-500">Miktar (g)
+          <label className={`w-28 ${lbl}`}>Miktar (g)
             <input className={`${field} mt-1 w-full text-sm font-normal text-stone-900`} inputMode="numeric" value={portionG} onChange={(e) => setPortionG(e.target.value.replace(/[^0-9.,]/g, ''))} />
           </label>
-          <button className={btn} onClick={() => setColsOpen(!colsOpen)} aria-expanded={colsOpen}>Değerleri seç</button>
-          <button className={btn} onClick={copyList}>Listeyi kopyala</button>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-end gap-3">
-          <label className="max-w-full text-xs font-bold uppercase tracking-wider text-stone-500">Değer filtresi
-            <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={rn} onChange={(e) => { setRn(e.target.value); setShown(PAGE) }}>
-              <option value="">Yok</option>
-              {CATS.map((cat) => <optgroup key={cat} label={cat}>{comps.filter((c) => c[2] === cat).map((c) => <option key={c[0]} value={c[0]}>{c[0]} ({c[1]})</option>)}</optgroup>)}
+          <label className={lbl}>Sırala
+            <select className={`${field} mt-1 block w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={sort.k} onChange={(e) => setSort({ k: e.target.value, d: e.target.value === 'name' ? 1 : -1 })}>
+              {SORTS.map(([key, label]) => <option key={key} value={key}>{label}</option>)}
             </select>
           </label>
-          <label className="w-24 text-xs font-bold uppercase tracking-wider text-stone-500">En az<input className={`${field} mt-1 w-full text-sm font-normal text-stone-900`} inputMode="decimal" value={rmin} onChange={(e) => setRmin(e.target.value)} /></label>
-          <label className="w-24 text-xs font-bold uppercase tracking-wider text-stone-500">En çok<input className={`${field} mt-1 w-full text-sm font-normal text-stone-900`} inputMode="decimal" value={rmax} onChange={(e) => setRmax(e.target.value)} /></label>
-          <span className="ml-auto self-center text-sm text-stone-500">{rows.length} besin listeleniyor</span>
+          <div className="flex overflow-hidden rounded-full border border-stone-300 text-sm font-semibold" role="tablist" aria-label="Görünüm">
+            {([['cards', 'Kartlar'], ['table', 'Tablo']] as const).map(([v, label]) => (
+              <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`px-4 py-2 ${view === v ? 'bg-brand-500 text-white' : 'bg-white text-stone-600'}`}>{label}</button>
+            ))}
+          </div>
         </div>
 
-        {colsOpen && (
+        <div className="mt-3 flex flex-wrap gap-1.5" role="group" aria-label="Gösterim">
+          {STATUSES.map(([s, label]) => <button key={s} aria-pressed={status === s} className={pill(status === s)} onClick={() => { setStatus(s); setShown(PAGE) }}>{label}</button>)}
+        </div>
+
+        <div className="-mx-1 mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1 [scrollbar-width:thin]" role="group" aria-label="Besin grubu">
+          <button aria-pressed={group === null} className={pill(group === null)} onClick={() => { setGroup(null); setShown(PAGE) }}>Tüm gruplar</button>
+          {food.groups.map((g, i) => <button key={g} aria-pressed={group === i} className={pill(group === i)} onClick={() => { setGroup(group === i ? null : i); setShown(PAGE) }}>{g}</button>)}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
+          <span className="text-sm text-stone-500">{rows.length} besin listeleniyor</span>
+          {removed.canEdit && status === 'removed' && removed.set.size > 0 && (
+            <button className={btn} onClick={() => confirm('Kaldırılan tüm besinler geri alınsın mı?') && removed.restoreAll()}>Tümünü geri al</button>
+          )}
+          <span className="ml-auto flex flex-wrap gap-2">
+            <button className={btn} onClick={() => setAdv(!adv)} aria-expanded={adv}>Gelişmiş süzgeç {adv ? '▴' : '▾'}</button>
+            {view === 'table' && <button className={btn} onClick={() => setColsOpen(!colsOpen)} aria-expanded={colsOpen}>Değerleri seç</button>}
+            <button className={btn} onClick={copyList}>Listeyi kopyala</button>
+          </span>
+        </div>
+
+        {adv && (
+          <div className="mt-3 flex flex-wrap items-end gap-3 rounded-xl border border-stone-200 bg-stone-50 p-3">
+            <label className={lbl}>Değer filtresi
+              <select className={`${field} mt-1 block w-full max-w-full text-sm font-normal normal-case text-stone-900 sm:w-auto`} value={rn} onChange={(e) => { setRn(e.target.value); setShown(PAGE) }}>
+                <option value="">Yok</option>
+                {CATS.map((cat) => <optgroup key={cat} label={cat}>{comps.filter((c) => c[2] === cat).map((c) => <option key={c[0]} value={c[0]}>{c[0]} ({c[1]})</option>)}</optgroup>)}
+              </select>
+            </label>
+            <label className={`w-24 ${lbl}`}>En az<input className={`${field} mt-1 w-full text-sm font-normal text-stone-900`} inputMode="decimal" value={rmin} onChange={(e) => setRmin(e.target.value)} /></label>
+            <label className={`w-24 ${lbl}`}>En çok<input className={`${field} mt-1 w-full text-sm font-normal text-stone-900`} inputMode="decimal" value={rmax} onChange={(e) => setRmax(e.target.value)} /></label>
+            <span className="pb-2 text-xs text-stone-500">Değerler {fmt(portion)} g için hesaplanır.</span>
+          </div>
+        )}
+
+        {view === 'table' && colsOpen && (
           <div className="mt-3 rounded-xl border border-stone-200 bg-stone-50 p-4">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs font-bold uppercase tracking-wider text-stone-500">Hazır setler</span>
+              <span className={lbl}>Hazır setler</span>
               {PRESETS.map(([n, list]) => <button key={n} className={btn} onClick={() => setCols(list)}>{n}</button>)}
               <button className={btn} onClick={() => setCols([])}>Temizle</button>
             </div>
             {CATS.map((cat) => (
               <div key={cat}>
-                <div className="mt-3 text-xs font-bold uppercase tracking-wider text-stone-500">{cat}</div>
+                <div className={`mt-3 ${lbl}`}>{cat}</div>
                 <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                   {comps.filter((c) => c[2] === cat).map((c) => (
                     <label key={c[0]} className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm">
@@ -213,8 +261,50 @@ export default function Foods() {
             ))}
           </div>
         )}
+      </section>
 
-        <div className="mt-3 max-h-[72vh] overflow-auto rounded-xl border border-stone-200">
+      {/* 3. Sonuçlar */}
+      {rows.length === 0 ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center text-stone-500">
+          {status === 'removed' ? 'Kaldırılmış besin yok.' : 'Bu filtrelerle eşleşen besin yok.'}
+        </div>
+      ) : view === 'cards' ? (
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+          {rows.slice(0, shown).map(({ f, e }) => {
+            const isRemoved = removed.set.has(f.code)
+            const val = (i: number) => (i >= 0 && f.v[i] != null ? f.v[i]! * k : null)
+            return (
+              <article key={f.id} className={`flex flex-col rounded-2xl border bg-white p-4 shadow-sm transition hover:border-brand-500 ${isRemoved ? 'border-dashed border-red-300 opacity-70' : e.st === 'hide' ? 'border-stone-200 opacity-60' : 'border-stone-200'}`}>
+                <div className="flex items-start gap-2">
+                  <button className="min-w-0 flex-1 text-left" onClick={() => setDetail(f.code)} title="Ayrıntıları aç">
+                    <h3 className="font-display text-[15px] font-bold leading-snug">{shortName(f.name)}</h3>
+                    <div className="mt-0.5 truncate text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
+                  </button>
+                  {adminBtn(f)}
+                </div>
+                <div className="mt-3 flex items-baseline gap-1.5">
+                  <span className="font-display text-3xl font-bold tabular-nums">{fmtVal(val(I.kcal))}</span>
+                  <span className="text-xs font-semibold text-stone-500">kcal · {fmt(portion)} g</span>
+                </div>
+                <dl className="mt-2 grid grid-cols-3 gap-2 text-center text-xs">
+                  {([['Protein', I.p], ['Karb.', I.c], ['Yağ', I.f]] as const).map(([n, i]) => (
+                    <div key={n} className="rounded-lg bg-stone-100 px-1 py-1.5">
+                      <dt className="text-[10.5px] font-semibold uppercase tracking-wide text-stone-500">{n}</dt>
+                      <dd className="font-bold tabular-nums">{fmtVal(val(i))} <span className="font-medium text-stone-500">g</span></dd>
+                    </div>
+                  ))}
+                </dl>
+                <div className="mt-2 min-h-5"><ReasonChips ev={e} max={2} /></div>
+                <div className="mt-auto flex gap-2 pt-3">
+                  <button className="flex-1 rounded-lg border border-stone-300 px-3 py-1.5 text-sm font-semibold hover:bg-stone-100" onClick={() => setDetail(f.code)}>Ayrıntı</button>
+                  {client && !isRemoved && <button className="flex-1 rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110" onClick={() => addToMenu(f)}>+ {meal}</button>}
+                </div>
+              </article>
+            )
+          })}
+        </div>
+      ) : (
+        <div className="mt-4 max-h-[72vh] overflow-auto rounded-2xl border border-stone-200 bg-white">
           <table className="w-full border-separate border-spacing-0 text-sm">
             <thead className="sticky top-0 z-20 bg-stone-100 text-xs uppercase tracking-wide text-stone-500">
               <tr>
@@ -226,31 +316,28 @@ export default function Foods() {
             <tbody>
               {rows.slice(0, shown).map(({ f, e }) => (
                 <tr key={f.id} className={`hover:bg-stone-50 ${e.st === 'hide' ? 'opacity-55' : ''}`}>
-                  <td className="sticky left-0 z-10 min-w-40 max-w-56 sm:min-w-60 sm:max-w-80 border-b border-stone-100 bg-white px-3 py-2">
+                  <td className="sticky left-0 z-10 min-w-40 max-w-56 border-b border-stone-100 bg-white px-3 py-2 sm:min-w-60 sm:max-w-80">
                     <button className="text-left font-bold hover:text-brand-500 hover:underline" onClick={() => setDetail(f.code)}>{f.name}</button>
                     <div className="text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
                     <ReasonChips ev={e} max={3} />
                   </td>
                   {colIdx.map((i) => <td key={i} className="whitespace-nowrap border-b border-stone-100 px-3 py-2 text-right tabular-nums">{fmtVal(f.v[i] == null ? null : f.v[i] * k)}</td>)}
                   <td className="whitespace-nowrap border-b border-stone-100 px-3 py-2 text-right">
-                    {client && <button className="mr-1 h-7 w-7 rounded-full border border-stone-300 font-bold text-brand-500 hover:bg-brand-500 hover:text-white" title="Menüye ekle" aria-label="Menüye ekle" onClick={() => addToMenu(f)}>+</button>}
-                    {removed.set.has(f.code)
-                      ? <button className="h-7 w-7 rounded-full border border-stone-300 font-bold text-brand-500" title="Geri al" aria-label="Geri al" onClick={() => removed.restore(f.code)}>↺</button>
-                      : <button className="h-7 w-7 rounded-full border border-stone-300 font-bold text-stone-500 hover:bg-red-100 hover:text-red-800" title="Listeden kaldır" aria-label="Listeden kaldır" onClick={() => removed.remove(f.code)}>×</button>}
+                    {client && !removed.set.has(f.code) && <button className="mr-1 h-8 w-8 rounded-full border border-stone-300 font-bold text-brand-500 hover:bg-brand-500 hover:text-white" title={`${meal} öğününe ekle`} aria-label="Menüye ekle" onClick={() => addToMenu(f)}>+</button>}
+                    {adminBtn(f)}
                   </td>
                 </tr>
               ))}
-              {rows.length === 0 && <tr><td colSpan={colIdx.length + 2} className="p-9 text-center text-stone-500">Bu filtrelerle eşleşen besin yok.</td></tr>}
             </tbody>
           </table>
         </div>
-        {rows.length > shown && (
-          <div className="mt-3 text-center"><button className={btn} onClick={() => setShown(shown + PAGE)}>Daha fazla göster ({rows.length - shown} besin daha)</button></div>
-        )}
-        <p className="mt-3 text-xs text-stone-500">
-          Veriler TürKomp (T.C. Tarım ve Orman Bakanlığı) dosyasından alınmıştır. Boş hücre, o besin için değer ölçülmediği anlamına gelir. Gluten, alerjen ve pürin bilgisi dosyada bulunmadığı için ilgili filtreler besin adı ve grubuna göre çalışır, kesin sonuç için ürün etiketi kontrol edilmelidir.
-        </p>
-      </div>
+      )}
+      {rows.length > shown && (
+        <div className="mt-4 text-center"><button className={btn} onClick={() => setShown(shown + PAGE)}>Daha fazla göster ({rows.length - shown} besin daha)</button></div>
+      )}
+      <p className="mt-4 text-xs text-stone-500">
+        Veriler TürKomp (T.C. Tarım ve Orman Bakanlığı) dosyasından alınmıştır. Boş değer, o besin için ölçülmediği anlamına gelir. Gluten, alerjen ve pürin bilgisi dosyada bulunmadığı için ilgili filtreler besin adı ve grubuna göre çalışır, kesin sonuç için ürün etiketi kontrol edilmelidir.
+      </p>
 
       {detailFood && (
         <FoodDetail food={food} f={detailFood} ev={evalr.map.get(detailFood.code)!} portionG={portion} canAdd={!!client} onClose={() => setDetail(null)}

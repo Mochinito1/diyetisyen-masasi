@@ -41,7 +41,9 @@ let ctx: { uid: string; username: string; kind: Profile['kind']; clientId?: stri
 const snap = { clients: new Map<string, string>(), aps: new Map<string, string>(), settings: new Map<string, string>() }
 const owners = new Map<string, string>()
 
-const CACHE_KEYS = ['dm.clients', 'dm.appointments', 'dm.accounts', 'dm.applications', 'dm.asClient', 'dm.menuClient', 'dm.openClient']
+const CACHE_KEYS = ['dm.clients', 'dm.appointments', 'dm.accounts', 'dm.applications', 'dm.asClient', 'dm.menuClient', 'dm.openClient', 'dm.removedFoods', 'dm.customFoods']
+/** Tüm diyetisyenler için ortak besin ayarları: yalnızca yönetici yazar (settings tablosunda owner = '_global') */
+const GLOBAL_KEYS = ['dm.removedFoods', 'dm.customFoods']
 const setRaw = (k: string, v: unknown) => { try { localStorage.setItem(k, JSON.stringify(v)) } catch { /* kota */ } }
 
 function clearCache() {
@@ -80,6 +82,8 @@ async function pullAll(me: Profile) {
   const apRows = await ok<{ id: string; data: ApLike }[]>(d.from('appointments').select('id,data'))
   const settings = await ok<{ owner: string; key: string; value: unknown }[]>(d.from('settings').select('owner,key,value'))
 
+  // Yönetici ilk girişte sunucuda henüz yoksa, bu tarayıcıdaki eklenmiş besinleri korur ve sunucuya yükler
+  const localCustom = me.kind === 'admin' ? localStorage.getItem('dm.customFoods') : null
   clearCache()
   const accounts: Record<string, Account> = {}
   for (const p of profiles) if (p.kind !== 'admin') accounts[p.username] = toAccount(p)
@@ -107,11 +111,16 @@ async function pullAll(me: Profile) {
   setRaw('dm.appointments', all)
 
   for (const s of settings) {
-    const key = `dm.${s.key}.${s.owner}`
+    const key = s.owner === '_global' ? `dm.${s.key}` : `dm.${s.key}.${s.owner}`
     setRaw(key, s.value)
     snap.settings.set(key, JSON.stringify(s.value))
   }
   ctx = { uid: me.id, username: me.username, kind: me.kind, clientId: me.client_id ?? undefined }
+  if (localCustom && !snap.settings.has('dm.customFoods')) {
+    localStorage.setItem('dm.customFoods', localCustom)
+    dirty.add('dm.customFoods')
+    void cloudFlush()
+  }
 }
 
 // ───────────── Push: yerel değişiklikleri sunucuya ─────────────
@@ -157,12 +166,14 @@ async function pushKey(key: string) {
       gone.forEach((id) => snap.aps.delete(id))
     }
   } else {
-    const m = /^dm\.(brand|availability)\.(.+)$/.exec(key)
+    const g = GLOBAL_KEYS.includes(key) ? /^dm\.(.+)$/.exec(key) : null
+    const m = g ?? /^dm\.(brand|availability)\.(.+)$/.exec(key)
     if (!m) return
+    if (g && ctx.kind !== 'admin') return
     let v: unknown = null
     try { v = JSON.parse(localStorage.getItem(key) ?? 'null') } catch { /* bozuk */ }
     if (v === null || snap.settings.get(key) === JSON.stringify(v)) return
-    const { error } = await d.from('settings').upsert({ owner: m[2], key: m[1], value: v, updated: new Date().toISOString() })
+    const { error } = await d.from('settings').upsert({ owner: g ? '_global' : m[2], key: m[1], value: v, updated: new Date().toISOString() })
     if (error) throw new Error(`Ayarlar kaydedilemedi: ${error.message}`)
     snap.settings.set(key, JSON.stringify(v))
   }
@@ -185,7 +196,7 @@ export function cloudFlush(): Promise<void> {
 if (cloudEnabled) {
   setSaveListener((key) => {
     if (!ctx) return
-    if (key !== 'dm.clients' && key !== 'dm.appointments' && !key.startsWith('dm.brand.') && !key.startsWith('dm.availability.')) return
+    if (key !== 'dm.clients' && key !== 'dm.appointments' && !GLOBAL_KEYS.includes(key) && !key.startsWith('dm.brand.') && !key.startsWith('dm.availability.')) return
     dirty.add(key)
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => void cloudFlush(), 400)
