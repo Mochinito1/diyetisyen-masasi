@@ -227,3 +227,19 @@ grant execute on function public.is_admin(), public.my_username(), public.my_cli
 -- Yönetici bir diyetisyeni pasife alabilir: profiles.status = 'inactive'. Tekrar çalıştırmak güvenlidir.
 alter table public.profiles drop constraint if exists profiles_status_check;
 alter table public.profiles add constraint profiles_status_check check (status in ('pending', 'rejected', 'inactive'));
+
+-- ───────────── Tahlil sonuçlarını koruma ─────────────
+-- Tahlil sonuçlarını yalnızca danışan ekler/siler. Diyetisyen ya da yönetici danışan kaydını kaydederken
+-- elindeki eski kopya danışanın sonradan eklediği tahlilleri ezmesin diye, danışan dışındaki güncellemelerde
+-- veritabanındaki tahlil listesi aynen korunur. Tekrar çalıştırmak güvenlidir.
+create or replace function public.keep_client_labs() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  if old.owner_user is not null and auth.uid() is distinct from old.owner_user then
+    new.data := jsonb_set(new.data, '{lab}', coalesce(old.data->'lab', '[]'::jsonb));
+  end if;
+  return new;
+end $$;
+drop trigger if exists clients_keep_labs on public.clients;
+create trigger clients_keep_labs before update on public.clients
+  for each row execute function public.keep_client_labs();

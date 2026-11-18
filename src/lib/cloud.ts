@@ -346,6 +346,17 @@ export async function cloudSetStatus(id: string, username: string | undefined, s
   } catch (e) { reportError(e) }
 }
 
+/** Danışanın güncel tahlil sonuçlarını sunucudan okur (diyetisyenin yerel önbelleği eski kalabilir); okunamazsa null */
+export async function cloudClientLabs(clientId: string): Promise<unknown[] | null> {
+  if (!cloudEnabled) return null
+  try {
+    const { data, error } = await db().from('clients').select('data').eq('id', clientId).maybeSingle()
+    if (error || !data) return null
+    const lab = (data as { data: { lab?: unknown } }).data?.lab
+    return Array.isArray(lab) ? lab : []
+  } catch { return null }
+}
+
 export async function cloudSetActive(username: string, active: boolean) {
   try {
     const p = await db().from('profiles').update({ status: active ? null : 'inactive' }).eq('username', username)

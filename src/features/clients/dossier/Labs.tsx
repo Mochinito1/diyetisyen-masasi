@@ -1,11 +1,27 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { card } from '../../../components/ui/styles'
 import { fmtDay, labFlag, type LabResult } from '../../../lib/dossier'
 import { fmt } from '../../../lib/format'
+import { cloudClientLabs, cloudEnabled } from '../../../lib/cloud'
+import { load } from '../../../lib/storage'
 
 /** Diyetisyen: kan tahlili eklemez; danışanın portaldan eklediği sonuçları yalnızca görüntüler. */
-export default function LabsCard({ labs, sex }: { labs: LabResult[]; sex: string }) {
+export default function LabsCard({ clientId, labs: initial, sex }: { clientId: string; labs: LabResult[]; sex: string }) {
   const [open, setOpen] = useState(false)
+  // Açık dosyadaki kopya eski kalabilir: güncel sonuçlar sunucudan (bulutta) ya da saklı kayıttan okunur
+  const [labs, setLabs] = useState<LabResult[]>(initial)
+  useEffect(() => {
+    let live = true
+    const done = (l: LabResult[] | null) => { if (live && l) setLabs(l) }
+    const refresh = () => {
+      if (cloudEnabled) void cloudClientLabs(clientId).then((l) => done(l as LabResult[] | null))
+      else done(load<{ id: string; lab?: LabResult[] }[]>('dm.clients', []).find((c) => c.id === clientId)?.lab ?? null)
+    }
+    refresh()
+    const t = setInterval(refresh, 15000)
+    window.addEventListener('focus', refresh)
+    return () => { live = false; clearInterval(t); window.removeEventListener('focus', refresh) }
+  }, [clientId, open])
 
   const latest = new Map<string, LabResult>()
   ;[...labs].sort((a, b) => (a.d < b.d ? -1 : 1)).forEach((x) => latest.set(x.k, x))

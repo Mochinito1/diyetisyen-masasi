@@ -102,7 +102,7 @@ export default function Clients() {
                 set({ meas, ...(w != null ? { profile: { ...editing.profile, w: String(w) } } : {}) })
               }}
             />
-            <LabsCard labs={editing.lab} sex={editing.profile.sex} />
+            <LabsCard clientId={editing.id} labs={editing.lab} sex={editing.profile.sex} />
             <SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} />
             <PortalTrackCard client={editing} />
           </div>
@@ -130,7 +130,9 @@ export default function Clients() {
               disabled={!valid}
               className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white disabled:opacity-40"
               onClick={() => {
-                upsert({ ...editing, name: editing.name.trim(), updated: Date.now() })
+                // Tahlil sonuçlarını yalnızca danışan ekler: açık dosyadaki eski kopya, danışanın sonradan eklediklerini ezmesin
+                const stored = load<Client[]>('dm.clients', []).find((c) => c.id === editing.id)
+                upsert({ ...editing, lab: stored?.lab ?? editing.lab, name: editing.name.trim(), updated: Date.now() })
                 setEditing(null)
               }}
             >

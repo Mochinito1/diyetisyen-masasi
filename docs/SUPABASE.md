@@ -39,3 +39,7 @@ Site GitHub Pages'te kalır; hesaplar ve veriler Supabase'te (PostgreSQL) saklan
 ## Pasife alma (yönetici)
 
 Yönetim → Diyetisyenler listesinde her diyetisyenin yanında **Pasife al / Aktif et** düğmesi vardır. Pasife alınan diyetisyen danışanların listesinde görünmez ve giriş yapamaz; aktif edilince her şey eskisi gibi döner. Bu özellik için Supabase'de şemanın bir kez güncellenmesi gerekir: `supabase/schema.sql` dosyasının en altındaki iki `alter table` satırını SQL Editor'da çalıştırın (tekrar çalıştırmak güvenlidir).
+
+## Tahlil sonuçlarının korunması
+
+Kan tahlili sonuçlarını yalnızca danışan ekler. Diyetisyen danışan dosyasını açık tutup kaydederken eski kopyası danışanın sonradan eklediği sonuçları silmesin diye `supabase/schema.sql` dosyasının en altındaki `keep_client_labs` fonksiyonunu ve `clients_keep_labs` tetikleyicisini SQL Editor'da bir kez çalıştırın (tekrar çalıştırmak güvenlidir).
