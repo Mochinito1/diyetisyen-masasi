@@ -19,7 +19,7 @@ const TICKS = [18.5, 25, 30, 35, 40]
 const pos = (v: number) => ((Math.min(Math.max(v, MIN), MAX) - MIN) / (MAX - MIN)) * 100
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-stone-200 bg-white p-4 md:p-5">{children}</div>
+  <div className="rounded-xl border border-stone-200 bg-white p-4">{children}</div>
 )
 const Label = ({ children }: { children: React.ReactNode }) => (
   <div className="text-[11px] font-bold uppercase tracking-[0.08em] opacity-70">{children}</div>
@@ -79,12 +79,12 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
       <Card>
         <h2 className="font-display text-lg font-bold">Kilo/boy indeksi</h2>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="font-display text-4xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
+          <span className="font-display text-3xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
           <span className="text-sm text-stone-500">kg/m²</span>
           {r.category && <span className={`ml-auto rounded-full px-3 py-1 text-sm font-semibold ${r.tone ? PILL[r.tone] : ''}`}>{r.category}</span>}
         </div>
 
-        <div className="relative mb-10 mt-9">
+        <div className="relative mb-9 mt-8">
           <div className="flex h-3.5 gap-0.5">
             {SEGMENTS.map(([a, b, cls], i) => (
               <i key={a} className={`block h-full ${cls} ${i === 0 ? 'rounded-l-full' : ''} ${i === SEGMENTS.length - 1 ? 'rounded-r-full' : ''}`} style={{ width: `${((b - a) / (MAX - MIN)) * 100}%` }} />
@@ -106,9 +106,9 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
               ['Sağlıklı aralık', `${fmt(r.idealLo, 1)}–${fmt(r.idealHi, 1)}`, 'kg'],
               [gap === 0 ? 'Durum' : gap > 0 ? 'Verilecek' : 'Alınacak', gap === 0 ? 'Aralıkta' : `${fmt(Math.abs(gap), 1)} kg`, ''],
             ] as const).map(([l, v, u]) => (
-              <div key={l} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 px-2 py-2.5">
+              <div key={l} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 px-2 py-2">
                 <div className="truncate text-[11px] font-semibold text-stone-500">{l}</div>
-                <div className="mt-0.5 font-display text-base font-bold tabular-nums sm:text-lg">{v}{u && <small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">{u}</small>}</div>
+                <div className="mt-0.5 font-display text-base font-bold tabular-nums">{v}{u && <small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">{u}</small>}</div>
               </div>
             ))}
           </div>
@@ -125,7 +125,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
 
       <Card>
         <h2 className="font-display text-lg font-bold">Makro dağılımı</h2>
-        <p className="mb-4 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
+        <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
         <MacroEditor target={r.target!} value={macroPct} onChange={onMacro} />
         {editable && (
           <p className="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500">Günlük sodyum üst sınırı: {fmt(sodiumLimit(input.age!, r.target!))} mg</p>

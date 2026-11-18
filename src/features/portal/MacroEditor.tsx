@@ -49,7 +49,7 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
   const handle = (which: 1 | 2, at: number, label: string) => (
     <div
       role="slider" tabIndex={0} aria-label={label} aria-valuemin={MIN} aria-valuemax={95} aria-valuenow={at}
-      className="absolute top-1/2 z-10 grid h-14 w-7 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+      className="absolute top-1/2 z-10 grid h-11 w-6 -translate-x-1/2 -translate-y-1/2 cursor-ew-resize touch-none place-items-center rounded-full outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
       style={{ left: `${at}%` }}
       onPointerDown={(e) => { e.currentTarget.setPointerCapture(e.pointerId); setBoundary(which, fromEvent(e)) }}
       onPointerMove={(e) => { if (e.currentTarget.hasPointerCapture(e.pointerId)) setBoundary(which, fromEvent(e)) }}
@@ -58,7 +58,7 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
         if (e.key === 'ArrowRight' || e.key === 'ArrowUp') { e.preventDefault(); setBoundary(which, at + STEP) }
       }}
     >
-      <span className="h-9 w-2.5 rounded-full border border-stone-300 bg-white shadow-md" />
+      <span className="h-7 w-2 rounded-full border border-stone-300 bg-white shadow-md" />
     </div>
   )
 
@@ -78,9 +78,9 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
   return (
     <div>
       <div ref={bar} className="relative">
-        <div className="flex h-12 gap-0.5 overflow-hidden rounded-2xl">
+        <div className="flex h-9 gap-0.5 overflow-hidden rounded-xl">
           {items.map(([k, name, , pct]) => (
-            <div key={k} className={`grid min-w-0 place-items-center text-sm font-bold tabular-nums transition-[width] duration-150 ${COLORS[k].bar} ${COLORS[k].text}`} style={{ width: `${pct}%` }} title={`${name} %${pct}`}>
+            <div key={k} className={`grid min-w-0 place-items-center text-xs font-bold tabular-nums transition-[width] duration-150 ${COLORS[k].bar} ${COLORS[k].text}`} style={{ width: `${pct}%` }} title={`${name} %${pct}`}>
               {pct >= 12 ? `%${pct}` : ''}
             </div>
           ))}
@@ -88,21 +88,21 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
         {edit && handle(1, b1, 'Karbonhidrat ve protein sınırı')}
         {edit && handle(2, b2, 'Protein ve yağ sınırı')}
       </div>
-      {edit && <p className="mt-2 text-center text-xs text-stone-500">Çubuktaki tutamaçları sürükle ya da düğmelerle %5 adımlarla ayarla</p>}
+      {edit && <p className="mt-1.5 text-center text-[11px] text-stone-500">Çubuktaki tutamaçları sürükle ya da düğmelerle %5 adımlarla ayarla</p>}
 
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-3 grid grid-cols-3 gap-2">
         {items.map(([k, name, g, pct]) => (
-          <div key={k} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 p-2.5 text-center sm:p-3">
+          <div key={k} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 p-2 text-center">
             <div className="flex items-center justify-center gap-1.5 text-xs font-semibold text-stone-600">
               <i className={`inline-block h-2.5 w-2.5 flex-none rounded-full ${COLORS[k].dot}`} />
               <span className="truncate">{k === 'c' ? <><span className="sm:hidden">Karb.</span><span className="hidden sm:inline">Karbonhidrat</span></> : name}</span>
             </div>
-            <div className="mt-1 font-display text-2xl font-bold leading-none tabular-nums">{fmt(g)}<small className="ml-0.5 font-sans text-xs font-semibold text-stone-500">g</small></div>
-            <div className="mt-1 text-xs font-semibold text-stone-500">%{pct}{k === 'y' ? ' (kalan)' : ''}</div>
+            <div className="mt-0.5 font-display text-xl font-bold leading-none tabular-nums">{fmt(g)}<small className="ml-0.5 font-sans text-xs font-semibold text-stone-500">g</small></div>
+            <div className="mt-0.5 text-[11px] font-semibold text-stone-500">%{pct}{k === 'y' ? ' (kalan)' : ''}</div>
             {edit && (
-              <div className="mt-2 flex justify-center gap-1.5">
-                <button className="h-8 w-8 rounded-lg border border-stone-300 bg-white text-lg font-bold leading-none hover:border-brand-500 hover:text-brand-500" aria-label={`${name} azalt`} onClick={() => step(k, -STEP)}>−</button>
-                <button className="h-8 w-8 rounded-lg border border-stone-300 bg-white text-lg font-bold leading-none hover:border-brand-500 hover:text-brand-500" aria-label={`${name} artır`} onClick={() => step(k, STEP)}>+</button>
+              <div className="mt-1.5 flex justify-center gap-1.5">
+                <button className="h-7 w-7 rounded-lg border border-stone-300 bg-white text-lg font-bold leading-none hover:border-brand-500 hover:text-brand-500" aria-label={`${name} azalt`} onClick={() => step(k, -STEP)}>−</button>
+                <button className="h-7 w-7 rounded-lg border border-stone-300 bg-white text-lg font-bold leading-none hover:border-brand-500 hover:text-brand-500" aria-label={`${name} artır`} onClick={() => step(k, STEP)}>+</button>
               </div>
             )}
           </div>
@@ -110,15 +110,15 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
       </div>
 
       {edit && (
-        <div className="mt-4">
+        <div className="mt-3">
           <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500">Hazır dağılımlar</div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {PRESETS.map(([label, p]) => {
               const on = p.c === value.c && p.p === value.p
               return (
                 <button key={label} aria-pressed={on} onClick={() => onChange!(p)}
-                  className={`min-w-0 rounded-xl border px-2 py-2 text-center transition ${on ? 'border-brand-500 bg-brand-50 text-brand-500 ring-1 ring-brand-500' : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-brand-500'}`}>
-                  <span className="block truncate text-xs font-bold">{label}</span>
+                  className={`min-w-0 rounded-lg border px-2 py-1.5 text-center transition ${on ? 'border-brand-500 bg-brand-50 text-brand-500 ring-1 ring-brand-500' : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-brand-500'}`}>
+                  <span className="block truncate text-xs font-bold leading-tight">{label}</span>
                   <span className="block text-[11px] font-semibold tabular-nums opacity-70">{p.c} / {p.p} / {100 - p.c - p.p}</span>
                 </button>
               )
