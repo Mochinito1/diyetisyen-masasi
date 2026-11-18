@@ -205,3 +205,9 @@ begin
 end $$;
 revoke all on function public.admin_delete_user(text, text) from public;
 grant execute on function public.admin_delete_user(text, text) to authenticated;
+
+-- ───────────── Erişim yetkileri (Data API) ─────────────
+-- "Automatically expose new tables" kapalıyken tablolara yetki elle verilir. Satır erişimini RLS kuralları sınırlar.
+grant usage on schema public to anon, authenticated;
+grant select, insert, update, delete on public.profiles, public.applications, public.clients, public.appointments, public.settings to authenticated;
+grant execute on function public.is_admin(), public.my_username(), public.my_client_id() to authenticated;
