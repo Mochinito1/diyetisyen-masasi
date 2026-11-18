@@ -158,16 +158,28 @@ create policy appointments_all on public.appointments for all to authenticated
       where c.id = appointments.client_id and c.owner_user = auth.uid() and c.dietitian = appointments.dietitian)
   );
 
--- Danışanın boş saatleri görebilmesi için: yalnızca tarih/saat ve durum (isim, not, bağlantı yok)
-create or replace view public.appointment_slots as
-  select id, dietitian,
-         jsonb_build_object('id', id, 'clientId', 'hidden', 'clientName', '', 'dt', data->>'dt',
-                            'type', data->'type', 'link', '', 'note', '', 'status', data->>'status',
-                            'by', 'diyetisyen', 'dietitian', dietitian, 'created', 0) as data
-  from public.appointments;
-revoke all on public.appointment_slots from anon;
-grant select on public.appointment_slots to authenticated;
-
+-- Danışanın boş saatleri görebilmesi için: yalnızca tarih/saat ve durum döner (isim, not, bağlantı yok).
+-- Eski SECURITY DEFINER görünümü (appointment_slots) güvenlik taramasında kritik çıktığı için kaldırıldı;
+-- yerine, yalnızca çağıranın kendi seçtiği diyetisyenin saatlerini veren (ya da diyetisyenin/yöneticinin kendi saatleri) fonksiyon var.
+drop view if exists public.appointment_slots;
+create or replace function public.appointment_slots(p_dietitian text)
+returns table (id text, data jsonb)
+language sql security definer stable set search_path = public as $$
+  select a.id,
+         jsonb_build_object('id', a.id, 'clientId', 'hidden', 'clientName', '', 'dt', a.data->>'dt',
+                            'type', a.data->'type', 'link', '', 'note', '', 'status', a.data->>'status',
+                            'by', 'diyetisyen', 'dietitian', a.dietitian, 'created', 0)
+  from public.appointments a
+  where a.dietitian = p_dietitian
+    and p_dietitian <> ''
+    and (
+      public.is_admin()
+      or p_dietitian = public.my_username()
+      or exists (select 1 from public.clients c where c.owner_user = auth.uid() and c.dietitian = p_dietitian)
+    )
+$$;
+revoke all on function public.appointment_slots(text) from public, anon;
+grant execute on function public.appointment_slots(text) to authenticated;
 -- settings: klinik bilgileri ve çalışma saatleri; herkes okur, yalnızca sahibi ve yönetici yazar
 drop policy if exists settings_select on public.settings;
 create policy settings_select on public.settings for select to authenticated using (true);

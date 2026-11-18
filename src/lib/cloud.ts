@@ -103,7 +103,13 @@ async function pullAll(me: Profile) {
   if (me.kind === 'danisan') {
     const chosen = clients.find((c) => c.id === me.client_id)?.dietitian
     if (chosen) {
-      const slots = await ok<{ id: string; data: ApLike }[]>(d.from('appointment_slots').select('id,data').eq('dietitian', chosen))
+      // Boş saatler: önce kısıtlı fonksiyon; henüz kurulmadıysa eski görünüm. Hata olursa giriş bozulmasın.
+      let slots: { id: string; data: ApLike }[] = []
+      try {
+        const r = await d.rpc('appointment_slots', { p_dietitian: chosen })
+        if (!r.error) slots = (r.data ?? []) as typeof slots
+        else slots = await ok<{ id: string; data: ApLike }[]>(d.from('appointment_slots').select('id,data').eq('dietitian', chosen))
+      } catch (e) { console.warn('[bulut] dolu saatler alınamadı', e) }
       const have = new Set(own.map((a) => a.id))
       all = [...own, ...slots.filter((s) => !have.has(s.id)).map((s) => ({ ...s.data, id: s.id }))]
     }
