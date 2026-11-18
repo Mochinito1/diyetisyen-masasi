@@ -145,6 +145,8 @@ input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='
   border-radius: 7px;
 }
 :focus-visible { outline: 2px solid var(--color-brand-500); outline-offset: 2px; }
+/* Kaydırılabilir üst menüde dış çerçeve kırpılır; odak içeriden halka ile gösterilir */
+.nav-link:focus-visible { outline: none; }
 
 /* Dokunmatik ekranlar: rahat dokunma alanı, iOS'ta girişe odaklanınca sayfanın yakınlaşmasını önleyen 16px yazı */
 @media (pointer: coarse) {

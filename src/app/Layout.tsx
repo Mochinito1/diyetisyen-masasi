@@ -8,7 +8,7 @@ import ThemePicker from './ThemePicker'
 import CloudBanner from './CloudBanner'
 
 const item = ({ isActive }: { isActive: boolean }) =>
-  `flex min-w-16 flex-1 shrink-0 snap-start flex-col items-center gap-0.5 px-0.5 py-1 text-[11.5px] font-semibold rounded-xl outline-none focus-visible:bg-brand-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 ${isActive ? 'text-brand-500' : 'text-stone-500'}`
+  `nav-link flex min-w-16 flex-1 shrink-0 snap-start flex-col items-center gap-0.5 px-0.5 py-1 text-[11.5px] font-semibold rounded-xl outline-none focus-visible:bg-brand-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 ${isActive ? 'text-brand-500' : 'text-stone-500'}`
 const pill = (active: boolean) => `grid h-7 w-[46px] place-items-center rounded-2xl ${active ? 'bg-brand-50' : ''}`
 
 export default function Layout() {
