@@ -163,6 +163,22 @@ export function removeApplication(id: string) {
   }
 }
 
+/**
+ * Tek seferlik sıfırlama: açılmış tüm hesaplar (ve başvurular, bağlı danışan kayıtları) silinir.
+ * Yönetici ve demo hesaplar kodda tanımlı olduğu için etkilenmez. Her tarayıcıda bir kez çalışır.
+ */
+export function resetAccountsOnce(tag = 'v1') {
+  try {
+    if (localStorage.getItem('dm.accountsReset') === tag) return
+    const ids = new Set(Object.values(loadAccounts()).map((a) => a.clientId).filter(Boolean))
+    save(ACC_KEY, {})
+    save(APPS_KEY, [])
+    save('dm.clients', load<{ id: string }[]>('dm.clients', []).filter((c) => !ids.has(c.id)))
+    saveSession(null)
+    localStorage.setItem('dm.accountsReset', tag)
+  } catch { /* gizli sekme */ }
+}
+
 /** Silinen danışan kaydına bağlı hesapları kaldırır: hesap artık giriş yapamaz */
 export function removeAccountsOfClient(clientId: string) {
   const rest = Object.fromEntries(Object.entries(loadAccounts()).filter(([, a]) => a.clientId !== clientId))

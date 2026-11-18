@@ -4,7 +4,7 @@ import { todayStr } from '../lib/appointments'
 import { DEMO_DIETITIAN } from '../lib/dietitians'
 import { sampleClients } from '../lib/samples'
 import {
-  DEMO_CLIENT_ID, authenticate, loadSession, register as doRegister, resetPassword as doReset, saveSession, submitApplication,
+  DEMO_CLIENT_ID, authenticate, loadSession, register as doRegister, resetAccountsOnce, resetPassword as doReset, saveSession, submitApplication,
   type Session,
 } from '../lib/auth'
 import { load, save } from '../lib/storage'
@@ -30,7 +30,7 @@ function ensureDemoClient() {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [session, setSession] = useState<Session | null>(() => loadSession())
+  const [session, setSession] = useState<Session | null>(() => { resetAccountsOnce(); return loadSession() })
 
   const start = (s: Session) => {
     if (s.kind === 'danisan') {
