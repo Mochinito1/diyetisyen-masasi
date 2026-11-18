@@ -19,6 +19,10 @@ export interface Food {
   local: string
   groups: number[]
   v: Record<string, number>
+  /** Yalnızca yemekler: 1 porsiyonun yaklaşık gramı, kategori ve kaynak */
+  portion?: number
+  cat?: string
+  src?: string
 }
 
 /** Bileşen indeksleri (comps dizisindeki sıra) */

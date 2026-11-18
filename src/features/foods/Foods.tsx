@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { btn, field } from '../../components/ui/styles'
+import { isDish } from '../../lib/dishes'
 import { fold, foodMatch, type Food } from '../../lib/foods'
 import { fmt, fmtVal, parseNum } from '../../lib/format'
 import { MEALS, foodUnits, makeItem, shortName, type Meal } from '../../lib/menu'
@@ -37,6 +38,8 @@ export default function Foods() {
   const evalr = useEvaluation(food, client, removed.set)
 
   const [q, setQ] = useState('')
+  const [kind, setKind] = useState<'besin' | 'yemek'>('besin')
+  const [cat, setCat] = useState('')
   const [group, setGroup] = useState<number | null>(null)
   const [status, setStatus] = useState<Status>('visible')
   const [view, setView] = useState<'cards' | 'table'>('cards')
@@ -56,6 +59,9 @@ export default function Foods() {
 
   const portion = parseNum(portionG) ?? 100
   const k = portion / 100
+  const isY = kind === 'yemek'
+  /** Yemeklerde değerler 1 porsiyon içindir; besinlerde seçilen miktara göre */
+  const kOf = (f: Food) => (isY && f.portion ? f.portion / 100 : k)
   const flash = (t: string) => { setToast(t); setTimeout(() => setToast(''), 1800) }
 
   const rows = useMemo(() => {
@@ -63,19 +69,20 @@ export default function Foods() {
     const ci = new Map(food.data.comps.map((c, i) => [c[0], i]))
     const rnI = rn ? ci.get(rn) : undefined
     const lo = parseNum(rmin), hi = parseNum(rmax)
-    let list = food.foods.map((f) => ({ f, e: evalr.map.get(f.code)! })).filter(({ f, e }) => {
+    let list = food.foods.filter((f) => isDish(f) === isY).map((f) => ({ f, e: evalr.map.get(f.code)! })).filter(({ f, e }) => {
       if (status === 'removed') { if (!removed.set.has(f.code)) return false }
       else {
         if (status === 'visible' && e.st === 'hide') return false
         if (status === 'ok' && e.st !== 'ok') return false
         if (status === 'hidden' && e.st !== 'hide') return false
       }
-      if (group !== null && !f.groups.includes(group)) return false
+      if (!isY && group !== null && !f.groups.includes(group)) return false
+      if (isY && cat && f.cat !== cat) return false
       if (q.trim() && !foodMatch(f, q)) return false
       if (rnI != null && (lo != null || hi != null)) {
         const v = f.v[rnI]
         if (v == null) return false
-        const sv = v * k
+        const sv = v * kOf(f)
         if (lo != null && sv < lo) return false
         if (hi != null && sv > hi) return false
       }
@@ -102,15 +109,18 @@ export default function Foods() {
         if (va == null && vb == null) return 0
         if (va == null) return 1
         if (vb == null) return -1
-        return (va - vb) * sort.d
+        return (va * kOf(a.f) - vb * kOf(b.f)) * sort.d
       })
     }
     return list
-  }, [food, evalr, q, group, status, k, rn, rmin, rmax, sort, removed.set])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [food, evalr, q, group, status, k, rn, rmin, rmax, sort, removed.set, isY, cat])
 
   if (!food || !evalr) return <p className="text-stone-500">Besin listesi yükleniyor…</p>
 
   const comps = food.data.comps
+  const cats = [...new Set(food.foods.filter(isDish).map((f) => f.cat!))]
+  const switchKind = (v: 'besin' | 'yemek') => { setKind(v); setCat(''); setGroup(null); setShown(PAGE); setSort({ k: 'name', d: 1 }) }
   const ci = (n: string) => comps.findIndex((c) => c[0] === n)
   const colIdx = cols.map(ci).filter((i) => i >= 0)
   const I = { kcal: ci('Enerji (kcal)'), p: ci('Protein'), c: ci('Karbonhidrat'), f: ci('Yağ, toplam') }
@@ -128,7 +138,7 @@ export default function Foods() {
     const lines = [head.join('\t')]
     rows.forEach(({ f, e }) => lines.push([
       f.name, f.groups.map((g) => food.groups[g]).join(' / '), e.st === 'hide' ? 'Gizli' : e.st === 'warn' ? 'Uyarılı' : 'Uygun',
-      ...colIdx.map((i) => (f.v[i] == null ? '' : String(+(f.v[i] * k).toFixed(3)).replace('.', ','))),
+      ...colIdx.map((i) => (f.v[i] == null ? '' : String(+(f.v[i] * kOf(f)).toFixed(3)).replace('.', ','))),
     ].join('\t')))
     try { await navigator.clipboard.writeText(lines.join('\n')); flash('Panoya kopyalandı') } catch { flash('Kopyalanamadı') }
   }
@@ -152,7 +162,7 @@ export default function Foods() {
 
   const sideLabel = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-stone-500'
   const sideField = `${field} w-full text-sm`
-  const activeFilters = (group !== null ? 1 : 0) + (status !== 'visible' ? 1 : 0) + (rn ? 1 : 0)
+  const activeFilters = (group !== null ? 1 : 0) + (cat ? 1 : 0) + (status !== 'visible' ? 1 : 0) + (rn ? 1 : 0)
 
   const sidebar = (
     <div className="space-y-5">
@@ -192,20 +202,32 @@ export default function Foods() {
         </div>
       </div>
 
-      <div>
-        <label className={sideLabel} htmlFor="f-group">Besin grubu</label>
-        <select id="f-group" className={sideField} value={group ?? ''} onChange={(e) => { setGroup(e.target.value === '' ? null : +e.target.value); setShown(PAGE) }}>
-          <option value="">Tüm gruplar</option>
-          {food.groups.map((g, i) => <option key={g} value={i}>{g}</option>)}
-        </select>
-      </div>
+      {isY ? (
+        <div>
+          <label className={sideLabel} htmlFor="f-cat">Yemek türü</label>
+          <select id="f-cat" className={sideField} value={cat} onChange={(e) => { setCat(e.target.value); setShown(PAGE) }}>
+            <option value="">Tüm yemekler</option>
+            {cats.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      ) : (
+        <div>
+          <label className={sideLabel} htmlFor="f-group">Besin grubu</label>
+          <select id="f-group" className={sideField} value={group ?? ''} onChange={(e) => { setGroup(e.target.value === '' ? null : +e.target.value); setShown(PAGE) }}>
+            <option value="">Tüm gruplar</option>
+            {food.groups.map((g, i) => (g === 'Yemekler' ? null : <option key={g} value={i}>{g}</option>))}
+          </select>
+        </div>
+      )}
 
       <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={sideLabel} htmlFor="f-portion">Miktar (g)</label>
-          <input id="f-portion" className={sideField} inputMode="numeric" value={portionG} onChange={(e) => setPortionG(e.target.value.replace(/[^0-9.,]/g, ''))} />
-        </div>
-        <div>
+        {!isY && (
+          <div>
+            <label className={sideLabel} htmlFor="f-portion">Miktar (g)</label>
+            <input id="f-portion" className={sideField} inputMode="numeric" value={portionG} onChange={(e) => setPortionG(e.target.value.replace(/[^0-9.,]/g, ''))} />
+          </div>
+        )}
+        <div className={isY ? 'col-span-2' : ''}>
           <label className={sideLabel} htmlFor="f-sort">Sırala</label>
           <select id="f-sort" className={sideField} value={sort.k} onChange={(e) => setSort({ k: e.target.value, d: e.target.value === 'name' ? 1 : -1 })}>
             {SORTS.map(([key, label]) => <option key={key} value={key}>{label.replace(' (çoktan aza)', ' ↓').replace(' (A-Z)', '')}</option>)}
@@ -227,20 +249,26 @@ export default function Foods() {
               <input className={sideField} inputMode="decimal" placeholder="En az" aria-label="En az" value={rmin} onChange={(e) => setRmin(e.target.value)} />
               <input className={sideField} inputMode="decimal" placeholder="En çok" aria-label="En çok" value={rmax} onChange={(e) => setRmax(e.target.value)} />
             </div>
-            <p className="text-xs text-stone-500">{fmt(portion)} g için hesaplanır.</p>
+            <p className="text-xs text-stone-500">{isY ? '1 porsiyon' : `${fmt(portion)} g`} için hesaplanır.</p>
           </div>
         )}
       </div>
 
       {(activeFilters > 0 || q) && (
-        <button className="w-full text-sm font-semibold text-brand-500 hover:underline" onClick={() => { setQ(''); setGroup(null); setStatus('visible'); setRn(''); setRmin(''); setRmax(''); setShown(PAGE) }}>Süzgeçleri temizle</button>
+        <button className="w-full text-sm font-semibold text-brand-500 hover:underline" onClick={() => { setQ(''); setGroup(null); setStatus('visible'); setCat(''); setRn(''); setRmin(''); setRmax(''); setShown(PAGE) }}>Süzgeçleri temizle</button>
       )}
     </div>
   )
 
   return (
     <>
-      <PageTitle title="Besin listesi" sub="TürKomp verileri. Danışan seçiliyse hastalık, diyet ve yaşa göre süzülür." />
+      <PageTitle title={isY ? 'Yemek listesi' : 'Besin listesi'} sub={isY ? 'Hazır yemeklerin porsiyon başına kalori ve besin değerleri. Danışan seçiliyse hastalık ve diyete göre süzülür.' : 'TürKomp verileri. Danışan seçiliyse hastalık, diyet ve yaşa göre süzülür.'} />
+      <div className="mb-4 inline-flex rounded-2xl border border-stone-200 bg-white p-1" role="tablist" aria-label="Liste türü">
+        {([['besin', 'Besinler'], ['yemek', 'Yemekler']] as const).map(([v, label]) => (
+          <button key={v} role="tab" aria-selected={kind === v} onClick={() => switchKind(v)}
+            className={`rounded-xl px-5 py-2 text-sm font-bold transition ${kind === v ? 'bg-brand-500 text-white shadow-sm' : 'text-stone-600 hover:bg-stone-100'}`}>{label}</button>
+        ))}
+      </div>
 
       <div className="grid items-start gap-5 xl:grid-cols-[280px_minmax(0,1fr)]">
         {/* Sol: süzgeçler (dar ekranda açılır panel) */}
@@ -255,11 +283,11 @@ export default function Foods() {
         <div className="min-w-0">
           <div className="relative">
             <svg className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-stone-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="M20 20l-3.5-3.5" /></svg>
-            <input className={`${field} w-full rounded-2xl py-3.5 pl-12 text-base shadow-sm`} aria-label="Besin ara" placeholder="Besin, bilimsel veya yöresel isim ara…" value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }} />
+            <input className={`${field} w-full rounded-2xl py-3.5 pl-12 text-base shadow-sm`} aria-label={isY ? 'Yemek ara' : 'Besin ara'} placeholder={isY ? 'Yemek ara… (ör. mercimek çorbası, kuru fasulye)' : 'Besin, bilimsel veya yöresel isim ara…'} value={q} onChange={(e) => { setQ(e.target.value); setShown(PAGE) }} />
           </div>
 
           <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="text-sm text-stone-500"><b className="text-stone-800">{rows.length}</b> besin</span>
+            <span className="text-sm text-stone-500"><b className="text-stone-800">{rows.length}</b> {isY ? 'yemek' : 'besin'}</span>
             {removed.canEdit && status === 'removed' && removed.set.size > 0 && (
               <button className={btn} onClick={() => confirm('Kaldırılan tüm besinler geri alınsın mı?') && removed.restoreAll()}>Tümünü geri al</button>
             )}
@@ -306,13 +334,14 @@ export default function Foods() {
             <div className="mt-3 grid gap-3 sm:grid-cols-2 2xl:grid-cols-3">
               {rows.slice(0, shown).map(({ f, e }) => {
                 const isRemoved = removed.set.has(f.code)
-                const val = (i: number) => (i >= 0 && f.v[i] != null ? f.v[i]! * k : null)
+                const kk = kOf(f)
+                const val = (i: number) => (i >= 0 && f.v[i] != null ? f.v[i]! * kk : null)
                 return (
                   <article key={f.id} className={`group flex flex-col rounded-2xl border bg-white p-4 transition hover:border-brand-500 hover:shadow-md ${isRemoved ? 'border-dashed border-red-300 opacity-70' : e.st === 'hide' ? 'border-stone-200 opacity-60' : 'border-stone-200'}`}>
                     <div className="flex items-start gap-2">
                       <button className="min-w-0 flex-1 text-left" onClick={() => setDetail(f.code)} title="Ayrıntıları aç">
                         <h3 className="font-display text-[15px] font-bold leading-snug group-hover:text-brand-500">{shortName(f.name)}</h3>
-                        <div className="mt-0.5 truncate text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
+                        <div className="mt-0.5 truncate text-xs text-stone-500">{isY ? f.cat : f.groups.map((g) => food.groups[g]).join(' · ')}</div>
                       </button>
                       <div className="text-right">
                         <div className="font-display text-2xl font-bold leading-none tabular-nums">{fmtVal(val(I.kcal))}</div>
@@ -325,7 +354,7 @@ export default function Foods() {
                           <i className={`inline-block h-2 w-2 rounded-full ${dot}`} aria-hidden="true" />{n} <b>{fmtVal(val(i))}</b> g
                         </span>
                       ))}
-                      <span className="ml-auto text-[11px] text-stone-400">{fmt(portion)} g</span>
+                      <span className="ml-auto text-[11px] text-stone-400">{isY ? '1 porsiyon' : `${fmt(portion)} g`}</span>
                     </div>
                     <ReasonChips ev={e} max={2} />
                     <div className="mt-auto flex items-center gap-2 pt-3">
@@ -352,10 +381,10 @@ export default function Foods() {
                     <tr key={f.id} className={`hover:bg-stone-50 ${e.st === 'hide' ? 'opacity-55' : ''}`}>
                       <td className="border-b border-stone-100 bg-white px-2 py-2 sm:px-3">
                         <button className="text-left font-bold leading-snug hover:text-brand-500 hover:underline" onClick={() => setDetail(f.code)}>{shortName(f.name)}</button>
-                        <div className="text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
+                        <div className="text-xs text-stone-500">{isY ? `${f.cat} · 1 porsiyon` : f.groups.map((g) => food.groups[g]).join(' · ')}</div>
                         <ReasonChips ev={e} max={3} />
                       </td>
-                      {colIdx.map((i, n) => <td key={i} className={`border-b border-stone-100 px-2 py-2 text-right tabular-nums ${colShow(n)}`}>{fmtVal(f.v[i] == null ? null : f.v[i] * k)}</td>)}
+                      {colIdx.map((i, n) => <td key={i} className={`border-b border-stone-100 px-2 py-2 text-right tabular-nums ${colShow(n)}`}>{fmtVal(f.v[i] == null ? null : f.v[i] * kOf(f))}</td>)}
                       <td className="whitespace-nowrap border-b border-stone-100 px-2 py-2 text-right">
                         {client && !removed.set.has(f.code) && <button className="mr-1 h-8 w-8 rounded-full border border-stone-300 font-bold text-brand-500 hover:bg-brand-500 hover:text-white" title={`${meal} öğününe ekle`} aria-label="Menüye ekle" onClick={() => addToMenu(f)}>+</button>}
                         {adminBtn(f)}
@@ -369,14 +398,18 @@ export default function Foods() {
           {rows.length > shown && (
             <div className="mt-4 text-center"><button className={btn} onClick={() => setShown(shown + PAGE)}>Daha fazla göster ({rows.length - shown} besin daha)</button></div>
           )}
+          {isY ? (
+            <p className="mt-4 text-xs text-stone-500">Yemek değerleri 1 porsiyon içindir ve T.C. Sağlık Bakanlığı standart gramaj listesi ile yemek.com porsiyon bilgilerine dayanır. Porsiyon ağırlığı yaklaşıktır; menüde gram olarak değiştirirsen değerler orantılı hesaplanır. Evde yapılan tarif farklı olabilir.</p>
+          ) : (
           <p className="mt-4 text-xs text-stone-500">
             Veriler TürKomp (T.C. Tarım ve Orman Bakanlığı) dosyasından alınmıştır. Boş değer, o besin için ölçülmediği anlamına gelir. Gluten, alerjen ve pürin bilgisi dosyada bulunmadığı için ilgili filtreler besin adı ve grubuna göre çalışır, kesin sonuç için ürün etiketi kontrol edilmelidir.
           </p>
+          )}
         </div>
       </div>
 
       {detailFood && (
-        <FoodDetail food={food} f={detailFood} ev={evalr.map.get(detailFood.code)!} portionG={portion} canAdd={!!client} onClose={() => setDetail(null)}
+        <FoodDetail food={food} f={detailFood} ev={evalr.map.get(detailFood.code)!} portionG={detailFood.portion ?? portion} canAdd={!!client} onClose={() => setDetail(null)}
           onAdd={(item) => { addToMenu(detailFood, item); setDetail(null) }} />
       )}
       {toast && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg">{toast}</div>}

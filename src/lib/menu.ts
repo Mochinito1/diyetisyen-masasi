@@ -19,7 +19,10 @@ export interface MenuItem {
 
 export const shortName = (n: string) => n.replace(/\s*\(.*$/, '').trim()
 
-export const foodUnits = (f: Food, groups: string[]) => unitsFor(f.name, groups[f.groups[0]] ?? '')
+export const foodUnits = (f: Food, groups: string[]) => {
+  const u = unitsFor(f.name, groups[f.groups[0]] ?? '')
+  return f.portion ? [{ u: 'porsiyon', g: f.portion }, ...u.filter((x) => x.u !== 'porsiyon')] : u
+}
 
 /** Miktar ve ölçüden kalem üretir; gram en az 1 olacak şekilde yuvarlanır. */
 export function makeItem(f: Food, groups: string[], q: number, u: string, meal: Meal): MenuItem {
