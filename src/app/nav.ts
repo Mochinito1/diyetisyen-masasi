@@ -22,4 +22,10 @@ export const NAV: NavItem[] = [
   { to: '/yonetim', label: 'Yönetim', short: 'Yönetim', desc: 'Hesaplar ve başvurular', icon: 'kalkan', roles: ['admin'] },
 ]
 
-export const navFor = (role: Role) => NAV.filter((n) => n.roles.includes(role))
+/** Danışanda "Kliniğim" (diyetisyenin klinik ayarları) yerine kendi "Ayarlar" sayfası vardır */
+const CLIENT_OVERRIDES: Record<string, Partial<NavItem>> = {
+  '/ayarlar': { label: 'Ayarlar', desc: 'Bilgilerin ve hesabın' },
+}
+
+export const navFor = (role: Role): NavItem[] =>
+  NAV.filter((n) => n.roles.includes(role)).map((n) => (role === 'danisan' ? { ...n, ...CLIENT_OVERRIDES[n.to] } : n))
