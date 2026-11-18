@@ -319,7 +319,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                       if (!F) return null
                       const t = portion(F, it.g)
                       return (
-                        <li key={i} className="relative grid items-center gap-x-3 gap-y-2 border-t border-stone-100 py-3 md:grid-cols-[minmax(0,1fr)_auto]">
+                        <li key={i} className="relative grid items-center gap-x-3 gap-y-2 border-t border-stone-100 py-3 md:grid-cols-[minmax(0,1fr)_20rem]">
                           <div className="min-w-0">
                             <b className="block truncate" title={shortName(F.name)}>{shortName(F.name)}</b>
                             {ev.get(F.code) && ev.get(F.code)!.st !== 'ok' && <ReasonChips ev={ev.get(F.code)!} max={2} />}
@@ -335,10 +335,10 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                               onBlur={(e) => edit(i, { q: e.target.value })}
                               onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                             />
-                            <select className={`${field} h-10 min-w-0 max-w-28 flex-1 py-0 md:flex-none`} aria-label="Ölçü" value={it.u} onChange={(e) => edit(i, { u: e.target.value })}>
+                            <select className={`${field} h-10 min-w-0 flex-1 truncate py-0 md:w-32 md:flex-none`} aria-label="Ölçü" value={it.u} onChange={(e) => edit(i, { u: e.target.value })}>
                               {foodUnits(F, food.groups).map((x) => <option key={x.u} value={x.u}>{x.u === 'g' ? 'gram' : x.u}</option>)}
                             </select>
-                            <span className="ml-auto w-16 text-right font-display text-base font-bold tabular-nums md:ml-0">{fmt(t.kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+                            <span className="w-16 flex-none text-right font-display text-base font-bold tabular-nums">{fmt(t.kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
                             <button className="grid h-10 w-10 flex-none place-items-center rounded-xl border border-stone-300 font-bold hover:bg-stone-100" aria-label="Diğer işlemler" aria-expanded={rowMenu === i} onClick={() => setRowMenu(rowMenu === i ? null : i)}>⋯</button>
                           </div>
                           {rowMenu === i && (
