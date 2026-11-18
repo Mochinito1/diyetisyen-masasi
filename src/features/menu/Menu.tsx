@@ -43,7 +43,7 @@ export default function Menu() {
       <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-stone-200 bg-white p-3">
         <label className="flex items-center gap-2 text-sm font-semibold">
           Danışan
-          <select className={`${field} py-1.5`} value={client.id} onChange={(e) => choose(e.target.value)}>
+          <select className={`${field} rounded-xl py-1.5`} value={client.id} onChange={(e) => choose(e.target.value)}>
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
