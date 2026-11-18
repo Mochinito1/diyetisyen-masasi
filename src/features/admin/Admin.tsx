@@ -2,10 +2,12 @@ import { useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
+import { useAuth } from '../../app/auth'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
+import { cloudEnabled } from '../../lib/cloud'
 import { DEMO_DIETITIAN, ownerOfClient } from '../../lib/dietitians'
-import { UNVANLAR, loadAccounts, removeAccountsOfClient, saveSession, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
+import { UNVANLAR, loadAccounts, removeAccountsOfClient, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -52,14 +54,9 @@ function Dietitians({ apps }: { apps: Application[] }) {
     const ids = new Set(allClients.filter((c) => ownerOfClient(c) === u).map((c) => c.id))
     return { clients: ids.size, aps: allAps.filter((a) => ids.has(a.clientId) && (a.dietitian ?? DEMO_DIETITIAN) === u).length }
   }
-  // Yönetici başka bir diyetisyen hesabına geçer (çıkış yapıp yeniden girerek yönetime döner)
-  const enter = (a: Account) => {
-    if (!confirm(`${withTitle(a)} hesabına geçilsin mi? Yönetime dönmek için çıkış yapıp yeniden giriş yapın.`)) return
-    saveSession({ u: a.u, label: withTitle(a), kind: 'diyetisyen' })
-    try { sessionStorage.removeItem('dm.impRole') } catch { /* gizli sekme */ }
-    location.hash = '#/'
-    location.reload()
-  }
+  // Yönetici başka bir diyetisyen hesabını görüntüler (üstte "Yönetime dön" çubuğu çıkar)
+  const { startImp } = useAuth()
+  const enter = (a: Account) => startImp({ u: a.u, label: withTitle(a), kind: 'diyetisyen' })
   if (!accs.length) return <p className="text-stone-500">Henüz onaylı diyetisyen yok. Başvurular sekmesinden onaylayabilirsiniz.</p>
   return (
     <div className={`${card} divide-y divide-stone-200 !p-0`}>
@@ -236,7 +233,7 @@ function DeleteTab({ apps }: { apps: ReturnType<typeof useApplications> }) {
   return (
     <div className={card}>
       <h2 className="font-display text-lg font-bold">Hesap sil</h2>
-      <p className="mb-3 text-xs text-stone-500">Silinen hesabın tüm verisi bu tarayıcıdan kaldırılır. Yedeğiniz yoksa geri getirilemez.</p>
+      <p className="mb-3 text-xs text-stone-500">{cloudEnabled ? 'Silinen hesap ve tüm verisi sunucudan kalıcı olarak kaldırılır. Yedeğiniz yoksa geri getirilemez.' : 'Silinen hesabın tüm verisi bu tarayıcıdan kaldırılır. Yedeğiniz yoksa geri getirilemez.'}</p>
       {clients.length === 0 && apps.list.length === 0 && <p className="text-stone-500">Silinecek hesap yok.</p>}
       {clients.map((c) => (
         <div key={c.id} className="flex items-center justify-between gap-3 border-t border-stone-100 py-2 text-sm"><span>{c.name} <span className="text-stone-500">· danışan</span></span><button className="text-sm font-semibold text-red-700" onClick={() => delClient(c.id, c.name)}>Sil</button></div>

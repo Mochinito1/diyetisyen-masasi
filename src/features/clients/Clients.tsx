@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { bmi } from '../../lib/formulas'
+import { cloudEnabled } from '../../lib/cloud'
 import { fmt, fmtDate, parseNum } from '../../lib/format'
 import { fold } from '../../lib/foods'
 import CalcResults from '../calculator/CalcResults'
@@ -144,7 +145,7 @@ export default function Clients() {
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
-        <PageTitle title="Danışanlar" sub={`${clients.length} kayıt. Veriler yalnızca bu tarayıcıda saklanır.`} />
+        <PageTitle title="Danışanlar" sub={`${clients.length} kayıt. ${cloudEnabled ? 'Veriler Supabase sunucusunda saklanır.' : 'Veriler yalnızca bu tarayıcıda saklanır.'}`} />
         <button
           className="mb-6 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white"
           onClick={() => { setEditing(blank()); setIsNew(true) }}

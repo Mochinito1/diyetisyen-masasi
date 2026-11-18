@@ -2,6 +2,7 @@ import { useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { btn, card, field } from '../../components/ui/styles'
 import { exportData, importData } from '../../lib/backup'
+import { cloudEnabled } from '../../lib/cloud'
 import { kvkkAydinlatma, kvkkRiza, type Brand } from '../../lib/brand'
 import { useAuth } from '../../app/auth'
 import { useRole } from '../../app/role'
@@ -77,7 +78,7 @@ function DietitianSettings() {
       <div className="grid items-start gap-4 md:grid-cols-2">
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Klinik ve PDF ayarları</h2>
-          <p className="mb-3 text-xs text-stone-500">Yazdırılabilir diyet listesinin başlığında, alt bilgisinde ve hatırlatma mesajlarında kullanılır. Bu tarayıcıda saklanır.</p>
+          <p className="mb-3 text-xs text-stone-500">Yazdırılabilir diyet listesinin başlığında, alt bilgisinde ve hatırlatma mesajlarında kullanılır. {cloudEnabled ? 'Sunucuda saklanır.' : 'Bu tarayıcıda saklanır.'}</p>
           <div className="grid gap-3 sm:grid-cols-2">
             {txt('clinic', 'Klinik / marka adı', 'Örn. Ayşe Yılmaz Beslenme ve Diyet')}
             {txt('name', 'Diyetisyen adı ve unvanı', 'Örn. Dyt. Ayşe Yılmaz')}
@@ -122,7 +123,7 @@ function DietitianSettings() {
 
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Yedekleme</h2>
-          <p className="mb-3 text-xs text-stone-500">Tüm veriler yalnızca bu tarayıcıda durur. Tarayıcı verisi silinirse kaybolur, bu yüzden düzenli yedek alın. Yedek dosyası danışan sağlık verisi içerir, güvenli saklayın.</p>
+          <p className="mb-3 text-xs text-stone-500">{cloudEnabled ? 'Veriler Supabase sunucusunda saklanır; yedek almak yine de iyi bir alışkanlıktır. Yedek dosyası danışan sağlık verisi içerir, güvenli saklayın.' : 'Tüm veriler yalnızca bu tarayıcıda durur. Tarayıcı verisi silinirse kaybolur, bu yüzden düzenli yedek alın. Yedek dosyası danışan sağlık verisi içerir, güvenli saklayın.'}</p>
           <div className="flex flex-wrap gap-2">
             <button className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white" onClick={download}>Yedeği indir (JSON)</button>
             <label className={`${btn} cursor-pointer py-2`}>Yedekten geri yükle

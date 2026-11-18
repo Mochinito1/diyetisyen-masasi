@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { apDay, isBusy, todayStr, type Appointment } from '../lib/appointments'
+import { cloudEnabled } from '../lib/cloud'
 import { fmt } from '../lib/format'
 import { calculate } from '../lib/formulas'
 import { save, load } from '../lib/storage'
@@ -27,7 +28,7 @@ export default function Home() {
     <div>
       <div className="py-4 text-center">
         <h1 className="font-display text-[26px] font-bold leading-tight md:text-[32px]">Diyetisyen Masası</h1>
-        <p className="mt-2 text-sm text-stone-500">Eğitim amaçlı: veriler yalnızca bu tarayıcıda saklanır, gerçek danışan verisi girmeyin.</p>
+        <p className="mt-2 text-sm text-stone-500">{cloudEnabled ? 'Eğitim amaçlı: veriler Supabase sunucusunda saklanır, gerçek danışan verisi girmeyin.' : 'Eğitim amaçlı: veriler yalnızca bu tarayıcıda saklanır, gerçek danışan verisi girmeyin.'}</p>
       </div>
       <PhotoShowcase />
       <div className="mt-4">{role === 'danisan' ? <ClientHome /> : <DietitianHome />}</div>

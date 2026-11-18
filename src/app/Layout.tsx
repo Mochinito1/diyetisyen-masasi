@@ -4,6 +4,7 @@ import { navFor } from './nav'
 import { ROLES, useRole } from './role'
 import { useAuth } from './auth'
 import { useTheme } from './theme'
+import CloudBanner from './CloudBanner'
 
 const item = ({ isActive }: { isActive: boolean }) =>
   `flex min-w-14 flex-1 flex-col items-center gap-0.5 px-0.5 py-1 text-[11.5px] font-semibold ${isActive ? 'text-brand-500' : 'text-stone-500'}`
@@ -11,11 +12,20 @@ const pill = (active: boolean) => `grid h-7 w-[46px] place-items-center rounded-
 
 export default function Layout() {
   const { role, setRole, canSwitch } = useRole()
-  const { session, logout } = useAuth()
+  const { session, logout, imp, stopImp } = useAuth()
   const { theme, toggle } = useTheme()
   const dark = theme === 'dark'
   return (
     <div className="min-h-screen">
+      <CloudBanner />
+      {imp && (
+        <div className="bg-[#0a0f0d] text-[#e5eee8]">
+          <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-1 text-xs md:px-6 lg:px-8">
+            <span className="font-semibold">{imp.label} hesabını yönetici olarak görüntülüyorsunuz.</span>
+            <button onClick={stopImp} className="ml-auto rounded-full bg-brand-500 px-3 py-0.5 font-semibold text-[#ffffff]">Yönetime dön</button>
+          </div>
+        </div>
+      )}
       {canSwitch && <div className="bg-[#0a0f0d] text-[#e5eee8]">
         <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-1 text-xs md:px-6 lg:px-8">
           <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span>

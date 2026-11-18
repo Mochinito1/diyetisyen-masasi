@@ -28,7 +28,8 @@ const PAGES: Record<string, ReactElement> = {
 
 export default function App() {
   const { role } = useRole()
-  const { session } = useAuth()
+  const { session, ready } = useAuth()
+  if (!ready) return <div className="grid min-h-screen place-items-center text-stone-500" role="status">Yükleniyor…</div>
   if (!session) return <Login />
   return (
     <Routes>

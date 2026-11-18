@@ -1,4 +1,8 @@
+import { cleanName, normUser, pwError, userError, withTitle } from './authRules'
+import { cloudApply, cloudChangePassword, cloudDeleteApplication, cloudDeleteUser, cloudEnabled, cloudLogin, cloudRegister, cloudResetPassword, cloudSetStatus, cloudSetTitle } from './cloud'
 import { load, save } from './storage'
+
+export { normUser, pwError, userError, withTitle }
 
 /**
  * Eğitim sürümü hesapları: şifre PBKDF2-SHA256 ile özetlenip yalnızca bu tarayıcıda saklanır.
@@ -59,10 +63,10 @@ export async function hashPw(pw: string, salt: string): Promise<string> {
 const newSalt = () => crypto.randomUUID().replace(/-/g, '')
 /** Unvanlar: onayda yönetim seçer */
 export const UNVANLAR = ['Dyt.', 'Uzm. Dyt.', 'Dr. Dyt.', 'Doç. Dr.', 'Prof. Dr.'] as const
-export const withTitle = (a: { ad: string; unvan?: string }) => (a.unvan ? `${a.unvan} ${a.ad}` : a.ad)
 
 /** Yönetim: bir diyetisyenin unvanını değiştirir (demo diyetisyen dahil) */
 export function setDietitianTitle(u: string, unvan: string) {
+  if (cloudEnabled) void cloudSetTitle(u, unvan)
   const acc = loadAccounts()[u]
   if (!acc) return
   putAccount({ ...acc, unvan })
@@ -70,10 +74,6 @@ export function setDietitianTitle(u: string, unvan: string) {
   save(APPS_KEY, apps.map((x) => (x.u === u ? { ...x, unvan } : x)))
 }
 
-export const normUser = (u: string) => u.trim().toLowerCase()
-export const userError = (u: string) =>
-  /^[a-z0-9._-]{3,20}$/.test(u) ? '' : 'Kullanıcı adı 3-20 karakter olmalı; yalnızca harf, rakam, nokta, alt çizgi ve tire.'
-export const pwError = (p: string, p2: string) => (p.length < 8 ? 'Şifre en az 8 karakter olmalı.' : p !== p2 ? 'Şifreler aynı değil.' : '')
 
 export const loadAccounts = () => load<Record<string, Account>>(ACC_KEY, {})
 const putAccount = (a: Account) => save(ACC_KEY, { ...loadAccounts(), [a.u]: a })
@@ -98,6 +98,7 @@ type Result = { ok: true; session: Session } | { ok: false; error: string }
 
 /** Kullanıcı adı ve şifreyle giriş: demo hesaplar ve bu tarayıcıda açılmış hesaplar */
 export async function authenticate(userRaw: string, pw: string): Promise<Result> {
+  if (cloudEnabled) return cloudLogin(userRaw, pw)
   const u = normUser(userRaw)
   if (Date.now() < lockedUntil) return { ok: false, error: `Çok fazla hatalı deneme. ${Math.ceil((lockedUntil - Date.now()) / 1000)} sn sonra tekrar deneyin.` }
   if (!u || !pw) return { ok: false, error: 'Kullanıcı adı ve şifre yazın.' }
@@ -117,11 +118,12 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
 }
 
 export async function register(i: { u: string; ad: string; p: string; p2: string; kind: AccountKind; clientId?: string }): Promise<Result> {
+  if (cloudEnabled) return cloudRegister(i)
   const u = normUser(i.u)
   const ue = userError(u)
   if (ue) return { ok: false, error: ue }
   if (Object.values(DEMO).some((d) => d[0] === u)) return { ok: false, error: 'Bu kullanıcı adı demo hesaba ayrılmış.' }
-  const ad = i.ad.trim().replace(/\s+/g, ' ')
+  const ad = cleanName(i.ad)
   if (ad.length < 3) return { ok: false, error: 'Ad soyad yazın.' }
   const pe = pwError(i.p, i.p2)
   if (pe) return { ok: false, error: pe }
@@ -134,6 +136,7 @@ export async function register(i: { u: string; ad: string; p: string; p2: string
 
 /** Şifre yenileme: kullanıcı adı ve hesap açılırken yazılan ad soyad eşleşmeli */
 export async function resetPassword(i: { u: string; ad: string; p: string; p2: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (cloudEnabled) return cloudResetPassword(i)
   const u = normUser(i.u)
   const a = loadAccounts()[u]
   if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok.' }
@@ -148,6 +151,7 @@ export async function resetPassword(i: { u: string; ad: string; p: string; p2: s
  * Yönetici onaylayınca (setApplicationStatus) hesap etkinleşir.
  */
 export async function submitApplication(i: { u: string; ad: string; p: string; p2: string; title: string; note: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (cloudEnabled) return cloudApply(i)
   if (!i.title.trim()) return { ok: false, error: 'Unvan veya diploma bilginizi yazın.' }
   const r = await register({ u: i.u, ad: i.ad, p: i.p, p2: i.p2, kind: 'diyetisyen' })
   if (!r.ok) return r
@@ -162,6 +166,7 @@ export async function submitApplication(i: { u: string; ad: string; p: string; p
 export function setApplicationStatus(id: string, status: Application['status'], unvan?: string) {
   const list = load<Application[]>(APPS_KEY, [])
   const app = list.find((a) => a.id === id)
+  if (cloudEnabled) void cloudSetStatus(id, app?.u, status, unvan)
   save(APPS_KEY, list.map((a) => (a.id === id ? { ...a, status, ...(unvan ? { unvan } : {}) } : a)))
   const acc = app?.u ? loadAccounts()[app.u] : undefined
   if (acc) putAccount({ ...acc, status: status === 'approved' ? undefined : status === 'rejected' ? 'rejected' : 'pending', ...(unvan ? { unvan } : {}) })
@@ -171,6 +176,7 @@ export function setApplicationStatus(id: string, status: Application['status'], 
 export function removeApplication(id: string) {
   const list = load<Application[]>(APPS_KEY, [])
   const app = list.find((a) => a.id === id)
+  if (cloudEnabled) { void cloudDeleteApplication(id); if (app?.u) void cloudDeleteUser({ username: app.u }) }
   save(APPS_KEY, list.filter((a) => a.id !== id))
   if (app?.u) {
     const { [app.u]: _gone, ...rest } = loadAccounts()
@@ -184,6 +190,7 @@ export function removeApplication(id: string) {
  * Yönetici ve demo hesaplar kodda tanımlı olduğu için etkilenmez. Her tarayıcıda bir kez çalışır.
  */
 export function resetAccountsOnce(tag = 'v1') {
+  if (cloudEnabled) return
   try {
     if (localStorage.getItem('dm.accountsReset') === tag) return
     const ids = new Set(Object.values(loadAccounts()).map((a) => a.clientId).filter(Boolean))
@@ -197,12 +204,14 @@ export function resetAccountsOnce(tag = 'v1') {
 
 /** Silinen danışan kaydına bağlı hesapları kaldırır: hesap artık giriş yapamaz */
 export function removeAccountsOfClient(clientId: string) {
+  if (cloudEnabled) void cloudDeleteUser({ client: clientId })
   const rest = Object.fromEntries(Object.entries(loadAccounts()).filter(([, a]) => a.clientId !== clientId))
   save(ACC_KEY, rest)
 }
 
 /** Oturumdaki hesabın şifresini değiştirir (mevcut şifre doğrulanır). Demo hesapların şifresi sabittir. */
 export async function changePassword(i: { u: string; current: string; p: string; p2: string }): Promise<{ ok: true } | { ok: false; error: string }> {
+  if (cloudEnabled) return cloudChangePassword(i)
   const a = loadAccounts()[normUser(i.u)]
   if (!a) return { ok: false, error: 'Demo hesabın şifresi değiştirilemez. Kendi hesabınızı oluşturarak deneyebilirsiniz.' }
   if (!i.current) return { ok: false, error: 'Mevcut şifrenizi yazın.' }

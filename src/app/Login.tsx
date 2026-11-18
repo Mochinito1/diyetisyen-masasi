@@ -3,6 +3,7 @@ import Modal from '../components/ui/Modal'
 import { kvkkAydinlatma, kvkkRiza } from '../lib/brand'
 import { DEMO_DIETITIAN } from '../lib/dietitians'
 import { loadBrandOf } from '../features/settings/useBrand'
+import { cloudEnabled } from '../lib/cloud'
 import { useAuth } from './auth'
 
 type Mode = 'login' | 'create' | 'forgot' | 'apply'
@@ -139,7 +140,7 @@ export default function Login() {
             </div>
           </Modal>
         )}
-        <p className="mt-4 text-xs text-stone-500">Eğitim sürümü: hesaplar ve veriler yalnızca bu tarayıcıda saklanır, şifre hiçbir yere gönderilmez. Gerçek danışan verisi girmeyin.</p>
+        <p className="mt-4 text-xs text-stone-500">{cloudEnabled ? 'Eğitim sürümü: hesaplar ve veriler Supabase sunucusunda saklanır; her cihazdan aynı hesapla girebilirsiniz. Gerçek danışan verisi girmeyin.' : 'Eğitim sürümü: hesaplar ve veriler yalnızca bu tarayıcıda saklanır, şifre hiçbir yere gönderilmez. Gerçek danışan verisi girmeyin.'}</p>
       </form>
     </div>
   )
