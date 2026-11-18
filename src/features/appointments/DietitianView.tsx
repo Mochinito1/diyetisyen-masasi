@@ -13,7 +13,7 @@ import MonthCalendar from './MonthCalendar'
 import type { ApApi } from './useAppointments'
 
 const field = 'rounded-lg border border-stone-300 bg-white px-3 py-2 focus:border-brand-500 focus:outline-none'
-const btn = 'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-semibold hover:bg-stone-100'
+const btn = 'inline-flex h-9 items-center rounded-xl border border-stone-300 bg-white px-3 text-sm font-semibold hover:border-brand-500 hover:text-brand-500'
 const ST: Record<ApStatus, [string, string]> = {
   pending: ['Onay bekliyor', 'bg-amber-100 text-amber-800'],
   plan: ['Planlandı', 'bg-stone-100 text-stone-700'],
@@ -28,7 +28,7 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
   const [month, setMonth] = useState(todayStr().slice(0, 7))
   const [day, setDay] = useState<string>(todayStr())
   const [adding, setAdding] = useState(false)
-  const [view, setView] = useState<'gun' | 'hafta' | 'ay'>('ay')
+  const [view, setView] = useState<'gun' | 'hafta'>('gun')
   const { brand } = useBrand()
   const [copied, setCopied] = useState('')
 
@@ -54,95 +54,103 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
   const weekStart = isoAdd(day, -((new Date(day + 'T12:00:00').getDay() + 6) % 7))
   const dayRows = (d: string) => sortByDt(aps.filter((a) => apDay(a) === d && a.status !== 'cancel'))
 
+  const go = (d: string) => { setDay(d); setMonth(d.slice(0, 7)) }
+  const stat = (label: string, n: number, tone = '') => (
+    <div className="rounded-2xl border border-stone-200 bg-white px-3 py-3 text-center sm:px-4 sm:text-left">
+      <div className={`font-display text-2xl font-bold leading-none tabular-nums ${tone}`}>{n}</div>
+      <div className="mt-1 text-[11px] font-semibold text-stone-500 sm:text-xs">{label}</div>
+    </div>
+  )
+
   return (
     <>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <PageTitle title="Randevu" sub={todayN ? `Bugün ${todayN} randevu var` : 'Bugün randevu yok'} />
-        <button className="mb-6 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white" onClick={() => setAdding(true)}>Randevu ekle</button>
+        <button className="mb-6 h-10 rounded-xl bg-brand-500 px-5 font-semibold text-white" onClick={() => setAdding(true)}>+ Randevu ekle</button>
       </div>
 
       <div className="space-y-4">
-        {adding && <AddForm clients={clients} day={day} onSave={(a) => { api.add(a); setDay(apDay(a)); setMonth(apDay(a).slice(0, 7)); setAdding(false) }} onClose={() => setAdding(false)} />}
+        <div className="grid grid-cols-3 gap-3">
+          {stat('Bugün', todayN)}
+          {stat('Onay bekleyen', pending.length, pending.length ? 'text-amber-700' : '')}
+          {stat('14 gün içinde', upcoming.length)}
+        </div>
+
+        {adding && <AddForm clients={clients} day={day} onSave={(a) => { api.add(a); go(apDay(a)); setAdding(false) }} onClose={() => setAdding(false)} />}
 
         {pending.length > 0 && (
-          <div className="rounded-2xl border border-amber-700 bg-white p-5">
+          <section className="rounded-2xl border border-amber-700 bg-white p-4 sm:p-5">
             <h2 className="font-display text-lg font-bold">Onay bekleyen randevu talepleri ({pending.length})</h2>
-            <p className="text-xs text-stone-500">Danışanların oluşturduğu talepler. Randevuya 24 saat kala onaylanmamış olanlar kendiliğinden onaylanır.</p>
+            <p className="mb-1 text-xs text-stone-500">Danışanların oluşturduğu talepler. Randevuya 24 saat kala onaylanmamış olanlar kendiliğinden onaylanır.</p>
             {pending.map((a) => (
               <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove}
                 actions={<>
-                  <button className="rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white" onClick={() => api.patch(a.id, { status: 'plan' })}>Onayla</button>
+                  <button className="h-9 rounded-xl bg-brand-500 px-4 text-sm font-semibold text-white" onClick={() => api.patch(a.id, { status: 'plan' })}>Onayla</button>
                   <button className={btn} onClick={() => api.patch(a.id, { status: 'cancel' })}>Reddet</button>
                 </>} />
             ))}
-          </div>
+          </section>
         )}
 
-        <div className="flex gap-1.5" role="tablist" aria-label="Görünüm">
-          {([['gun', 'Gün'], ['hafta', 'Hafta'], ['ay', 'Ay']] as const).map(([v, l]) => (
-            <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`rounded-full border px-4 py-1 text-sm font-semibold ${view === v ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white text-stone-600'}`}>{l}</button>
-          ))}
-        </div>
-
-        {view === 'ay' && (
-          <div className="grid gap-4 lg:grid-cols-[360px_1fr]">
-            <div className="h-fit rounded-2xl border border-stone-200 bg-white p-4">
-              <MonthCalendar month={month} onMonth={setMonth} selected={day} onSelect={setDay} count={countOn} />
-            </div>
-            <div className="rounded-2xl border border-stone-200 bg-white p-5">
-              <h2 className="font-display text-lg font-bold capitalize">{longDate(day)}</h2>
-              {dayList.length === 0 ? <p className="mt-2 text-stone-500">Bu gün için randevu yok.</p> : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
-            </div>
+        {/* Mobilde sıra: takvim, gün/hafta listesi, 14 gün, gelmeyenler, çalışma saatleri. Geniş ekranda iki sütun. */}
+        <div className="grid gap-4 lg:grid-cols-[380px_minmax(0,1fr)] lg:items-start">
+          <div className="contents lg:flex lg:flex-col lg:gap-4">
+            <section className="order-1 rounded-2xl border border-stone-200 bg-white p-4" aria-label="Takvim">
+              <MonthCalendar month={month} onMonth={setMonth} selected={day} onSelect={go} count={countOn} />
+            </section>
+            <div className="order-5"><Hours api={api} /></div>
           </div>
-        )}
 
-        {view === 'gun' && (
-          <div className="rounded-2xl border border-stone-200 bg-white p-5">
-            <div className="flex items-center justify-between gap-2">
-              <button className={btn} aria-label="Önceki gün" onClick={() => setDay(isoAdd(day, -1))}>‹</button>
-              <h2 className="font-display text-lg font-bold capitalize">{longDate(day)}</h2>
-              <button className={btn} aria-label="Sonraki gün" onClick={() => setDay(isoAdd(day, 1))}>›</button>
-            </div>
-            <div className="mt-2"><button className={btn} onClick={() => setDay(today)}>Bugün</button></div>
-            {dayList.length === 0 ? <p className="mt-3 text-stone-500">Bu gün için randevu yok.</p> : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
-          </div>
-        )}
-
-        {view === 'hafta' && (
-          <div className="rounded-2xl border border-stone-200 bg-white p-5">
-            <div className="flex items-center justify-between gap-2">
-              <button className={btn} aria-label="Önceki hafta" onClick={() => setDay(isoAdd(day, -7))}>‹</button>
-              <h2 className="font-display text-lg font-bold">{fmtShort(weekStart)} – {fmtShort(isoAdd(weekStart, 6))}</h2>
-              <button className={btn} aria-label="Sonraki hafta" onClick={() => setDay(isoAdd(day, 7))}>›</button>
-            </div>
-            {Array.from({ length: 7 }, (_, i) => isoAdd(weekStart, i)).map((d) => {
-              const rows = dayRows(d)
-              return (
-                <div key={d} className="mt-2 border-t border-stone-100 pt-2">
-                  <button className={`flex w-full items-center justify-between py-1 text-left font-bold capitalize ${d === today ? 'text-brand-500' : ''}`} onClick={() => { setDay(d); setView('gun') }}>
-                    <span>{longDate(d)}</span>
-                    {rows.length > 0 && <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-800">{rows.length} randevu</span>}
-                  </button>
-                  {rows.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
+          <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+            <section className="order-2 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5" aria-label="Randevu listesi">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="mr-auto min-w-0 font-display text-lg font-bold capitalize">
+                  {view === 'gun' ? longDate(day) : `${fmtShort(weekStart)} – ${fmtShort(isoAdd(weekStart, 6))}`}
+                </h2>
+                <div className="flex overflow-hidden rounded-xl border border-stone-300 text-sm font-semibold" role="tablist" aria-label="Görünüm">
+                  {([['gun', 'Gün'], ['hafta', 'Hafta']] as const).map(([v, l]) => (
+                    <button key={v} role="tab" aria-selected={view === v} onClick={() => setView(v)} className={`h-9 px-4 ${view === v ? 'bg-brand-500 text-white' : 'bg-white text-stone-600 hover:bg-stone-100'}`}>{l}</button>
+                  ))}
                 </div>
-              )
-            })}
+                <div className="flex items-center gap-1.5">
+                  <button className={btn} aria-label={view === 'gun' ? 'Önceki gün' : 'Önceki hafta'} onClick={() => go(isoAdd(day, view === 'gun' ? -1 : -7))}>‹</button>
+                  <button className={btn} onClick={() => go(today)}>Bugün</button>
+                  <button className={btn} aria-label={view === 'gun' ? 'Sonraki gün' : 'Sonraki hafta'} onClick={() => go(isoAdd(day, view === 'gun' ? 1 : 7))}>›</button>
+                </div>
+              </div>
+
+              {view === 'gun' ? (
+                dayList.length === 0
+                  ? <p className="mt-4 rounded-xl border border-dashed border-stone-300 p-6 text-center text-stone-500">Bu gün için randevu yok.</p>
+                  : dayList.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)
+              ) : (
+                Array.from({ length: 7 }, (_, i) => isoAdd(weekStart, i)).map((d) => {
+                  const rows = dayRows(d)
+                  return (
+                    <div key={d} className="mt-3">
+                      <button className={`flex w-full items-center justify-between rounded-lg bg-stone-50 px-3 py-2 text-left font-bold capitalize ${d === today ? 'text-brand-500' : ''}`} onClick={() => { go(d); setView('gun') }}>
+                        <span>{longDate(d)}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${rows.length ? 'bg-emerald-100 text-emerald-800' : 'text-stone-400'}`}>{rows.length ? `${rows.length} randevu` : 'boş'}</span>
+                      </button>
+                      {rows.map((a) => <Row key={a.id} a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />)}
+                    </div>
+                  )
+                })
+              )}
+            </section>
+
+            <section className="order-3 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5" aria-label="Önümüzdeki 14 gün">
+              <h2 className="font-display text-lg font-bold">Önümüzdeki 14 gün</h2>
+              {upcoming.length === 0 ? <p className="mt-2 text-stone-500">Yaklaşan randevu yok.</p> : upcoming.map((a) => (
+                <div key={a.id} className="mt-3">
+                  <div className="text-xs font-bold uppercase capitalize tracking-wide text-stone-500">{longDate(apDay(a))}</div>
+                  <Row a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />
+                </div>
+              ))}
+            </section>
+
+            <div className="order-4"><GapCard clients={clients} aps={aps} tpl={brand.tpl2} clinic={brand.clinic || brand.name} onNew={() => setAdding(true)} /></div>
           </div>
-        )}
-        <div className="grid items-start gap-4 xl:grid-cols-2">
-        <div className="rounded-2xl border border-stone-200 bg-white p-5">
-          <h2 className="font-display text-lg font-bold">Önümüzdeki 14 gün</h2>
-          {upcoming.length === 0 ? <p className="mt-2 text-stone-500">Yaklaşan randevu yok.</p> : upcoming.map((a) => (
-            <div key={a.id} className="mt-2 border-t border-stone-100 pt-2">
-              <div className="text-xs capitalize text-stone-500">{longDate(apDay(a))}</div>
-              <Row a={a} showName onChange={api.patch} onRemove={api.remove} remind={remind(a)} />
-            </div>
-          ))}
-        </div>
-
-        <GapCard clients={clients} aps={aps} tpl={brand.tpl2} clinic={brand.clinic || brand.name} onNew={() => setAdding(true)} />
-
-        <Hours api={api} />
         </div>
       </div>
       {copied && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg" role="status">{copied}</div>}
@@ -175,36 +183,40 @@ function Row({ a, showName, onChange, onRemove, actions, remind }: {
   const st = effectiveStatus(a)
   const [label, tone] = ST[st]
   return (
-    <div className="grid grid-cols-[56px_1fr] gap-x-3 gap-y-2 border-t border-stone-100 py-3 first:border-t-0">
-      <b className="font-display text-lg tabular-nums">{apTime(a)}</b>
-      <div>
-        <b>{showName ? a.clientName : a.type === 'online' ? 'Online görüşme' : 'Yüz yüze'}</b>
-        <div className="mt-1 flex flex-wrap gap-1.5 text-xs font-semibold">
-          <span className={`rounded-full px-2 py-0.5 ${tone}`}>{label}</span>
-          <span className="rounded-full bg-stone-100 px-2 py-0.5">{a.type === 'online' ? 'Online' : 'Yüz yüze'}</span>
-          {a.by === 'danisan' && <span className="rounded-full bg-stone-100 px-2 py-0.5">Danışan oluşturdu</span>}
+    <div className="mt-2.5 rounded-xl border border-stone-200 p-3">
+      <div className="flex items-start gap-3">
+        <div className="grid h-12 w-16 flex-none place-items-center rounded-lg bg-brand-50 font-display text-lg font-bold tabular-nums text-brand-500">{apTime(a)}</div>
+        <div className="min-w-0 flex-1">
+          <b className="block truncate">{showName ? a.clientName : a.type === 'online' ? 'Uzaktan görüşme' : 'Yüz yüze'}</b>
+          <div className="mt-1 flex flex-wrap gap-1.5 text-xs font-semibold">
+            <span className={`rounded-full px-2 py-0.5 ${tone}`}>{label}</span>
+            <span className="rounded-full bg-stone-100 px-2 py-0.5">{a.type === 'online' ? 'Uzaktan' : 'Yüz yüze'}</span>
+            {a.by === 'danisan' && <span className="rounded-full bg-stone-100 px-2 py-0.5">Danışan oluşturdu</span>}
+          </div>
+          {a.type === 'online' && a.link && <a className="mt-1 block break-all text-sm text-brand-500 underline" href={a.link} target="_blank" rel="noopener noreferrer">{a.link}</a>}
+          {a.note && <div className="mt-1 text-sm text-stone-500">{a.note}</div>}
         </div>
-        {a.type === 'online' && a.link && <a className="mt-1 block break-all text-sm text-brand-500 underline" href={a.link} target="_blank" rel="noopener noreferrer">{a.link}</a>}
-        {a.note && <div className="mt-1 text-sm text-stone-500">{a.note}</div>}
       </div>
-      <div className="col-span-2 flex flex-wrap gap-2">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-stone-100 pt-3">
         {actions ?? (
           <>
             {st === 'plan' || st === 'pending' ? (
               <>
+                <div className="flex overflow-hidden rounded-xl border border-stone-300">
+                  <button className="h-9 px-3 text-sm font-semibold hover:bg-emerald-100 hover:text-emerald-800" onClick={() => onChange(a.id, { status: 'done' })}>Geldi</button>
+                  <button className="h-9 border-x border-stone-300 px-3 text-sm font-semibold hover:bg-red-100 hover:text-red-800" onClick={() => onChange(a.id, { status: 'miss' })}>Gelmedi</button>
+                  <button className="h-9 px-3 text-sm font-semibold hover:bg-stone-100" onClick={() => onChange(a.id, { status: 'cancel' })}>İptal</button>
+                </div>
                 {remind && (remind.wa
                   ? <a className={btn} href={remind.wa} target="_blank" rel="noopener noreferrer">WhatsApp</a>
                   : <button className={btn + ' opacity-50'} disabled title="Geçerli telefon yok">WhatsApp</button>)}
                 {remind?.sms && <a className={btn} href={remind.sms}>SMS</a>}
                 {remind && <button className={btn} onClick={remind.onCopy}>Mesajı kopyala</button>}
-                <button className={btn} onClick={() => onChange(a.id, { status: 'done' })}>Geldi</button>
-                <button className={btn} onClick={() => onChange(a.id, { status: 'miss' })}>Gelmedi</button>
-                <button className={btn} onClick={() => onChange(a.id, { status: 'cancel' })}>İptal</button>
               </>
             ) : (
               <button className={btn} onClick={() => onChange(a.id, { status: 'plan' })}>Geri al</button>
             )}
-            <button className={btn} onClick={() => confirm('Randevu silinsin mi?') && onRemove(a.id)}>Sil</button>
+            <button className="ml-auto h-9 rounded-xl px-3 text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => confirm('Randevu silinsin mi?') && onRemove(a.id)}>Sil</button>
           </>
         )}
       </div>
