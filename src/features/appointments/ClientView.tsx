@@ -105,27 +105,34 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
               <>
                 <div className="mt-4 text-xs font-bold uppercase tracking-wider capitalize text-stone-500">{longDate(day)}</div>
                 {(() => {
-                  const free = slotsFor(day, api.av, busy)
-                  const hours = [...new Set(free.map((s) => s.slice(0, 2)))]
-                  const inHour = hour ? free.filter((s) => s.startsWith(`${hour}:`)) : []
-                  const chipCls = (on: boolean) => `rounded-full border px-4 py-1.5 text-sm font-semibold ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white hover:border-brand-500'}`
+                  // Dolu saatler listeden silinmez: soluk ve tıklanamaz görünür
+                  const all = slotsFor(day, api.av, new Set())
+                  const isFree = (s: string) => !busy.has(`${day}T${s}`)
+                  const hours = [...new Set(all.map((s) => s.slice(0, 2)))]
+                  const inHour = hour ? all.filter((s) => s.startsWith(`${hour}:`)) : []
+                  const chipCls = (on: boolean) => `rounded-full border px-4 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:border-stone-200 disabled:bg-stone-100 disabled:text-stone-400 disabled:opacity-60 disabled:line-through ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white hover:border-brand-500'}`
                   return (
                     <>
                       <div className="mt-2 text-xs font-semibold text-stone-500">1. Saati seç</div>
                       <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Saat">
-                        {hours.map((h) => (
-                          <button key={h} aria-pressed={hour === h} className={chipCls(hour === h)}
-                            onClick={() => { setHour(h); const opts = free.filter((s) => s.startsWith(`${h}:`)); setSlot(opts.length === 1 ? opts[0] : null) }}>
-                            {h}
-                          </button>
-                        ))}
+                        {hours.map((h) => {
+                          const opts = all.filter((s) => s.startsWith(`${h}:`))
+                          const freeOpts = opts.filter(isFree)
+                          const full = freeOpts.length === 0
+                          return (
+                            <button key={h} disabled={full} title={full ? 'Bu saat dolu' : undefined} aria-pressed={hour === h} className={chipCls(hour === h)}
+                              onClick={() => { setHour(h); setSlot(freeOpts.length === 1 ? freeOpts[0] : null) }}>
+                              {h}
+                            </button>
+                          )
+                        })}
                       </div>
                       {hour && (
                         <>
                           <div className="mt-3 text-xs font-semibold text-stone-500">2. Dakikayı seç</div>
                           <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Dakika">
                             {inHour.map((s) => (
-                              <button key={s} aria-pressed={slot === s} className={chipCls(slot === s)} onClick={() => setSlot(s)}>{s}</button>
+                              <button key={s} disabled={!isFree(s)} title={isFree(s) ? undefined : 'Bu saat dolu'} aria-pressed={slot === s} className={chipCls(slot === s)} onClick={() => setSlot(s)}>{s}</button>
                             ))}
                           </div>
                         </>
