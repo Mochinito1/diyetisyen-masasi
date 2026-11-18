@@ -4,6 +4,7 @@ import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
+import { removeAccountsOfClient } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -172,6 +173,7 @@ function DeleteTab({ apps }: { apps: ReturnType<typeof useApplications> }) {
   const delClient = (id: string, name: string) => {
     if (!confirm(`“${name}” silinsin mi? Profil, menü, ölçümler, tahliller, notlar ve randevular kalıcı olarak kaldırılır. Bu işlem geri alınamaz.`)) return
     remove(id)
+    removeAccountsOfClient(id)
     save('dm.appointments', load<Appointment[]>('dm.appointments', []).filter((a) => a.clientId !== id))
     setMsg(`${name} silindi`)
   }

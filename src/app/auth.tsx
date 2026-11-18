@@ -13,7 +13,7 @@ import type { Client } from '../features/clients/types'
 interface AuthCtx {
   session: Session | null
   login: (u: string, p: string) => Promise<string>
-  register: (i: { u: string; ad: string; p: string; p2: string; kvkk: boolean }) => Promise<string>
+  register: (i: { u: string; ad: string; p: string; p2: string; kvkk: boolean; riza: boolean }) => Promise<string>
   apply: (i: { u: string; ad: string; p: string; p2: string; title: string; note: string }) => Promise<string>
   reset: (i: { u: string; ad: string; p: string; p2: string }) => Promise<string>
   logout: () => void
@@ -39,7 +39,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     saveSession(s)
     setSession(s)
-    location.hash = '#/'
+    // Bilgilerini henüz doldurmamış danışan ilk girişte Profil'e yönlendirilir
+    const me = s.kind === 'danisan' ? load<Client[]>('dm.clients', []).find((c) => c.id === s.clientId) : undefined
+    location.hash = me && !me.onb ? '#/profil' : '#/'
   }
 
   const value: AuthCtx = {
@@ -52,12 +54,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     },
     register: async (i) => {
       if (!i.kvkk) return 'Hesap oluşturmak için KVKK aydınlatma metnini okuyup onaylayın.'
+      if (!i.riza) return 'Hesap oluşturmak için açık rıza metnini okuyup onaylayın.'
       // Hesap danışan hesabıdır; ona bağlı bir danışan kaydı oluşturulur
       const clientId = crypto.randomUUID()
       const r = await doRegister({ ...i, kind: 'danisan', clientId })
       if (!r.ok) return r.error
       // KVKK onayı hesap açılırken alınır; danışan formlarında tekrar sorulmaz
-      const created = { ...makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), kvkk: { ay: todayStr(), riza: '' } }
+      const created = { ...makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), kvkk: { ay: todayStr(), riza: todayStr() } }
       save('dm.clients', [created, ...load<Client[]>('dm.clients', [])])
       start(r.session)
       return ''

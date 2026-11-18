@@ -92,6 +92,9 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
   if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok. “Hesap oluştur” ile yeni hesap açabilirsiniz.' }
   if ((await hashPw(pw, a.salt)) !== a.hash) return failed('Kullanıcı adı veya şifre hatalı.')
   fails = 0
+  if (a.kind === 'danisan' && a.clientId && !load<{ id: string }[]>('dm.clients', []).some((c) => c.id === a.clientId)) {
+    return { ok: false, error: 'Bu hesap silinmiş. Yeni bir hesap oluşturabilirsiniz.' }
+  }
   if (a.status === 'pending') return { ok: false, error: 'Diyetisyen başvurunuz inceleniyor. Yönetici onayladığında bu kullanıcı adı ve şifreyle giriş yapabilirsiniz.' }
   if (a.status === 'rejected') return { ok: false, error: 'Diyetisyen başvurunuz onaylanmadı.' }
   return { ok: true, session: { u, label: a.ad, kind: a.kind, clientId: a.clientId } }
@@ -158,6 +161,12 @@ export function removeApplication(id: string) {
     void _gone
     save(ACC_KEY, rest)
   }
+}
+
+/** Silinen danışan kaydına bağlı hesapları kaldırır: hesap artık giriş yapamaz */
+export function removeAccountsOfClient(clientId: string) {
+  const rest = Object.fromEntries(Object.entries(loadAccounts()).filter(([, a]) => a.clientId !== clientId))
+  save(ACC_KEY, rest)
 }
 
 /** Oturumdaki hesabın şifresini değiştirir (mevcut şifre doğrulanır). Demo hesapların şifresi sabittir. */
