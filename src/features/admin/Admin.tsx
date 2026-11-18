@@ -4,7 +4,8 @@ import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
-import { DEMO, UNVANLAR, demoTitle, loadAccounts, removeAccountsOfClient, saveSession, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
+import { DEMO_DIETITIAN, ownerOfClient } from '../../lib/dietitians'
+import { UNVANLAR, loadAccounts, removeAccountsOfClient, saveSession, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -40,14 +41,17 @@ export default function Admin() {
 }
 
 function Dietitians({ apps }: { apps: Application[] }) {
-  const { brand } = useBrand()
-  const { clients } = useClients()
-  const { setRole } = useRole()
-  const aps = load<Appointment[]>('dm.appointments', [])
-  const approved = apps.filter((a) => a.status === 'approved')
   const [, setTick] = useState(0)
   const bump = () => setTick((t) => t + 1)
+  const approved = apps.filter((a) => a.status === 'approved')
   const accs = Object.values(loadAccounts()).filter((a) => a.kind === 'diyetisyen' && !a.status)
+  // Her diyetisyene bağlı danışan ve randevu sayısı (danışanın seçtiği diyetisyene göre)
+  const allClients = load<{ id: string; dietitian?: string }[]>('dm.clients', [])
+  const allAps = load<Appointment[]>('dm.appointments', [])
+  const countsOf = (u: string) => {
+    const ids = new Set(allClients.filter((c) => ownerOfClient(c) === u).map((c) => c.id))
+    return { clients: ids.size, aps: allAps.filter((a) => ids.has(a.clientId) && (a.dietitian ?? DEMO_DIETITIAN) === u).length }
+  }
   // Yönetici başka bir diyetisyen hesabına geçer (çıkış yapıp yeniden girerek yönetime döner)
   const enter = (a: Account) => {
     if (!confirm(`${withTitle(a)} hesabına geçilsin mi? Yönetime dönmek için çıkış yapıp yeniden giriş yapın.`)) return
@@ -56,29 +60,25 @@ function Dietitians({ apps }: { apps: Application[] }) {
     location.hash = '#/'
     location.reload()
   }
+  if (!accs.length) return <p className="text-stone-500">Henüz onaylı diyetisyen yok. Başvurular sekmesinden onaylayabilirsiniz.</p>
   return (
     <div className={`${card} divide-y divide-stone-200 !p-0`}>
-      <TitleRow
-        name={brand.name || 'Demo Diyetisyen'}
-        sub={`Demo hesap · ${clients.length} danışan · ${aps.length} randevu`}
-        unvan={demoTitle()}
-        onSave={(t) => { setDietitianTitle(DEMO.dyt[0], t); bump() }}
-        onEnter={() => setRole('diyetisyen')}
-      />
-      {accs.map((a) => (
-        <TitleRow
-          key={a.u}
-          name={a.ad}
-          sub={`${approved.find((x) => x.u === a.u)?.title ?? 'Onaylı diyetisyen'} · @${a.u}`}
-          unvan={a.unvan}
-          onSave={(t) => { setDietitianTitle(a.u, t); bump() }}
-          onEnter={() => enter(a)}
-        />
-      ))}
+      {accs.map((a) => {
+        const n = countsOf(a.u)
+        return (
+          <TitleRow
+            key={a.u}
+            name={a.ad}
+            sub={`${approved.find((x) => x.u === a.u)?.title ?? 'Onaylı diyetisyen'} · @${a.u} · ${n.clients} danışan · ${n.aps} randevu`}
+            unvan={a.unvan}
+            onSave={(t) => { setDietitianTitle(a.u, t); bump() }}
+            onEnter={() => enter(a)}
+          />
+        )
+      })}
     </div>
   )
 }
-
 /** Tek tip diyetisyen satırı: unvan seçimi, isim soyisim, Unvanı kaydet ve Hesabına gir yan yana */
 function TitleRow({ name, sub, unvan, onSave, onEnter }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void; onEnter: () => void }) {
   const [t, setT] = useState(unvan ?? '')

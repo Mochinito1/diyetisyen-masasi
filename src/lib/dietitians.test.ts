@@ -12,12 +12,12 @@ describe('diyetisyen dizini', async () => {
   const a = await import('./auth')
 
   it('demo diyetisyen her zaman listede, onaylı hesaplar eklenir, bekleyenler eklenmez', async () => {
-    expect(d.listDietitians().map((x) => x.u)).toEqual(['diyetisyen'])
+    expect(d.listDietitians().map((x) => x.u)).toEqual([])
     await a.submitApplication({ u: 'dytbir', ad: 'Bir Dyt', p: '12345678', p2: '12345678', title: 'Dyt.', note: '' })
-    expect(d.listDietitians().map((x) => x.u)).toEqual(['diyetisyen'])
+    expect(d.listDietitians().map((x) => x.u)).toEqual([])
     const id = JSON.parse(localStorage.getItem(a.APPS_KEY)!)[0].id
     a.setApplicationStatus(id, 'approved')
-    expect(d.listDietitians().map((x) => x.u)).toEqual(['diyetisyen', 'dytbir'])
+    expect(d.listDietitians().map((x) => x.u)).toEqual(['dytbir'])
   })
 
   it('veri sahibi: diyetisyen kendisi, yönetici demo, danışan seçtiği', () => {

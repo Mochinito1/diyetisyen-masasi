@@ -1,7 +1,6 @@
 import { createContext, useContext, useState, type ReactNode } from 'react'
 import { makeClient } from '../features/clients/factory'
 import { todayStr } from '../lib/appointments'
-import { DEMO_DIETITIAN } from '../lib/dietitians'
 import { sampleClients } from '../lib/samples'
 import {
   DEMO_CLIENT_ID, authenticate, loadSession, register as doRegister, resetAccountsOnce, resetPassword as doReset, saveSession, submitApplication,
@@ -26,7 +25,7 @@ function ensureDemoClient() {
   const list = load<Client[]>('dm.clients', [])
   if (list.some((c) => c.id === DEMO_CLIENT_ID)) return
   const s = sampleClients()[0]
-  save('dm.clients', [{ ...s, id: DEMO_CLIENT_ID, name: 'Demo Danışan', onb: true, dietitian: DEMO_DIETITIAN, kvkk: { ay: todayStr(), riza: '' } }, ...list])
+  save('dm.clients', [{ ...s, id: DEMO_CLIENT_ID, name: 'Demo Danışan', onb: true, dietitian: '', kvkk: { ay: todayStr(), riza: '' } }, ...list])
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

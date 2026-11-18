@@ -29,8 +29,8 @@ describe('hesaplar', async () => {
   })
 
   it('demo hesaplar giriş yapar', async () => {
-    const r = await a.authenticate('Diyetisyen', 'Diyet2026!')
-    expect(r.ok && r.session.kind).toBe('diyetisyen')
+    // Demo diyetisyen kaldırıldı: eski şifreyle giriş yapılamaz
+    expect((await a.authenticate('Diyetisyen', 'Diyet2026!')).ok).toBe(false)
     const d = await a.authenticate('danisan', 'Danisan2026!')
     expect(d.ok && d.session.clientId).toBe(a.DEMO_CLIENT_ID)
     const m = await a.authenticate('admin', 'Yonetim-Kx7#2026')

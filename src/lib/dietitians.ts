@@ -1,7 +1,7 @@
-import { loadAccounts, demoLabel, withTitle, DEMO, type Session } from './auth'
+import { loadAccounts, withTitle, DEMO, type Session } from './auth'
 import { load } from './storage'
 
-/** Eski ve demo veriler bu diyetisyene aittir */
+/** Eski (diyetisyen alanı olmayan) kayıtların iç sahip anahtarı ve yönetici görünümü; bu adla giriş yapılamaz, kayıt da açılamaz */
 export const DEMO_DIETITIAN = DEMO.dyt[0]
 
 export interface DietitianInfo {
@@ -9,9 +9,9 @@ export interface DietitianInfo {
   label: string
 }
 
-/** Danışanın seçebileceği diyetisyenler: demo diyetisyen ve onaylı (etkin) diyetisyen hesapları */
+/** Danışanın seçebileceği diyetisyenler: onaylı (etkin) diyetisyen hesapları */
 export function listDietitians(): DietitianInfo[] {
-  const list: DietitianInfo[] = [{ u: DEMO_DIETITIAN, label: demoLabel() }]
+  const list: DietitianInfo[] = []
   for (const a of Object.values(loadAccounts())) if (a.kind === 'diyetisyen' && !a.status) list.push({ u: a.u, label: withTitle(a) })
   return list
 }
