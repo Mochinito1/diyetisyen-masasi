@@ -102,7 +102,7 @@ export default function Clients() {
                 set({ meas, ...(w != null ? { profile: { ...editing.profile, w: String(w) } } : {}) })
               }}
             />
-            <LabsCard labs={editing.lab} sex={editing.profile.sex} onChange={(lab) => set({ lab })} />
+            <LabsCard labs={editing.lab} sex={editing.profile.sex} />
             <SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} />
             <PortalTrackCard client={editing} />
           </div>
