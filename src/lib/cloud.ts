@@ -11,7 +11,8 @@ import { load, setSaveListener } from './storage'
  *  - kaydedilen danışan/randevu/klinik ayarlarını sunucuya gönderir (push).
  * Boş yapılandırmada (supabaseConfig.ts) etkin değildir ve uygulama yerel modda çalışır.
  */
-export const cloudEnabled = SUPABASE_URL !== '' && SUPABASE_ANON_KEY !== ''
+// Testler her zaman yerel modda çalışır (gerçek sunucuya istek atmaz)
+export const cloudEnabled = SUPABASE_URL !== '' && SUPABASE_ANON_KEY !== '' && import.meta.env.MODE !== 'test'
 
 const sb: SupabaseClient | null = cloudEnabled ? createClient(SUPABASE_URL, SUPABASE_ANON_KEY) : null
 const db = () => sb as SupabaseClient
