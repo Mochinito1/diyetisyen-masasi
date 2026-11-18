@@ -14,7 +14,9 @@ import { useEvaluation } from './useEvaluation'
 import { useRemovedFoods } from './useRemovedFoods'
 
 type Status = 'visible' | 'ok' | 'all' | 'hidden' | 'removed'
-const DEFAULT_COLS = ['Enerji (kcal)', 'Protein', 'Karbonhidrat', 'Yağ, toplam', 'Lif, toplam diyet', 'Sodyum, Na', 'Kalsiyum, Ca', 'Demir, Fe']
+/** Tablo yatay kaydırma gerektirmesin diye en fazla bu kadar değer sütunu gösterilir */
+const MAX_COLS = 7
+const DEFAULT_COLS = ['Enerji (kcal)', 'Protein', 'Karbonhidrat', 'Yağ, toplam', 'Lif, toplam diyet', 'Sodyum, Na', 'Kalsiyum, Ca']
 const PRESETS: [string, string[]][] = [
   ['Makro', ['Enerji (kcal)', 'Protein', 'Karbonhidrat', 'Yağ, toplam', 'Lif, toplam diyet']],
   ['Mineraller', ['Sodyum, Na', 'Potasyum, K', 'Kalsiyum, Ca', 'Demir, Fe', 'Fosfor, P', 'Magnezyum, Mg', 'Çinko, Zn']],
@@ -131,10 +133,12 @@ export default function Foods() {
     try { await navigator.clipboard.writeText(lines.join('\n')); flash('Panoya kopyalandı') } catch { flash('Kopyalanamadı') }
   }
 
-  const th = (key: string, label: string, unit = '') => (
+  // Dar ekranlarda ilk 2 değer, geniş ekranlarda 4, masaüstünde tümü görünür (yatay kaydırma olmaz)
+  const colShow = (n: number) => (n < 2 ? '' : n < 4 ? 'hidden sm:table-cell' : 'hidden lg:table-cell')
+  const th = (key: string, label: string, unit = '', n = 0) => (
     <th key={key} onClick={() => setSort(sort.k === key ? { k: key, d: (sort.d * -1) as 1 | -1 } : { k: key, d: key === 'name' ? 1 : -1 })}
-      className={`cursor-pointer whitespace-nowrap px-3 py-2 ${key === 'name' ? 'sticky left-0 z-10 min-w-40 bg-stone-100 sm:min-w-60 text-left' : 'text-right'} ${sort.k === key ? 'text-brand-500' : ''}`}>
-      {label} {unit && <span className="font-medium">{unit}</span>} {sort.k === key && (sort.d > 0 ? '▲' : '▼')}
+      className={`cursor-pointer select-none px-2 py-2.5 align-bottom text-[11px] leading-tight ${key === 'name' ? 'w-[46%] text-left sm:w-[34%]' : `${colShow(n)} text-right`} ${sort.k === key ? 'text-brand-500' : ''}`}>
+      <span className="break-words">{label.replace(/, toplam diyet| \(kcal\)|, toplam/, '').replace('Karbonhidrat', 'Karb.').replace('Kalsiyum', 'Kalsiyum')}</span> {unit && <span className="font-medium normal-case">({unit})</span>} {sort.k === key && (sort.d > 0 ? '▲' : '▼')}
     </th>
   )
 
@@ -274,7 +278,8 @@ export default function Foods() {
             <div className="mt-3 rounded-xl border border-stone-200 bg-white p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className={lbl}>Hazır setler</span>
-                {PRESETS.map(([n, list]) => <button key={n} className={btn} onClick={() => setCols(list)}>{n}</button>)}
+                <span className="text-xs text-stone-500">(en fazla {MAX_COLS} değer · {cols.length} seçili)</span>
+                {PRESETS.map(([n, list]) => <button key={n} className={btn} onClick={() => setCols(list.slice(0, MAX_COLS))}>{n}</button>)}
                 <button className={btn} onClick={() => setCols([])}>Temizle</button>
               </div>
               {CATS.map((cat) => (
@@ -283,7 +288,7 @@ export default function Foods() {
                   <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
                     {comps.filter((c) => c[2] === cat).map((c) => (
                       <label key={c[0]} className="flex cursor-pointer items-center gap-1.5 whitespace-nowrap text-sm">
-                        <input type="checkbox" className="accent-brand-500" checked={cols.includes(c[0])} onChange={(e) => setCols(e.target.checked ? [...cols, c[0]] : cols.filter((x) => x !== c[0]))} />
+                        <input type="checkbox" className="accent-brand-500" checked={cols.includes(c[0])} disabled={!cols.includes(c[0]) && cols.length >= MAX_COLS} onChange={(e) => setCols(e.target.checked ? [...cols, c[0]].slice(0, MAX_COLS) : cols.filter((x) => x !== c[0]))} />
                         {c[0]} <span className="text-stone-500">{c[1]}</span>
                       </label>
                     ))}
@@ -333,25 +338,25 @@ export default function Foods() {
               })}
             </div>
           ) : (
-            <div className="mt-3 max-h-[72vh] overflow-auto rounded-2xl border border-stone-200 bg-white">
-              <table className="w-full border-separate border-spacing-0 text-sm">
-                <thead className="sticky top-0 z-20 bg-stone-100 text-xs uppercase tracking-wide text-stone-500">
+            <div className="mt-3 overflow-hidden rounded-2xl border border-stone-200 bg-white">
+              <table className="w-full table-fixed border-separate border-spacing-0 text-sm">
+                <thead className="bg-stone-100 text-xs uppercase tracking-wide text-stone-500">
                   <tr>
                     {th('name', 'Besin')}
-                    {colIdx.map((i) => th(comps[i][0], comps[i][0], comps[i][1]))}
-                    <th className="px-3 py-2" />
+                    {colIdx.map((i, n) => th(comps[i][0], comps[i][0], comps[i][1], n))}
+                    <th className="w-24 px-2 py-2" />
                   </tr>
                 </thead>
                 <tbody>
                   {rows.slice(0, shown).map(({ f, e }) => (
                     <tr key={f.id} className={`hover:bg-stone-50 ${e.st === 'hide' ? 'opacity-55' : ''}`}>
-                      <td className="sticky left-0 z-10 min-w-40 max-w-56 border-b border-stone-100 bg-white px-3 py-2 sm:min-w-60 sm:max-w-80">
-                        <button className="text-left font-bold hover:text-brand-500 hover:underline" onClick={() => setDetail(f.code)}>{f.name}</button>
+                      <td className="border-b border-stone-100 bg-white px-2 py-2 sm:px-3">
+                        <button className="text-left font-bold leading-snug hover:text-brand-500 hover:underline" onClick={() => setDetail(f.code)}>{shortName(f.name)}</button>
                         <div className="text-xs text-stone-500">{f.groups.map((g) => food.groups[g]).join(' · ')}</div>
                         <ReasonChips ev={e} max={3} />
                       </td>
-                      {colIdx.map((i) => <td key={i} className="whitespace-nowrap border-b border-stone-100 px-3 py-2 text-right tabular-nums">{fmtVal(f.v[i] == null ? null : f.v[i] * k)}</td>)}
-                      <td className="whitespace-nowrap border-b border-stone-100 px-3 py-2 text-right">
+                      {colIdx.map((i, n) => <td key={i} className={`border-b border-stone-100 px-2 py-2 text-right tabular-nums ${colShow(n)}`}>{fmtVal(f.v[i] == null ? null : f.v[i] * k)}</td>)}
+                      <td className="whitespace-nowrap border-b border-stone-100 px-2 py-2 text-right">
                         {client && !removed.set.has(f.code) && <button className="mr-1 h-8 w-8 rounded-full border border-stone-300 font-bold text-brand-500 hover:bg-brand-500 hover:text-white" title={`${meal} öğününe ekle`} aria-label="Menüye ekle" onClick={() => addToMenu(f)}>+</button>}
                         {adminBtn(f)}
                       </td>
