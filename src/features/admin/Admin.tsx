@@ -73,17 +73,15 @@ function TitleRow({ name, sub, unvan, onSave }: { name: string; sub: string; unv
   const cur = unvan ?? ''
   return (
     <div className={card}>
-      <b>{cur ? `${cur} ` : ''}{name}</b>
-      <div className="text-xs text-stone-500">{sub}</div>
-      <div className="mt-3 flex flex-wrap items-center gap-2">
-        <label className="text-sm font-semibold">Unvan
-          <select className={`${field} ml-2 w-auto`} value={t} onChange={(e) => setT(e.target.value)}>
-            <option value="">(unvansız)</option>
-            {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
-          </select>
-        </label>
+      <div className="flex flex-wrap items-center gap-2">
+        <select aria-label="Unvan" className={`${field} w-auto`} value={t} onChange={(e) => setT(e.target.value)}>
+          <option value="">(unvansız)</option>
+          {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
+        </select>
+        <b className="min-w-0 flex-1 basis-32">{name}</b>
         <button className={btn} disabled={t === cur} onClick={() => onSave(t)}>Unvanı kaydet</button>
       </div>
+      <div className="mt-1 text-xs text-stone-500">{sub}</div>
     </div>
   )
 }
