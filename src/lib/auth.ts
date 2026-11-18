@@ -16,6 +16,8 @@ export interface Account {
   created: number
   /** Diyetisyen başvurusu: onaylanana kadar giriş yapılamaz (boşsa hesap etkin) */
   status?: 'pending' | 'rejected'
+  /** Yönetimin onayda verdiği unvan (Dyt., Uzm. Dyt. ...) */
+  unvan?: string
 }
 /** Diyetisyen olmak isteyenlerin başvurusu; yönetici panelinde incelenir */
 export interface Application {
@@ -26,6 +28,8 @@ export interface Application {
   title: string
   note: string
   status: 'pending' | 'approved' | 'rejected'
+  /** Onaylanırken verilen unvan */
+  unvan?: string
   ts: number
 }
 export interface Session {
@@ -53,6 +57,10 @@ export async function hashPw(pw: string, salt: string): Promise<string> {
 }
 
 const newSalt = () => crypto.randomUUID().replace(/-/g, '')
+/** Unvanlar: onayda yönetim seçer */
+export const UNVANLAR = ['Dyt.', 'Uzm. Dyt.', 'Dr. Dyt.', 'Doç. Dr.', 'Prof. Dr.'] as const
+export const withTitle = (a: { ad: string; unvan?: string }) => (a.unvan ? `${a.unvan} ${a.ad}` : a.ad)
+
 export const normUser = (u: string) => u.trim().toLowerCase()
 export const userError = (u: string) =>
   /^[a-z0-9._-]{3,20}$/.test(u) ? '' : 'Kullanıcı adı 3-20 karakter olmalı; yalnızca harf, rakam, nokta, alt çizgi ve tire.'
@@ -97,7 +105,7 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
   }
   if (a.status === 'pending') return { ok: false, error: 'Diyetisyen başvurunuz inceleniyor. Yönetici onayladığında bu kullanıcı adı ve şifreyle giriş yapabilirsiniz.' }
   if (a.status === 'rejected') return { ok: false, error: 'Diyetisyen başvurunuz onaylanmadı.' }
-  return { ok: true, session: { u, label: a.ad, kind: a.kind, clientId: a.clientId } }
+  return { ok: true, session: { u, label: withTitle(a), kind: a.kind, clientId: a.clientId } }
 }
 
 export async function register(i: { u: string; ad: string; p: string; p2: string; kind: AccountKind; clientId?: string }): Promise<Result> {
@@ -143,12 +151,12 @@ export async function submitApplication(i: { u: string; ad: string; p: string; p
 }
 
 /** Başvuru durumunu ve bağlı hesabı birlikte günceller */
-export function setApplicationStatus(id: string, status: Application['status']) {
+export function setApplicationStatus(id: string, status: Application['status'], unvan?: string) {
   const list = load<Application[]>(APPS_KEY, [])
   const app = list.find((a) => a.id === id)
-  save(APPS_KEY, list.map((a) => (a.id === id ? { ...a, status } : a)))
+  save(APPS_KEY, list.map((a) => (a.id === id ? { ...a, status, ...(unvan ? { unvan } : {}) } : a)))
   const acc = app?.u ? loadAccounts()[app.u] : undefined
-  if (acc) putAccount({ ...acc, status: status === 'approved' ? undefined : status === 'rejected' ? 'rejected' : 'pending' })
+  if (acc) putAccount({ ...acc, status: status === 'approved' ? undefined : status === 'rejected' ? 'rejected' : 'pending', ...(unvan ? { unvan } : {}) })
 }
 
 /** Başvuruyu ve (açıldıysa) bekleyen hesabını siler */

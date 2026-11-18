@@ -4,7 +4,7 @@ import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
-import { removeAccountsOfClient } from '../../lib/auth'
+import { UNVANLAR, removeAccountsOfClient } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -57,7 +57,7 @@ function Dietitians({ apps }: { apps: Application[] }) {
         </div>
       </div>
       {approved.map((a) => (
-        <div key={a.id} className={card}><b>{a.name}</b><div className="text-xs text-stone-500">{a.title} · onaylı diyetisyen adayı. Eğitim sürümünde tek diyetisyen verisi bulunur; gerçek çok hesaplı kullanım için sunucu gerekir.</div></div>
+        <div key={a.id} className={card}><b>{a.unvan ? `${a.unvan} ` : ''}{a.name}</b><div className="text-xs text-stone-500">{a.title} · onaylı diyetisyen adayı. Eğitim sürümünde tek diyetisyen verisi bulunur; gerçek çok hesaplı kullanım için sunucu gerekir.</div></div>
       ))}
     </div>
   )
@@ -102,14 +102,33 @@ function Applications({ list, setStatus }: ReturnType<typeof useApplications>) {
           </div>
           <div className="mt-1 text-sm">{a.title}</div>
           {a.note && <div className="text-sm text-stone-500">{a.note}</div>}
-          {a.status === 'pending' && (
-            <div className="mt-3 flex gap-2">
-              <button className={btnPrimary} onClick={() => setStatus(a.id, 'approved')}>Onayla</button>
-              <button className={btn} onClick={() => setStatus(a.id, 'rejected')}>Reddet</button>
-            </div>
-          )}
+          {a.status === 'approved' && <div className="mt-1 text-sm font-semibold text-emerald-700">Unvan: {a.unvan ?? '—'}</div>}
+          <TitleActions a={a} setStatus={setStatus} />
         </div>
       ))}
+    </div>
+  )
+}
+
+/** Onayda unvan verilir; onaylı diyetisyenin unvanı sonradan değiştirilebilir */
+function TitleActions({ a, setStatus }: { a: Application; setStatus: (id: string, s: Application['status'], unvan?: string) => void }) {
+  const [unvan, setUnvan] = useState<string>(a.unvan ?? 'Dyt.')
+  if (a.status === 'rejected') return null
+  return (
+    <div className="mt-3 flex flex-wrap items-center gap-2">
+      <label className="text-sm font-semibold">Unvan
+        <select className={`${field} ml-2 w-auto`} value={unvan} onChange={(e) => setUnvan(e.target.value)}>
+          {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
+        </select>
+      </label>
+      {a.status === 'pending' ? (
+        <>
+          <button className={btnPrimary} onClick={() => setStatus(a.id, 'approved', unvan)}>Onayla</button>
+          <button className={btn} onClick={() => setStatus(a.id, 'rejected')}>Reddet</button>
+        </>
+      ) : (
+        <button className={btn} onClick={() => setStatus(a.id, 'approved', unvan)}>Unvanı güncelle</button>
+      )}
     </div>
   )
 }

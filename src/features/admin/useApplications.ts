@@ -10,7 +10,7 @@ export function useApplications() {
   const refresh = () => setList(load<Application[]>(APPS_KEY, []))
   return {
     list,
-    setStatus: (id: string, status: Application['status']) => { setApplicationStatus(id, status); refresh() },
+    setStatus: (id: string, status: Application['status'], unvan?: string) => { setApplicationStatus(id, status, unvan); refresh() },
     remove: (id: string) => { removeApplication(id); refresh() },
   }
 }
