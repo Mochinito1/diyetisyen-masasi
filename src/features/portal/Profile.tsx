@@ -35,11 +35,11 @@ export default function Profile() {
       ) : (
         <>
           <NextAppointment clientId={client.id} />
-          <div className="grid items-start gap-4 lg:grid-cols-[360px_1fr]">
-            <div className="rounded-xl border border-stone-200 bg-white p-4 md:p-5">
+          <div className="grid items-stretch gap-4 lg:grid-cols-[340px_1fr]">
+            <div className="flex flex-col rounded-xl border border-stone-200 bg-white p-4 md:p-5">
               <h2 className="font-display text-lg font-bold">Diyetisyeninizin belirlediği değerler</h2>
               <p className="mb-2 text-xs text-stone-500">Hedefiniz diyetisyeniniz tarafından hesaplanır ve güncellenir.</p>
-              <dl className="text-sm">
+              <dl className="flex flex-1 flex-col text-sm">
                 {([
                   ['Cinsiyet', p.sex === 'K' ? 'Kadın' : p.sex === 'E' ? 'Erkek' : '–'],
                   ['Yaş', p.age || '–'],
@@ -49,14 +49,15 @@ export default function Profile() {
                   ['Hedef', GOAL[p.goal] ?? p.goal],
                   ...(p.phys !== 'none' ? [['Fizyolojik durum', PHYS[p.phys]] as const] : []),
                 ] as const).map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-3 border-b border-stone-200 py-2 last:border-0">
+                  <div key={k} className="flex flex-1 items-center justify-between gap-3 border-b border-stone-200 py-2.5 last:border-0">
                     <dt className="text-stone-500">{k}</dt><dd className="text-right font-semibold">{v}</dd>
                   </div>
                 ))}
               </dl>
             </div>
             <ProfileSummary input={toCalcInput(client.profile)} />
-          </div>          <div className="mt-4">
+          </div>
+          <div className="mt-4">
             <MeasurementsCard
               meas={client.meas}
               sex={client.profile.sex}

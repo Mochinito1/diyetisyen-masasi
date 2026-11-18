@@ -62,7 +62,7 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
         {series.length ? <LineChart points={series} digits={mt.digits} unit={mt.unit} /> : <p className="text-sm text-stone-500">Bu ölçüt için henüz veri yok.</p>}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         <label className="block text-xs font-semibold">Tarih
           <input type="date" className={`${field} mt-1 w-full`} value={d} onChange={(e) => setD(e.target.value)} />
         </label>

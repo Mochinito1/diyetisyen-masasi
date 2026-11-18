@@ -15,6 +15,11 @@ export default function Layout() {
   const { session, logout, imp, stopImp } = useAuth()
   const { theme, toggle } = useTheme()
   const dark = theme === 'dark'
+  // Danışan menüsü soldan sağa: Profil, Menü, Anasayfa, Randevu, Ayarlar
+  const home = { to: '/', short: 'Anasayfa', icon: 'home' as const }
+  const items = [home, ...navFor(role)]
+  const ORDER = ['/profil', '/menu', '/', '/randevu', '/ayarlar']
+  const navItems = role === 'danisan' ? [...items].sort((a, b) => ORDER.indexOf(a.to) - ORDER.indexOf(b.to)) : items
   return (
     <div className="min-h-screen">
       <CloudBanner />
@@ -68,15 +73,11 @@ export default function Layout() {
             </div>
           </div>
           <nav aria-label="Ana menü" className="mx-auto flex max-w-4xl gap-0.5 overflow-x-auto pb-1.5 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            <NavLink to="/" end className={item}>
-              {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name="home" /></span><span>Anasayfa</span></>)}
-            </NavLink>
-            {navFor(role).map((n) => (
-              <NavLink key={n.to} to={n.to} className={item}>
+            {navItems.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.to === '/'} className={item}>
                 {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name={n.icon} /></span><span className="max-w-full truncate">{n.short}</span></>)}
               </NavLink>
-            ))}
-          </nav>
+            ))}          </nav>
         </div>
       </header>
 

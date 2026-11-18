@@ -25,13 +25,13 @@ const Label = ({ children }: { children: React.ReactNode }) => (
 
 function Kpi({ label, value, unit, sub, main, subClass = '' }: { label: string; value: string; unit?: string; sub?: string; main?: boolean; subClass?: string }) {
   return (
-    <div className={`min-w-0 rounded-[9px] px-3.5 py-3 ${main ? 'bg-brand-500 text-white' : 'bg-stone-100'}`}>
+    <div className={`flex h-full min-w-0 flex-col rounded-[9px] px-3.5 py-3 ${main ? 'bg-brand-500 text-white' : 'bg-stone-100'}`}>
       <Label>{label}</Label>
       <div className="mt-0.5 font-display text-[28px] font-bold leading-tight">
         {value}
         {unit && <small className="ml-1 font-sans text-[13px] font-semibold opacity-70">{unit}</small>}
       </div>
-      {sub && <div className={`text-xs ${main ? 'opacity-85' : 'text-stone-500'} ${subClass}`}>{sub}</div>}
+      {sub && <div className={`mt-auto pt-0.5 text-xs ${main ? 'opacity-85' : 'text-stone-500'} ${subClass}`}>{sub}</div>}
     </div>
   )
 }
@@ -69,6 +69,7 @@ export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: {
         </div>
       </Card>
 
+      <div className="grid items-stretch gap-4 xl:grid-cols-[1.5fr_1fr]">
       <Card>
         <h2 className="font-display text-lg font-bold">Kilo/boy indeksi</h2>
         <div className="relative mb-7 mt-9 flex h-3 rounded-md">
@@ -96,12 +97,26 @@ export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: {
 
       <Card>
         <h2 className="font-display text-lg font-bold">Makro dağılımı</h2>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Kpi label="Karbonhidrat" value={fmt(m.carbG)} unit="g" sub={`%${m.carbPct}`} />
-          <Kpi label="Protein" value={fmt(m.proteinG)} unit="g" sub={`%${m.proteinPct}`} />
-          <Kpi label="Yağ" value={fmt(m.fatG)} unit="g" sub={`%${m.fatPct}`} />
-        </div>
+        <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
+        <ul className="space-y-3.5">
+          {([
+            ['Karbonhidrat', m.carbG, m.carbPct, 'bg-brand-500'],
+            ['Protein', m.proteinG, m.proteinPct, 'bg-amber-700/60'],
+            ['Yağ', m.fatG, m.fatPct, 'bg-stone-500'],
+          ] as const).map(([name, g, pct, cls]) => (
+            <li key={name}>
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-sm font-semibold">{name}</span>
+                <span className="text-sm text-stone-500"><b className="font-display text-xl text-stone-900">{fmt(g)}</b> g · %{pct}</span>
+              </div>
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-200" role="img" aria-label={`${name} yüzde ${pct}`}>
+                <i className={`block h-full rounded-full ${cls}`} style={{ width: `${Math.min(100, pct)}%` }} />
+              </div>
+            </li>
+          ))}
+        </ul>
       </Card>
+      </div>
 
       {r.warns.length > 0 && (
         <ul className="space-y-2">
