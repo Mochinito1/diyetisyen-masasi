@@ -37,7 +37,8 @@ function GroupSelect({ group, conds, done, onChange }: { group: string; conds: s
 
   const markDone = () => (answered ? done : [...done, group])
   const toggle = (id: string) => onChange(conds.includes(id) ? conds.filter((x) => x !== id) : [...conds, id], markDone())
-  const none = () => onChange(conds.filter((x) => !ids.includes(x)), markDone())
+  // "Yok" seçilince grup yanıtlanmış olur ve liste kendiliğinden kapanır
+  const none = () => { onChange(conds.filter((x) => !ids.includes(x)), markDone()); setOpen(false) }
 
   const box = (on: boolean) => (
     <span className={`grid h-[18px] w-[18px] flex-none place-items-center rounded-[5px] border-[1.5px] ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-400'}`} aria-hidden="true">
