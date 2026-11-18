@@ -34,14 +34,14 @@ export default function PortalSettings() {
       <PageTitle title="Ayarlar" sub="Bilgilerin ve hesabın" />
       <ClientPicker clients={clients} value={client.id} onChange={choose} />
       <div className="grid items-start gap-4 md:grid-cols-[220px_1fr] lg:grid-cols-[260px_1fr]">
-        <nav aria-label="Ayar bölümleri" className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] md:sticky md:top-28 md:flex-col md:gap-1 md:overflow-visible md:rounded-2xl md:border md:border-stone-200 md:bg-white md:p-2 [&::-webkit-scrollbar]:hidden">
+        <nav aria-label="Ayar bölümleri" className="flex flex-col gap-1 rounded-2xl border border-stone-200 bg-white p-2 md:sticky md:top-28">
           {SECTIONS.map((s) => (
             <button
               key={s.id}
               role="tab"
               aria-selected={sec === s.id}
               onClick={() => setSec(s.id)}
-              className={`shrink-0 whitespace-nowrap rounded-full border px-4 py-2 text-left text-sm font-semibold md:rounded-xl md:border-0 md:py-2.5 ${sec === s.id ? 'border-brand-500 bg-brand-500 text-white md:bg-brand-50 md:text-brand-500' : 'border-stone-300 bg-white text-stone-600 md:bg-transparent md:hover:bg-stone-100'}`}
+              className={`w-full rounded-xl px-4 py-3 text-left text-sm font-semibold transition md:py-2.5 ${sec === s.id ? 'bg-brand-500 text-white md:bg-brand-50 md:text-brand-500' : 'text-stone-600 hover:bg-stone-100'}`}
             >
               {s.label}
             </button>
