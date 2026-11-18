@@ -2,7 +2,7 @@ import { useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import {
   DAY_MS, MAX_DAYS_AHEAD, addMonths, apDay, apTime, canCancel, dtMs, effectiveStatus, fmtRemaining,
-  isBusy, isDayAvailable, longDate, slotRange, slotsFor, sortByDt, todayStr, type Appointment,
+  isBusy, isDayAvailable, longDate, slotsFor, sortByDt, todayStr, type Appointment,
 } from '../../lib/appointments'
 import { load, save } from '../../lib/storage'
 import { useAuth } from '../../app/auth'
@@ -22,6 +22,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
   const [month, setMonth] = useState(todayStr().slice(0, 7))
   const [day, setDay] = useState<string | null>(null)
   const [slot, setSlot] = useState<string | null>(null)
+  const [hour, setHour] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const [done, setDone] = useState('')
 
@@ -49,6 +50,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
     save(KEY, id)
     setDay(null)
     setSlot(null)
+    setHour(null)
   }
 
   const noDyt = !me.dietitian
@@ -94,25 +96,48 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
               month={month}
               onMonth={setMonth}
               selected={day}
-              onSelect={(d) => { setDay(d); setSlot(null); setDone('') }}
+              onSelect={(d) => { setDay(d); setSlot(null); setHour(null); setDone('') }}
               disabled={(d) => !isDayAvailable(d, api.av, busy)}
               minMonth={today.slice(0, 7)}
               maxMonth={maxMonth}
             />
             {day && isDayAvailable(day, api.av, busy) ? (
               <>
-                <div className="mt-4 text-xs font-bold uppercase tracking-wider capitalize text-stone-500">{longDate(day)} · saat aralıkları</div>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {slotsFor(day, api.av, busy).map((s) => (
-                    <button key={s} onClick={() => setSlot(s)} className={`rounded-full border px-3 py-1 text-sm font-semibold ${slot === s ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white'}`}>{slotRange(s, api.av.step)}</button>
-                  ))}
-                </div>
-                <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
+                <div className="mt-4 text-xs font-bold uppercase tracking-wider capitalize text-stone-500">{longDate(day)}</div>
+                {(() => {
+                  const free = slotsFor(day, api.av, busy)
+                  const hours = [...new Set(free.map((s) => s.slice(0, 2)))]
+                  const inHour = hour ? free.filter((s) => s.startsWith(`${hour}:`)) : []
+                  const chipCls = (on: boolean) => `rounded-full border px-4 py-1.5 text-sm font-semibold ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white hover:border-brand-500'}`
+                  return (
+                    <>
+                      <div className="mt-2 text-xs font-semibold text-stone-500">1. Saati seç</div>
+                      <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Saat">
+                        {hours.map((h) => (
+                          <button key={h} aria-pressed={hour === h} className={chipCls(hour === h)}
+                            onClick={() => { setHour(h); const opts = free.filter((s) => s.startsWith(`${h}:`)); setSlot(opts.length === 1 ? opts[0] : null) }}>
+                            {h}
+                          </button>
+                        ))}
+                      </div>
+                      {hour && (
+                        <>
+                          <div className="mt-3 text-xs font-semibold text-stone-500">2. Dakikayı seç</div>
+                          <div className="mt-1.5 flex flex-wrap gap-2" role="group" aria-label="Dakika">
+                            {inHour.map((s) => (
+                              <button key={s} aria-pressed={slot === s} className={chipCls(slot === s)} onClick={() => setSlot(s)}>{s}</button>
+                            ))}
+                          </div>
+                        </>
+                      )}
+                    </>
+                  )
+                })()}                <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
                   <input className={`${field} mt-1 w-full`} maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
                 </label>
               </>
             ) : (
-              <p className="mt-3 text-xs text-stone-500">Takvimden bir gün seçin; o güne ait saat aralıkları burada görünür. Yalnızca önümüzdeki {MAX_DAYS_AHEAD} gün ve diyetisyenin açtığı günler seçilebilir.</p>
+              <p className="mt-3 text-xs text-stone-500">Takvimden bir gün seçin; o güne ait saatler burada görünür. Yalnızca önümüzdeki {MAX_DAYS_AHEAD} gün ve diyetisyenin açtığı günler seçilebilir.</p>
             )}
           </div>
           <button className="mt-3 w-full rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white disabled:opacity-40" disabled={!day || !slot || noDyt} onClick={book}>
