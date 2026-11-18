@@ -1,8 +1,10 @@
 import { fmt } from '../../lib/format'
-import { calculate, macros, sodiumLimit, type CalcInput } from '../../lib/formulas'
+import { calculate, sodiumLimit, type CalcInput } from '../../lib/formulas'
+import MacroEditor from './MacroEditor'
 
 const FORMULA = { mifflin: 'Mifflin-St Jeor', harris: 'Harris-Benedict', schofield: 'Schofield (FAO/WHO)' } as const
-const TONE = { ok: 'text-emerald-800', warn: 'text-amber-800', bad: 'text-red-800' } as const
+const PILL = { ok: 'bg-emerald-100 text-emerald-800', warn: 'bg-amber-100 text-amber-800', bad: 'bg-red-100 text-red-800' } as const
+const SEGMENT_NAMES: [number, number, string][] = [[15, 18.5, 'Zayıf'], [18.5, 25, 'Normal'], [25, 30, 'Fazla kilolu'], [30, 40, 'Obez']]
 
 /** BKİ çubuğunun gösterdiği aralık ve renkli bölümleri */
 const MIN = 15
@@ -54,9 +56,9 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
     )
 
   const adj = r.adj ?? 0
-  const m = macros(r.target!, macroPct.c, macroPct.p)
   const h = input.heightCm!
   const w = input.weightKg!
+  const gap = w > r.idealHi ? w - r.idealHi : w < r.idealLo ? w - r.idealLo : 0
   const inRange = w >= r.idealLo && w <= r.idealHi
   const status = inRange ? 'Mevcut kilo normal aralıkta.' : w < r.idealLo ? 'Mevcut kilo bu aralığın altında.' : 'Mevcut kilo bu aralığın üzerinde.'
   const wk = r.weeklyKg
@@ -67,31 +69,53 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
       <Card>
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <Kpi main label="Günlük hedef" value={fmt(r.target!)} unit="kcal" sub={adj === 0 ? 'BMH × aktivite' : `BMH × aktivite ${adj > 0 ? '+' : '−'} ${fmt(Math.abs(adj))} kcal`} />
-          <Kpi label="Beden kitle indeksi" value={fmt(r.bmi, 1)} unit="kg/m²" sub={r.category} subClass={`font-semibold ${r.tone ? TONE[r.tone] : ''}`} />
+          <Kpi label="Beden kitle indeksi" value={fmt(r.bmi, 1)} unit="kg/m²" sub={r.category} subClass="font-semibold" />
           <Kpi label="Bazal metabolizma" value={fmt(r.bmr!)} unit="kcal" sub={FORMULA[r.formula!]} />
           <Kpi label="Toplam harcama" value={fmt(r.tdee!)} unit="kcal" sub={`Aktivite katsayısı ${fmt(input.activity, 3)}`} />
         </div>
       </Card>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-[1.5fr_1fr]">
+      <div className="grid items-stretch gap-4 xl:grid-cols-[1.1fr_1fr]">
       <Card>
         <h2 className="font-display text-lg font-bold">Kilo/boy indeksi</h2>
-        <div className="relative mb-7 mt-9 flex h-3 rounded-md">
-          {SEGMENTS.map(([a, b, cls], i) => (
-            <i key={a} className={`block h-full ${cls} ${i === 0 ? 'rounded-l-md' : ''} ${i === SEGMENTS.length - 1 ? 'rounded-r-md' : ''}`} style={{ width: `${((b - a) / (MAX - MIN)) * 100}%` }} />
-          ))}
-          <div className="absolute -top-2 h-7 w-[3px] -translate-x-1/2 rounded bg-stone-900" style={{ left: `${pos(r.bmi)}%` }} aria-label={`BKİ ${fmt(r.bmi, 1)}`}>
-            <b className="absolute bottom-8 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-[5px] bg-stone-900 px-2 py-px text-xs text-stone-50">{fmt(r.bmi, 1)}</b>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="font-display text-4xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
+          <span className="text-sm text-stone-500">kg/m²</span>
+          {r.category && <span className={`ml-auto rounded-full px-3 py-1 text-sm font-semibold ${r.tone ? PILL[r.tone] : ''}`}>{r.category}</span>}
+        </div>
+
+        <div className="relative mb-10 mt-9">
+          <div className="flex h-3.5 gap-0.5">
+            {SEGMENTS.map(([a, b, cls], i) => (
+              <i key={a} className={`block h-full ${cls} ${i === 0 ? 'rounded-l-full' : ''} ${i === SEGMENTS.length - 1 ? 'rounded-r-full' : ''}`} style={{ width: `${((b - a) / (MAX - MIN)) * 100}%` }} />
+            ))}
           </div>
+          {SEGMENT_NAMES.map(([a, b, name]) => (
+            <span key={name} className="absolute -top-6 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold text-stone-500" style={{ left: `${(pos(a) + pos(b)) / 2}%` }}>{name}</span>
+          ))}
+          <div className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-stone-50 bg-stone-900 shadow-md transition-[left] duration-300" style={{ left: `${pos(r.bmi)}%` }} role="img" aria-label={`BKİ ${fmt(r.bmi, 1)}`} />
           {TICKS.map((t) => (
-            <span key={t} className="absolute top-4 -translate-x-1/2 text-[10.5px] text-stone-500" style={{ left: `${pos(t)}%` }}>{fmt(t, t % 1 ? 1 : 0)}</span>
+            <span key={t} className="absolute top-6 -translate-x-1/2 text-[10.5px] text-stone-500" style={{ left: `${pos(t)}%` }}>{fmt(t, t % 1 ? 1 : 0)}</span>
           ))}
         </div>
+
         {r.adult ? (
-          <p className="text-sm">Boy {fmt(h)} cm için sağlıklı kilo aralığı <b>{fmt(r.idealLo, 1)}–{fmt(r.idealHi, 1)} kg</b>. {status}</p>
+          <div className="grid grid-cols-3 gap-2 text-center">
+            {([
+              ['Mevcut kilo', `${fmt(w, 1)} kg`, ''],
+              ['Sağlıklı aralık', `${fmt(r.idealLo, 1)}–${fmt(r.idealHi, 1)}`, 'kg'],
+              [gap === 0 ? 'Durum' : gap > 0 ? 'Verilecek' : 'Alınacak', gap === 0 ? 'Aralıkta' : `${fmt(Math.abs(gap), 1)} kg`, ''],
+            ] as const).map(([l, v, u]) => (
+              <div key={l} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 px-2 py-2.5">
+                <div className="truncate text-[11px] font-semibold text-stone-500">{l}</div>
+                <div className="mt-0.5 font-display text-base font-bold tabular-nums sm:text-lg">{v}{u && <small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">{u}</small>}</div>
+              </div>
+            ))}
+          </div>
         ) : (
           <p className="text-sm text-stone-500">Çocuk ve ergenlerde BKİ, yaş ve cinsiyete göre büyüme eğrileriyle değerlendirilir; diyetisyenine danış.</p>
         )}
+        {r.adult && <p className="mt-2 text-xs text-stone-500">{status} (boy {fmt(h)} cm)</p>}
         {wk != null && (
           <p className="mt-1 text-xs text-stone-500">
             {wk === 0 ? 'Seçilen hedef kilonun korunmasıdır; haftalık değişim beklenmez.' : `Seçilen hedefle tahmini haftalık değişim yaklaşık ${fmt(Math.abs(wk), 2)} kg ${wk < 0 ? 'azalış' : 'artış'}.`}
@@ -101,48 +125,10 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
 
       <Card>
         <h2 className="font-display text-lg font-bold">Makro dağılımı</h2>
-        <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı{editable ? '. Kaydırıcıları sürükleyerek değiştir.' : ''}</p>
+        <p className="mb-4 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
+        <MacroEditor target={r.target!} value={macroPct} onChange={onMacro} />
         {editable && (
-          <div className="mb-4 flex h-3 overflow-hidden rounded-full bg-stone-200" aria-hidden="true">
-            <i className="block h-full bg-brand-500 transition-all" style={{ width: `${m.carbPct}%` }} />
-            <i className="block h-full bg-amber-700/60 transition-all" style={{ width: `${m.proteinPct}%` }} />
-            <i className="block h-full bg-stone-500 transition-all" style={{ width: `${m.fatPct}%` }} />
-          </div>
-        )}
-        <ul className="space-y-3.5">
-          {([
-            ['Karbonhidrat', m.carbG, m.carbPct, 'bg-brand-500'],
-            ['Protein', m.proteinG, m.proteinPct, 'bg-amber-700/60'],
-            ['Yağ', m.fatG, m.fatPct, 'bg-stone-500'],
-          ] as const).map(([name, g, pct, cls]) => (
-            <li key={name}>
-              <div className="flex items-baseline justify-between gap-2">
-                <span className="text-sm font-semibold">{name}</span>
-                <span className="text-sm text-stone-500"><b className="font-display text-xl text-stone-900">{fmt(g)}</b> g · %{pct}</span>
-              </div>
-              {editable && name !== 'Yağ' ? (
-                <input
-                  type="range" min={5} max={80} step={5} value={pct}
-                  aria-label={`${name} yüzdesi`}
-                  onChange={(e) => {
-                    const v = +e.target.value
-                    onMacro!(name === 'Karbonhidrat' ? { c: Math.min(v, 100 - macroPct.p), p: macroPct.p } : { c: macroPct.c, p: Math.min(v, 100 - macroPct.c) })
-                  }}
-                  className="mt-1.5 h-6 w-full cursor-pointer accent-brand-500"
-                />
-              ) : (
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-200" role="img" aria-label={`${name} yüzde ${pct}`}>
-                  <i className={`block h-full rounded-full ${cls}`} style={{ width: `${Math.min(100, pct)}%` }} />
-                </div>
-              )}
-            </li>
-          ))}
-        </ul>
-        {editable && (
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 text-xs text-stone-500">
-            <span>Günlük sodyum üst sınırı: {fmt(sodiumLimit(input.age!, r.target!))} mg</span>
-            <button className="h-8 rounded-lg border border-stone-300 px-3 font-semibold text-stone-700 hover:border-brand-500 hover:text-brand-500" onClick={() => onMacro!(DEFAULT_MACRO)}>Varsayılan 50/20/30</button>
-          </div>
+          <p className="mt-4 border-t border-stone-100 pt-3 text-xs text-stone-500">Günlük sodyum üst sınırı: {fmt(sodiumLimit(input.age!, r.target!))} mg</p>
         )}
       </Card>
       </div>
