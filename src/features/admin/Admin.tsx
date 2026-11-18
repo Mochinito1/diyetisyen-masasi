@@ -7,7 +7,7 @@ import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
 import { cloudEnabled } from '../../lib/cloud'
 import { DEMO_DIETITIAN, ownerOfClient } from '../../lib/dietitians'
-import { UNVANLAR, loadAccounts, removeAccountsOfClient, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
+import { UNVANLAR, loadAccounts, removeAccountsOfClient, setDietitianActive, setDietitianTitle, withTitle, type Account } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -46,7 +46,7 @@ function Dietitians({ apps }: { apps: Application[] }) {
   const [, setTick] = useState(0)
   const bump = () => setTick((t) => t + 1)
   const approved = apps.filter((a) => a.status === 'approved')
-  const accs = Object.values(loadAccounts()).filter((a) => a.kind === 'diyetisyen' && !a.status)
+  const accs = Object.values(loadAccounts()).filter((a) => a.kind === 'diyetisyen' && (!a.status || a.status === 'inactive'))
   // Her diyetisyene bağlı danışan ve randevu sayısı (danışanın seçtiği diyetisyene göre)
   const allClients = load<{ id: string; dietitian?: string }[]>('dm.clients', [])
   const allAps = load<Appointment[]>('dm.appointments', [])
@@ -70,6 +70,10 @@ function Dietitians({ apps }: { apps: Application[] }) {
             unvan={a.unvan}
             onSave={(t) => { setDietitianTitle(a.u, t); bump() }}
             onEnter={() => enter(a)}
+            inactive={a.status === 'inactive'}
+            onToggle={() => {
+              if (a.status === 'inactive' || confirm(`${withTitle(a)} pasife alınsın mı? Danışanlar listede göremez ve hesabına giriş yapılamaz. İstediğin zaman geri açabilirsin.`)) { setDietitianActive(a.u, a.status === 'inactive'); bump() }
+            }}
           />
         )
       })}
@@ -77,7 +81,7 @@ function Dietitians({ apps }: { apps: Application[] }) {
   )
 }
 /** Tek tip diyetisyen satırı: unvan seçimi, isim soyisim, Unvanı kaydet ve Hesabına gir yan yana */
-function TitleRow({ name, sub, unvan, onSave, onEnter }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void; onEnter: () => void }) {
+function TitleRow({ name, sub, unvan, onSave, onEnter, inactive, onToggle }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void; onEnter: () => void; inactive?: boolean; onToggle?: () => void }) {
   const [t, setT] = useState(unvan ?? '')
   const cur = unvan ?? ''
   return (
@@ -87,12 +91,13 @@ function TitleRow({ name, sub, unvan, onSave, onEnter }: { name: string; sub: st
         {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
       </select>
       <div className="min-w-0">
-        <b className="block truncate">{name}</b>
+        <b className="block truncate">{name}{inactive && <span className="ml-2 rounded-full bg-stone-200 px-2 py-0.5 align-middle text-[11px] font-semibold text-stone-600">Pasif</span>}</b>
         <div className="truncate text-xs text-stone-500">{sub}</div>
       </div>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button className={btn} disabled={t === cur} onClick={() => onSave(t)}>Unvanı kaydet</button>
         <button className={btn} onClick={onEnter}>Hesabına gir</button>
+        {onToggle && <button className={inactive ? btn : `${btn} hover:!border-red-300 hover:!text-red-700`} onClick={onToggle}>{inactive ? 'Aktif et' : 'Pasife al'}</button>}
       </div>
     </div>
   )

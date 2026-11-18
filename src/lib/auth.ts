@@ -1,5 +1,5 @@
 import { cleanName, normUser, pwError, userError, withTitle } from './authRules'
-import { cloudApply, cloudChangePassword, cloudDeleteApplication, cloudDeleteUser, cloudEnabled, cloudLogin, cloudRegister, cloudResetPassword, cloudSetStatus, cloudSetTitle } from './cloud'
+import { cloudApply, cloudChangePassword, cloudDeleteApplication, cloudDeleteUser, cloudEnabled, cloudLogin, cloudRegister, cloudResetPassword, cloudSetActive, cloudSetStatus, cloudSetTitle } from './cloud'
 import { load, save } from './storage'
 
 export { normUser, pwError, userError, withTitle }
@@ -19,7 +19,7 @@ export interface Account {
   clientId?: string
   created: number
   /** Diyetisyen başvurusu: onaylanana kadar giriş yapılamaz (boşsa hesap etkin) */
-  status?: 'pending' | 'rejected'
+  status?: 'pending' | 'rejected' | 'inactive'
   /** Yönetimin onayda verdiği unvan (Dyt., Uzm. Dyt. ...) */
   unvan?: string
 }
@@ -74,6 +74,13 @@ export function setDietitianTitle(u: string, unvan: string) {
   save(APPS_KEY, apps.map((x) => (x.u === u ? { ...x, unvan } : x)))
 }
 
+/** Yönetim: bir diyetisyeni pasife alır (danışan listesinde görünmez, giriş yapamaz) ya da yeniden etkinleştirir */
+export function setDietitianActive(u: string, active: boolean) {
+  if (cloudEnabled) void cloudSetActive(u, active)
+  const acc = loadAccounts()[u]
+  if (!acc) return
+  putAccount({ ...acc, status: active ? undefined : 'inactive' })
+}
 
 export const loadAccounts = () => load<Record<string, Account>>(ACC_KEY, {})
 const putAccount = (a: Account) => save(ACC_KEY, { ...loadAccounts(), [a.u]: a })
@@ -114,6 +121,7 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
   }
   if (a.status === 'pending') return { ok: false, error: 'Diyetisyen başvurunuz inceleniyor. Yönetici onayladığında bu kullanıcı adı ve şifreyle giriş yapabilirsiniz.' }
   if (a.status === 'rejected') return { ok: false, error: 'Diyetisyen başvurunuz onaylanmadı.' }
+  if (a.status === 'inactive') return { ok: false, error: 'Hesabınız yönetici tarafından pasife alındı. Yönetimle iletişime geçin.' }
   return { ok: true, session: { u, label: withTitle(a), kind: a.kind, clientId: a.clientId } }
 }
 

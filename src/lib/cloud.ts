@@ -26,7 +26,7 @@ interface Profile {
   ad: string
   kind: 'admin' | 'diyetisyen' | 'danisan'
   unvan: string | null
-  status: 'pending' | 'rejected' | null
+  status: 'pending' | 'rejected' | 'inactive' | null
   client_id: string | null
   created: string
 }
@@ -224,6 +224,7 @@ async function openSession(uid: string): Promise<Result> {
   }
   if (p.status === 'pending') { await db().auth.signOut(); return fail('Diyetisyen başvurunuz inceleniyor. Yönetici onayladığında bu kullanıcı adı ve şifreyle giriş yapabilirsiniz.') }
   if (p.status === 'rejected') { await db().auth.signOut(); return fail('Diyetisyen başvurunuz onaylanmadı.') }
+  if (p.status === 'inactive') { await db().auth.signOut(); return fail('Hesabınız yönetici tarafından pasife alındı. Yönetimle iletişime geçin.') }
   await pullAll(p)
   return { ok: true, session: sessionOf(p) }
 }
@@ -299,6 +300,8 @@ export async function cloudRegister(i: { u: string; ad: string; p: string; p2: s
   if (!r.ok) return r
   clearCache()
   ctx = { uid: r.uid, username: normUser(i.u), kind: 'danisan', clientId: i.clientId }
+  // Diyetisyen listesi hemen dolsun (aksi halde bir sonraki girişe kadar boş kalırdı)
+  try { await cloudRefreshDietitians() } catch { /* sessiz */ }
   return { ok: true, session: { u: normUser(i.u), label: r.label, kind: 'danisan', clientId: i.clientId } }
 }
 
@@ -341,6 +344,30 @@ export async function cloudSetStatus(id: string, username: string | undefined, s
       if (p.error) throw new Error(p.error.message)
     }
   } catch (e) { reportError(e) }
+}
+
+export async function cloudSetActive(username: string, active: boolean) {
+  try {
+    const p = await db().from('profiles').update({ status: active ? null : 'inactive' }).eq('username', username)
+    if (p.error) throw new Error(/check|constraint/i.test(p.error.message) ? 'Pasife alma için Supabase şemasını güncelleyin (docs/SUPABASE.md, "Pasife alma").' : p.error.message)
+  } catch (e) { reportError(e) }
+}
+
+/** Diyetisyen listesini sunucudan tazeler (yeni hesap açan danışan ve açık sekmeler için); yalnızca diyetisyen kayıtlarını günceller */
+export async function cloudRefreshDietitians(): Promise<boolean> {
+  if (!cloudEnabled) return false
+  try {
+    const rows = await ok<Profile[]>(db().from('profiles').select('*').eq('kind', 'diyetisyen'))
+    const acc = load<Record<string, Account>>('dm.accounts', {})
+    const next: Record<string, Account> = {}
+    for (const [k, v] of Object.entries(acc)) if (v.kind !== 'diyetisyen') next[k] = v
+    for (const p of rows) next[p.username] = toAccount(p)
+    setRaw('dm.accounts', next)
+    return true
+  } catch (e) {
+    console.warn('[bulut] diyetisyenler tazelenemedi', e)
+    return false
+  }
 }
 
 export async function cloudSetTitle(username: string, unvan: string) {

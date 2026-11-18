@@ -35,3 +35,7 @@ Site GitHub Pages'te kalır; hesaplar ve veriler Supabase'te (PostgreSQL) saklan
 - "Şifremi unuttum", kullanıcı adı ve ad soyad eşleşirse şifreyi yeniler (`reset_password` fonksiyonu). E-posta doğrulaması olmadığı için eğitim sürümüne özgü, zayıf bir yöntemdir; gerçek kullanımda e-posta bağlantısı kullanın.
 - Yönetici bir hesabı sildiğinde (`admin_delete_user`) kullanıcı ve danışan kaydı sunucudan kalıcı olarak silinir; aynı kullanıcı adıyla yeniden hesap açılabilir.
 - Gerçek danışan sağlık verisi için KVKK'ya uygun, Türkiye'de barındırılan bir sistem gerekir. Bu proje eğitim amaçlıdır.
+
+## Pasife alma (yönetici)
+
+Yönetim → Diyetisyenler listesinde her diyetisyenin yanında **Pasife al / Aktif et** düğmesi vardır. Pasife alınan diyetisyen danışanların listesinde görünmez ve giriş yapamaz; aktif edilince her şey eskisi gibi döner. Bu özellik için Supabase'de şemanın bir kez güncellenmesi gerekir: `supabase/schema.sql` dosyasının en altındaki iki `alter table` satırını SQL Editor'da çalıştırın (tekrar çalıştırmak güvenlidir).

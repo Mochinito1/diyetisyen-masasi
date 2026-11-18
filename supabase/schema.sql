@@ -9,7 +9,7 @@ create table if not exists public.profiles (
   kind text not null check (kind in ('admin', 'diyetisyen', 'danisan')),
   unvan text,
   -- boş = etkin hesap; diyetisyen başvurusu onaylanana kadar 'pending'
-  status text check (status in ('pending', 'rejected')),
+  status text check (status in ('pending', 'rejected', 'inactive')),
   client_id text,
   created timestamptz not null default now()
 );
@@ -223,3 +223,7 @@ grant execute on function public.admin_delete_user(text, text) to authenticated;
 grant usage on schema public to anon, authenticated;
 grant select, insert, update, delete on public.profiles, public.applications, public.clients, public.appointments, public.settings to authenticated;
 grant execute on function public.is_admin(), public.my_username(), public.my_client_id() to authenticated;
+-- ───────────── Pasife alma (mevcut kurulumlar için) ─────────────
+-- Yönetici bir diyetisyeni pasife alabilir: profiles.status = 'inactive'. Tekrar çalıştırmak güvenlidir.
+alter table public.profiles drop constraint if exists profiles_status_check;
+alter table public.profiles add constraint profiles_status_check check (status in ('pending', 'rejected', 'inactive'));
