@@ -1,5 +1,5 @@
 import { fmt } from '../../lib/format'
-import { calculate, macros, type CalcInput } from '../../lib/formulas'
+import { calculate, macros, sodiumLimit, type CalcInput } from '../../lib/formulas'
 
 const FORMULA = { mifflin: 'Mifflin-St Jeor', harris: 'Harris-Benedict', schofield: 'Schofield (FAO/WHO)' } as const
 const TONE = { ok: 'text-emerald-800', warn: 'text-amber-800', bad: 'text-red-800' } as const
@@ -37,7 +37,10 @@ function Kpi({ label, value, unit, sub, main, subClass = '' }: { label: string; 
 }
 
 /** Danışan profili: diyetisyenin belirlediği hedeflerin salt okunur özeti (göstergeler, BKİ çubuğu, makro dağılımı) */
-export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: { input: CalcInput; macroPct?: { c: number; p: number } }) {
+export const DEFAULT_MACRO = { c: 50, p: 20 }
+
+/** onMacro verilirse (diyetisyen) makro dağılımı kaydırıcılarla değiştirilebilir; verilmezse (danışan) salt okunurdur. */
+export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacro }: { input: CalcInput; macroPct?: { c: number; p: number }; onMacro?: (m: { c: number; p: number }) => void }) {
   const r = calculate(input)
   if (!r)
     return <Card><p className="text-stone-500">Diyetisyenin bilgilerini tamamladığında hedeflerin burada görünecek.</p></Card>
@@ -57,6 +60,7 @@ export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: {
   const inRange = w >= r.idealLo && w <= r.idealHi
   const status = inRange ? 'Mevcut kilo normal aralıkta.' : w < r.idealLo ? 'Mevcut kilo bu aralığın altında.' : 'Mevcut kilo bu aralığın üzerinde.'
   const wk = r.weeklyKg
+  const editable = !!onMacro
 
   return (
     <div className="space-y-4">
@@ -97,7 +101,14 @@ export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: {
 
       <Card>
         <h2 className="font-display text-lg font-bold">Makro dağılımı</h2>
-        <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
+        <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı{editable ? '. Kaydırıcıları sürükleyerek değiştir.' : ''}</p>
+        {editable && (
+          <div className="mb-4 flex h-3 overflow-hidden rounded-full bg-stone-200" aria-hidden="true">
+            <i className="block h-full bg-brand-500 transition-all" style={{ width: `${m.carbPct}%` }} />
+            <i className="block h-full bg-amber-700/60 transition-all" style={{ width: `${m.proteinPct}%` }} />
+            <i className="block h-full bg-stone-500 transition-all" style={{ width: `${m.fatPct}%` }} />
+          </div>
+        )}
         <ul className="space-y-3.5">
           {([
             ['Karbonhidrat', m.carbG, m.carbPct, 'bg-brand-500'],
@@ -109,12 +120,30 @@ export default function ProfileSummary({ input, macroPct = { c: 50, p: 20 } }: {
                 <span className="text-sm font-semibold">{name}</span>
                 <span className="text-sm text-stone-500"><b className="font-display text-xl text-stone-900">{fmt(g)}</b> g · %{pct}</span>
               </div>
-              <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-200" role="img" aria-label={`${name} yüzde ${pct}`}>
-                <i className={`block h-full rounded-full ${cls}`} style={{ width: `${Math.min(100, pct)}%` }} />
-              </div>
+              {editable && name !== 'Yağ' ? (
+                <input
+                  type="range" min={5} max={80} step={5} value={pct}
+                  aria-label={`${name} yüzdesi`}
+                  onChange={(e) => {
+                    const v = +e.target.value
+                    onMacro!(name === 'Karbonhidrat' ? { c: Math.min(v, 100 - macroPct.p), p: macroPct.p } : { c: macroPct.c, p: Math.min(v, 100 - macroPct.c) })
+                  }}
+                  className="mt-1.5 h-6 w-full cursor-pointer accent-brand-500"
+                />
+              ) : (
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-stone-200" role="img" aria-label={`${name} yüzde ${pct}`}>
+                  <i className={`block h-full rounded-full ${cls}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                </div>
+              )}
             </li>
           ))}
         </ul>
+        {editable && (
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-stone-100 pt-3 text-xs text-stone-500">
+            <span>Günlük sodyum üst sınırı: {fmt(sodiumLimit(input.age!, r.target!))} mg</span>
+            <button className="h-8 rounded-lg border border-stone-300 px-3 font-semibold text-stone-700 hover:border-brand-500 hover:text-brand-500" onClick={() => onMacro!(DEFAULT_MACRO)}>Varsayılan 50/20/30</button>
+          </div>
+        )}
       </Card>
       </div>
 

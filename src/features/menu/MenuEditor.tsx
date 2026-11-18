@@ -54,7 +54,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   const isHidden = (f: Food) => ev.get(f.code)?.st === 'hide'
   const T = totals(menu, food.byCode, food.idx)
   const results = searchForMenu(food.foods, q, 10, showHidden ? undefined : isHidden)
-  const warns = warnList(result, age, T, menu.length)
+  const warns = warnList(result, age, T, menu.length, client.macro ?? { c: 50, p: 20 })
   const badItems = menu.filter((it) => ev.get(it.code)?.st === 'hide')
   if (badItems.length)
     warns.push({ tone: 'bad', text: `Bu danışan için uygun olmayan ${badItems.length} ürün var: ${badItems.map((it) => shortName(food.byCode.get(it.code)?.name ?? '')).join(', ')}` })
@@ -99,7 +99,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
 
   const goals = ready
     ? (() => {
-        const m = macros(result.target!, 50, 20)
+        const m = macros(result.target!, client.macro?.c ?? 50, client.macro?.p ?? 20)
         return [
           ['Enerji', T.kcal, result.target!, 'kcal'],
           ['Protein', T.p, m.proteinG, 'g'],

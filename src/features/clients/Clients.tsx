@@ -92,7 +92,7 @@ export default function Clients() {
             </div>
           </div>
           <div className="space-y-4">
-            <CalcResults input={toCalcInput(editing.profile)} />
+            <CalcResults input={toCalcInput(editing.profile)} macro={editing.macro} onMacro={(macro) => set({ macro })} />
             <MeasurementsCard
               meas={editing.meas}
               sex={editing.profile.sex}

@@ -55,7 +55,7 @@ export default function Profile() {
                 ))}
               </dl>
             </div>
-            <ProfileSummary input={toCalcInput(client.profile)} />
+            <ProfileSummary input={toCalcInput(client.profile)} macroPct={client.macro} />
           </div>
           <div className="mt-4">
             <MeasurementsCard

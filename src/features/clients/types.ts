@@ -19,6 +19,8 @@ export interface Client {
   kvkk: { ay: string; riza: string }
   /** Danışan portalı takibi: gün -> yenen öğünler ve su (bardak) */
   trk: Record<string, { m: string[]; su: number }>
+  /** Diyetisyenin belirlediği makro dağılımı: karbonhidrat ve protein yüzdesi (yağ kalan). Yoksa 50/20/30 */
+  macro?: { c: number; p: number }
   /** Danışanın bağlı olduğu diyetisyenin kullanıcı adı (boşsa demo diyetisyen) */
   dietitian?: string
   /** Seçili hastalık, alerji ve diyet kimlikleri (rules.ts) */
