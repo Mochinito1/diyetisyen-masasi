@@ -37,7 +37,7 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
         Kilo (kg)
         <input className={field} inputMode="decimal" maxLength={5} placeholder="Yazın" value={value.w} onChange={num('w')} />
       </label>
-      <label className="block text-sm font-semibold">
+      <label className="col-span-2 block text-sm font-semibold">
         Fiziksel aktivite
         <select className={field} value={value.act} onChange={(e) => set('act', e.target.value)}>
           <option value="1.2">Hareketsiz (1,2)</option>
@@ -47,7 +47,7 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
           <option value="1.9">Aşırı aktif (1,9)</option>
         </select>
       </label>
-      <label className="block text-sm font-semibold">
+      <label className="col-span-2 block text-sm font-semibold">
         Hedef
         <select className={field} value={value.goal} onChange={(e) => set('goal', e.target.value)}>
           <option value="0">Kiloyu koru</option>
@@ -58,7 +58,7 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
           <option value="500">Kilo al (+500 kcal)</option>
         </select>
       </label>
-      <label className="block text-sm font-semibold">
+      <label className="col-span-2 block text-sm font-semibold">
         Fizyolojik durum
         <select className={field} value={value.phys} onChange={(e) => set('phys', e.target.value as Profile['phys'])}>
           <option value="none">Yok</option>

@@ -75,7 +75,7 @@ function DietitianSettings() {
   return (
     <>
       <PageTitle title="Ayarlar" sub="Klinik bilgileri, mesaj şablonları, KVKK metinleri ve yedekleme" />
-      <div className="grid items-start gap-4 md:grid-cols-2">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Klinik ve PDF ayarları</h2>
           <p className="mb-3 text-xs text-stone-500">Yazdırılabilir diyet listesinin başlığında, alt bilgisinde ve hatırlatma mesajlarında kullanılır. {cloudEnabled ? 'Sunucuda saklanır.' : 'Bu tarayıcıda saklanır.'}</p>

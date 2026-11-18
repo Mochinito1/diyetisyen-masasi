@@ -67,7 +67,7 @@ export default function Clients() {
                 Ad soyad
                 <input className={field} value={editing.name} onChange={(e) => set({ name: e.target.value })} />
               </label>
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm font-semibold">
                   Telefon
                   <input className={field} inputMode="numeric" placeholder="05XX XXX XX XX" value={editing.tel} onChange={(e) => set({ tel: e.target.value.replace(/[^0-9 ]/g, '') })} />
@@ -154,7 +154,7 @@ export default function Clients() {
         </button>
       </div>
       <div className="mb-4 flex flex-wrap gap-3">
-        <input className={`${field} max-w-xs`} placeholder="Danışan ara" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input className={`${field} w-full sm:max-w-xs`} placeholder="Danışan ara" value={q} onChange={(e) => setQ(e.target.value)} />
         <select className={`${field} w-auto`} value={sort} onChange={(e) => setSort(e.target.value as typeof sort)}>
           <option value="upd">Son güncellenen</option>
           <option value="name">Ad (A-Z)</option>

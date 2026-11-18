@@ -5,6 +5,7 @@ import { DEMO_DIETITIAN } from '../lib/dietitians'
 import { loadBrandOf } from '../features/settings/useBrand'
 import { cloudEnabled } from '../lib/cloud'
 import { useAuth } from './auth'
+import ThemePicker from './ThemePicker'
 
 type Mode = 'login' | 'create' | 'forgot' | 'apply'
 const field = 'mt-1 w-full rounded-[7px] border border-stone-300 bg-stone-50 px-3 py-2.5 text-[15px] focus:border-brand-500 focus:outline-none'
@@ -63,7 +64,8 @@ export default function Login() {
   )
 
   return (
-    <div className="grid min-h-screen place-items-center bg-stone-50 p-4">
+    <div className="relative grid min-h-screen place-items-center bg-stone-50 p-4">
+      <div className="absolute right-4 top-4 z-10"><ThemePicker /></div>
       <form onSubmit={submit} className="w-full max-w-[420px] rounded-xl border border-stone-200 bg-white p-6 text-center shadow-sm">
         <h1 className="font-display text-[28px] font-bold leading-tight">Diyetisyen Masası</h1>
         <p className="mb-4 mt-1 text-xs text-stone-500">{SUBTITLE[mode]}</p>

@@ -1,9 +1,10 @@
-import { NavLink, Link, Outlet } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { NavLink, Link, Outlet, useLocation } from 'react-router-dom'
 import NavIcon from './NavIcon'
 import { navFor } from './nav'
 import { ROLES, useRole } from './role'
 import { useAuth } from './auth'
-import { useTheme } from './theme'
+import ThemePicker from './ThemePicker'
 import CloudBanner from './CloudBanner'
 
 const item = ({ isActive }: { isActive: boolean }) =>
@@ -12,9 +13,14 @@ const pill = (active: boolean) => `grid h-7 w-[46px] place-items-center rounded-
 
 export default function Layout() {
   const { role, setRole, canSwitch } = useRole()
+  const navRef = useRef<HTMLElement>(null)
+  const { pathname } = useLocation()
+  // Mobilde kaydırılan menüde etkin sekme her zaman görünür olsun
+  useEffect(() => {
+    const el = navRef.current?.querySelector<HTMLElement>('[aria-current="page"]')
+    el?.scrollIntoView({ inline: 'center', block: 'nearest' })
+  }, [pathname, role])
   const { session, logout, imp, stopImp } = useAuth()
-  const { theme, toggle } = useTheme()
-  const dark = theme === 'dark'
   // Danışan menüsü soldan sağa: Profil, Menü, Anasayfa, Randevu, Ayarlar
   const home = { to: '/', short: 'Anasayfa', icon: 'home' as const }
   const items = [home, ...navFor(role)]
@@ -51,9 +57,9 @@ export default function Layout() {
         </div>
       </div>}
 
-      <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-[1600px] px-4 md:px-6 lg:px-8">
-          <div className="relative flex min-h-[52px] items-center justify-between gap-2 py-1.5 sm:justify-center sm:pt-2.5">
+      <header className="border-stone-200 bg-stone-50 max-md:contents md:sticky md:top-0 md:z-20 md:border-b">
+        <div className="mx-auto max-w-[1600px] px-4 max-md:contents md:px-6 lg:px-8">
+          <div className="relative flex min-h-[52px] max-md:px-4 items-center justify-between gap-2 py-1.5 sm:justify-center sm:pt-2.5">
             <Link to="/" className="min-w-0 truncate font-display text-base font-bold leading-tight text-stone-900 sm:text-[17px] md:text-xl" aria-label="Anasayfa">Diyetisyen Masası</Link>
             <div className="flex flex-none items-center gap-1.5 sm:absolute sm:right-0 sm:top-1.5 sm:gap-2">
               <span className="max-w-[4.75rem] truncate text-[13px] font-bold text-stone-900 min-[400px]:max-w-[6.5rem] sm:max-w-[16rem] sm:text-base" title={session?.label}>{session?.label}</span>
@@ -61,21 +67,10 @@ export default function Layout() {
                 <svg className="sm:hidden" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></svg>
                 <span className="hidden sm:inline">Çıkış</span>
               </button>
-              <button
-                onClick={toggle}
-                aria-label={dark ? 'Açık temaya geç' : 'Karanlık temaya geç'}
-                title="Tema"
-                className="grid h-9 w-9 flex-none place-items-center rounded-full border border-stone-200 bg-white text-stone-900 hover:border-brand-500 hover:text-brand-500 sm:h-[38px] sm:w-[38px]"
-              >
-                {dark ? (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
-                ) : (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" /></svg>
-                )}
-              </button>
+              <ThemePicker />
             </div>
           </div>
-          <nav aria-label="Ana menü" className="-mx-4 flex snap-x gap-0.5 overflow-x-auto px-3 pb-1.5 pt-0.5 [scrollbar-width:none] md:mx-auto md:max-w-4xl md:px-0 [&::-webkit-scrollbar]:hidden">
+          <nav ref={navRef} aria-label="Ana menü" className="max-md:sticky max-md:top-0 max-md:z-20 max-md:border-b max-md:border-stone-200 max-md:bg-stone-50 max-md:[mask-image:linear-gradient(to_right,transparent,#000_12px,#000_calc(100%-28px),transparent)] flex snap-x gap-0.5 overflow-x-auto px-3 pb-1.5 pt-0.5 [scrollbar-width:none] md:mx-auto md:max-w-4xl md:px-0 [&::-webkit-scrollbar]:hidden">
             {navItems.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.to === '/'} className={item}>
                 {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name={n.icon} /></span><span className="max-w-full truncate">{n.short}</span></>)}
