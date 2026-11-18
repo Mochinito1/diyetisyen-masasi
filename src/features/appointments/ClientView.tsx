@@ -17,7 +17,8 @@ const KEY = 'dm.asClient'
 export default function ClientView({ api, clients }: { api: ApApi; clients: Client[] }) {
   const { session } = useAuth()
   const [asId, setAsId] = useState<string>(() => load<string>(KEY, ''))
-  const [open, setOpen] = useState(false)
+  const [tab, setTab] = useState<'up' | 'past'>('up')
+  const [fresh, setFresh] = useState('')
   const [month, setMonth] = useState(todayStr().slice(0, 7))
   const [day, setDay] = useState<string | null>(null)
   const [slot, setSlot] = useState<string | null>(null)
@@ -39,26 +40,28 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
   const today = todayStr()
   const mine = sortByDt(api.aps.filter((a) => a.clientId === me.id))
   const upcoming = mine.filter((a) => isBusy(a) && apDay(a) >= today)
-  const past = mine.filter((a) => !(isBusy(a) && apDay(a) >= today)).reverse().slice(0, 8)
+  const past = mine.filter((a) => !(isBusy(a) && apDay(a) >= today)).reverse().slice(0, 20)
   const busy = new Set(api.aps.filter(isBusy).map((a) => a.dt))
   const maxMonth = addMonths(today.slice(0, 7), 3)
 
   const choose = (id: string) => {
     setAsId(id)
     save(KEY, id)
-    setOpen(false)
     setDay(null)
     setSlot(null)
   }
 
+  const noDyt = !me.dietitian
   const book = () => {
-    if (!day || !slot) return
+    if (!day || !slot || noDyt) return
+    const id = crypto.randomUUID()
     api.add({
-      id: crypto.randomUUID(), clientId: me.id, clientName: me.name, dt: `${day}T${slot}`, type: 'yuz', link: '',
+      id, clientId: me.id, clientName: me.name, dt: `${day}T${slot}`, type: 'yuz', link: '',
       note: note.trim(), status: 'pending', by: 'danisan', dietitian: me.dietitian, created: Date.now(),
     })
     setDone(`${longDate(day)} ${slot} için randevu talebin iletildi.`)
-    setOpen(false)
+    setTab('up')
+    setFresh(id)
     setDay(null)
     setSlot(null)
     setNote('')
@@ -66,7 +69,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
 
   return (
     <>
-      <PageTitle title="Randevu" sub="Randevularını buradan oluşturabilirsin" />
+      <PageTitle title="Randevu" sub="Randevu oluştur ve randevularını takip et" />
       {session?.kind === 'admin' && (
       <label className="mb-4 block max-w-xs text-xs font-semibold text-stone-500">
         Test: hangi danışan olarak görüntüleniyor?
@@ -76,91 +79,123 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
       </label>
       )}
 
-      <div className="grid items-start gap-4 lg:grid-cols-2">
-        {done && <div className="rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800 lg:col-span-2">{done}</div>}
-
-        <div className="rounded-2xl border border-stone-200 bg-white p-5">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h2 className="font-display text-lg font-bold">Randevularım</h2>
-            <button className="rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white" aria-expanded={open} onClick={() => { setOpen(!open); setDone('') }}>
-              Randevu oluştur
-            </button>
-          </div>
-
-          {open && (
-            <div className="mt-4 max-w-md rounded-xl border border-stone-200 bg-stone-50 p-4">
-              <MonthCalendar
-                month={month}
-                onMonth={setMonth}
-                selected={day}
-                onSelect={(d) => { setDay(d); setSlot(null) }}
-                disabled={(d) => !isDayAvailable(d, api.av, busy)}
-                minMonth={today.slice(0, 7)}
-                maxMonth={maxMonth}
-              />
-              {day && isDayAvailable(day, api.av, busy) ? (
-                <>
-                  <div className="mt-4 text-xs font-bold uppercase tracking-wider capitalize text-stone-500">{longDate(day)} · saat aralıkları</div>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {slotsFor(day, api.av, busy).map((s) => (
-                      <button key={s} onClick={() => setSlot(s)} className={`rounded-full border px-3 py-1 text-sm font-semibold ${slot === s ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white'}`}>{slotRange(s, api.av.step)}</button>
-                    ))}
-                  </div>
-                  <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
-                    <input className={`${field} mt-1 w-full`} maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
-                  </label>
-                  <button className="mt-3 rounded-lg bg-brand-500 px-4 py-2 font-semibold text-white disabled:opacity-40" disabled={!slot} onClick={book}>Randevu oluştur</button>
-                </>
-              ) : (
-                <p className="mt-3 text-xs text-stone-500">Takvimden bir gün seçin; o güne ait saat aralıkları burada görünür. Yalnızca önümüzdeki {MAX_DAYS_AHEAD} gün ve diyetisyenin açtığı günler seçilebilir.</p>
-              )}
+      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,26rem)_minmax(0,1fr)]">
+        {/* Sol: randevu oluştur */}
+        <section className="rounded-2xl border border-stone-200 bg-white p-5" aria-label="Randevu oluştur">
+          <h2 className="font-display text-lg font-bold">Randevu oluştur</h2>
+          <p className="mb-3 text-xs text-stone-500">Takvimden bir gün, ardından bir saat seç.</p>
+          {noDyt && (
+            <div role="alert" className="mb-3 rounded-xl bg-amber-100 p-3 text-sm text-amber-800">
+              Randevu oluşturmak için önce diyetisyenini seçmelisin. <b>Ayarlar → Diyetisyenim</b> bölümünden seçebilirsin.
             </div>
           )}
+          <div className="rounded-xl border border-stone-200 bg-stone-50 p-4">
+            <MonthCalendar
+              month={month}
+              onMonth={setMonth}
+              selected={day}
+              onSelect={(d) => { setDay(d); setSlot(null); setDone('') }}
+              disabled={(d) => !isDayAvailable(d, api.av, busy)}
+              minMonth={today.slice(0, 7)}
+              maxMonth={maxMonth}
+            />
+            {day && isDayAvailable(day, api.av, busy) ? (
+              <>
+                <div className="mt-4 text-xs font-bold uppercase tracking-wider capitalize text-stone-500">{longDate(day)} · saat aralıkları</div>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {slotsFor(day, api.av, busy).map((s) => (
+                    <button key={s} onClick={() => setSlot(s)} className={`rounded-full border px-3 py-1 text-sm font-semibold ${slot === s ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white'}`}>{slotRange(s, api.av.step)}</button>
+                  ))}
+                </div>
+                <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
+                  <input className={`${field} mt-1 w-full`} maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
+                </label>
+              </>
+            ) : (
+              <p className="mt-3 text-xs text-stone-500">Takvimden bir gün seçin; o güne ait saat aralıkları burada görünür. Yalnızca önümüzdeki {MAX_DAYS_AHEAD} gün ve diyetisyenin açtığı günler seçilebilir.</p>
+            )}
+          </div>
+          <button className="mt-3 w-full rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white disabled:opacity-40" disabled={!day || !slot || noDyt} onClick={book}>
+            {day && slot ? `${longDate(day)} ${slot} için randevu oluştur` : 'Randevu oluştur'}
+          </button>
+        </section>
 
-          {upcoming.length === 0 ? (
-            <p className="mt-3 text-stone-500">Planlı randevun yok.</p>
-          ) : upcoming.map((a) => <MyRow key={a.id} a={a} now={now} onCancel={() => api.patch(a.id, { status: 'cancel' })} />)}
-        </div>
+        {/* Sağ: Randevularım */}
+        <section className="rounded-2xl border border-stone-200 bg-white p-5" aria-label="Randevularım">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <h2 className="font-display text-lg font-bold">Randevularım</h2>
+            <div className="flex overflow-hidden rounded-full border border-stone-300 text-sm font-semibold" role="tablist">
+              {([['up', `Yaklaşan (${upcoming.length})`], ['past', `Geçmiş (${past.length})`]] as const).map(([k, label]) => (
+                <button key={k} role="tab" aria-selected={tab === k} onClick={() => setTab(k)} className={`px-4 py-1.5 ${tab === k ? 'bg-brand-500 text-white' : 'bg-white text-stone-600'}`}>{label}</button>
+              ))}
+            </div>
+          </div>
 
-        {past.length > 0 && (
-          <div className="rounded-2xl border border-stone-200 bg-white p-5">
-            <h3 className="font-display text-lg font-bold">Geçmiş</h3>
-            {past.map((a) => (
-              <div key={a.id} className="flex justify-between border-t border-stone-100 py-2 text-sm first:border-t-0">
-                <span className="capitalize">{longDate(apDay(a))} {apTime(a)}</span>
-                <span className="font-semibold">{{ done: 'Geldi', miss: 'Gelmedi', cancel: 'İptal', plan: 'Planlandı', pending: 'Onay bekliyor' }[a.status]}</span>
+          {done && <div role="status" className="mt-3 rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800">{done}</div>}
+
+          <div className="mt-3 space-y-3">
+            {tab === 'up' ? (
+              upcoming.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-stone-500">
+                  <div className="font-semibold text-stone-700">Planlı randevun yok</div>
+                  <div className="mt-1 text-sm">Soldaki takvimden yeni bir randevu oluşturabilirsin.</div>
+                </div>
+              ) : upcoming.map((a) => <MyRow key={a.id} a={a} now={now} fresh={a.id === fresh} onCancel={() => api.patch(a.id, { status: 'cancel' })} />)
+            ) : past.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-stone-300 p-8 text-center text-stone-500">Geçmiş randevun yok.</div>
+            ) : past.map((a) => (
+              <div key={a.id} className="flex items-center gap-3 rounded-xl border border-stone-200 p-3">
+                <DateBadge day={apDay(a)} muted />
+                <div className="min-w-0 flex-1">
+                  <b className="capitalize">{longDate(apDay(a))}</b>
+                  <div className="text-sm text-stone-500">Saat {apTime(a)}</div>
+                </div>
+                <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${a.status === 'done' ? 'bg-emerald-100 text-emerald-800' : a.status === 'miss' ? 'bg-red-100 text-red-800' : 'bg-stone-100 text-stone-600'}`}>
+                  {{ done: 'Geldi', miss: 'Gelmedi', cancel: 'İptal', plan: 'Planlandı', pending: 'Onay bekliyor' }[a.status]}
+                </span>
               </div>
             ))}
           </div>
-        )}
+        </section>
       </div>
     </>
   )
 }
 
-function MyRow({ a, now, onCancel }: { a: Appointment; now: number; onCancel: () => void }) {
+/** Gün numarası ve ay kısaltması olan küçük tarih rozeti */
+function DateBadge({ day, muted }: { day: string; muted?: boolean }) {
+  const d = new Date(`${day}T12:00`)
+  return (
+    <div className={`grid h-14 w-14 flex-none place-items-center rounded-xl text-center leading-tight ${muted ? 'bg-stone-100 text-stone-600' : 'bg-brand-50 text-brand-500'}`} aria-hidden="true">
+      <div>
+        <div className="font-display text-xl font-bold">{d.getDate()}</div>
+        <div className="text-[11px] font-semibold uppercase">{d.toLocaleDateString('tr-TR', { month: 'short' })}</div>
+      </div>
+    </div>
+  )
+}
+
+function MyRow({ a, now, fresh, onCancel }: { a: Appointment; now: number; fresh: boolean; onCancel: () => void }) {
   const st = effectiveStatus(a, now)
   const left = dtMs(a.dt) - DAY_MS - now
   const can = canCancel(a, now)
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border-t border-stone-100 pt-3">
-      <div>
-        <b className="capitalize">{longDate(apDay(a))}</b>
-        <div className="text-sm text-stone-500">Saat {apTime(a)}{a.note ? ` · ${a.note}` : ''}</div>
-        {can ? (
-          <div className="mt-1 text-xs font-semibold text-amber-800">
-            İptal edebilmek için kalan süre: {fmtRemaining(left)}
-            {st === 'pending' && ' · Diyetisyen onaylamazsa randevuya 24 saat kala otomatik onaylanır.'}
-          </div>
-        ) : (
-          <div className="mt-1 text-xs font-semibold text-amber-800">Randevuya 24 saatten az kaldı; randevu otomatik onaylandı ve iptal edilemez.</div>
-        )}
-      </div>
-      <div className="flex items-center gap-2">
+    <div className={`rounded-xl border p-3 ${fresh ? 'border-brand-500 bg-brand-50' : 'border-stone-200'}`}>
+      <div className="flex flex-wrap items-center gap-3">
+        <DateBadge day={apDay(a)} />
+        <div className="min-w-0 flex-1">
+          <b className="capitalize">{longDate(apDay(a))}</b>
+          <div className="text-sm text-stone-500">Saat {apTime(a)}{a.note ? ` · ${a.note}` : ''}</div>
+        </div>
         <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${st === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
-          {st === 'pending' ? 'Diyetisyen onayı bekleniyor' : 'Onaylandı'}
+          {st === 'pending' ? 'Onay bekleniyor' : 'Onaylandı'}
         </span>
         {can && <button className={btn} onClick={onCancel}>İptal et</button>}
+      </div>
+      <div className="mt-2 text-xs font-semibold text-amber-800">
+        {can
+          ? <>İptal edebilmek için kalan süre: {fmtRemaining(left)}{st === 'pending' && ' · Diyetisyen onaylamazsa randevuya 24 saat kala otomatik onaylanır.'}</>
+          : 'Randevuya 24 saatten az kaldı; randevu otomatik onaylandı ve iptal edilemez.'}
       </div>
     </div>
   )
