@@ -6,6 +6,7 @@ import { toCalcInput } from '../calculator/profile'
 import MeasurementsCard from '../clients/dossier/Measurements'
 import { useBrand } from '../settings/useBrand'
 import ClientPicker from './ClientPicker'
+import PortalLabs from './PortalLabs'
 import ProfileSummary from './ProfileSummary'
 import NextAppointment from './NextAppointment'
 import Onboarding from './Onboarding'
@@ -67,6 +68,9 @@ export default function Profile() {
                 update({ meas, ...(w != null ? { profile: { ...client.profile, w: String(w) } } : {}) })
               }}
             />
+          </div>
+          <div className="mt-4">
+            <PortalLabs labs={client.lab} sex={client.profile.sex} onChange={(lab) => update({ lab })} />
           </div>
         </>
       )}
