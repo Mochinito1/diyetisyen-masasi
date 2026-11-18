@@ -22,7 +22,7 @@ export default function PortalSettings() {
     <>
       <PageTitle title="Ayarlar" sub="Bilgilerin ve hesabın" />
       <ClientPicker clients={clients} value={client.id} onChange={choose} />
-      <div className="max-w-2xl space-y-4">
+      <div className="grid items-start gap-4 md:grid-cols-2">
         <div className={card}>
           <h2 className="font-display text-lg font-bold">Diyetisyenim</h2>
           <p className="mb-2 text-xs text-stone-500">İstediğin zaman başka bir diyetisyen seçebilirsin. Menün ve bilgilerin sende kalır; yeni randevuları seçtiğin diyetisyenin takviminden alırsın. Önceki diyetisyende kalan randevular onun takviminde durur.</p>

@@ -17,7 +17,7 @@ export default function Layout() {
   return (
     <div className="min-h-screen">
       {canSwitch && <div className="bg-[#0a0f0d] text-[#e5eee8]">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-1 text-xs">
+        <div className="mx-auto flex max-w-[1600px] flex-wrap items-center gap-3 px-4 py-1 text-xs md:px-6 lg:px-8">
           <span className="hidden font-semibold opacity-70 sm:inline">Şu rol olarak görüntüle:</span>
           <span className="font-semibold opacity-70 sm:hidden">Rol:</span>
           <div className="flex overflow-hidden rounded-full border border-[#3a4b42]">
@@ -37,7 +37,7 @@ export default function Layout() {
       </div>}
 
       <header className="sticky top-0 z-20 border-b border-stone-200 bg-stone-50">
-        <div className="mx-auto max-w-6xl px-4">
+        <div className="mx-auto max-w-[1600px] px-4 md:px-6 lg:px-8">
           <div className="relative flex items-center justify-center pt-2.5">
             <Link to="/" className="font-display text-[17px] font-bold leading-tight text-stone-900 md:text-xl" aria-label="Anasayfa">Diyetisyen Masası</Link>
             <div className="absolute left-0 top-1.5 flex items-center gap-2">
@@ -57,7 +57,7 @@ export default function Layout() {
               )}
             </button>
           </div>
-          <nav aria-label="Ana menü" className="mx-auto flex max-w-3xl gap-0.5 overflow-x-auto pb-1.5 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <nav aria-label="Ana menü" className="mx-auto flex max-w-4xl gap-0.5 overflow-x-auto pb-1.5 pt-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             <NavLink to="/" end className={item}>
               {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name="home" /></span><span>Anasayfa</span></>)}
             </NavLink>
@@ -70,7 +70,7 @@ export default function Layout() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] md:py-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-8 lg:px-8">
         <Outlet />
       </main>
     </div>

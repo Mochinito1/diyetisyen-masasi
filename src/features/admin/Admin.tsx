@@ -45,7 +45,7 @@ function Dietitians({ apps }: { apps: Application[] }) {
   const aps = load<Appointment[]>('dm.appointments', [])
   const approved = apps.filter((a) => a.status === 'approved')
   return (
-    <div className="space-y-3">
+    <div className="grid items-start gap-3 md:grid-cols-2">
       <div className={card}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="min-w-0 flex-1">
@@ -92,7 +92,7 @@ const ST = { pending: ['İncelemede', 'bg-amber-100 text-amber-800'], approved: 
 function Applications({ list, setStatus }: ReturnType<typeof useApplications>) {
   if (!list.length) return <p className="text-stone-500">Başvuru yok.</p>
   return (
-    <div className="space-y-3">
+    <div className="grid items-start gap-3 md:grid-cols-2">
       {list.map((a) => (
         <div key={a.id} className={card}>
           <div className="flex flex-wrap items-center gap-2">
@@ -135,7 +135,7 @@ function FoodFile() {
     setMsg(`${r.foods.length} besin eklendi${r.skipped ? `, ${r.skipped} satır atlandı` : ''}`)
   }
   return (
-    <div className="space-y-4">
+    <div className="grid items-start gap-4 lg:grid-cols-2">
       <div className={card}>
         <h2 className="font-display text-lg font-bold">Besin ekle</h2>
         <p className="mb-3 text-xs text-stone-500">Eklenen besinler TürKomp listesine katılır ve tüm diyetisyenlerce görülür. Değerler 100 g başınadır.</p>

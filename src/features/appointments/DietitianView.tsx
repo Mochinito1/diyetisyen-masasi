@@ -129,6 +129,7 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
             })}
           </div>
         )}
+        <div className="grid items-start gap-4 xl:grid-cols-2">
         <div className="rounded-2xl border border-stone-200 bg-white p-5">
           <h2 className="font-display text-lg font-bold">Önümüzdeki 14 gün</h2>
           {upcoming.length === 0 ? <p className="mt-2 text-stone-500">Yaklaşan randevu yok.</p> : upcoming.map((a) => (
@@ -142,6 +143,7 @@ export default function DietitianView({ api, clients }: { api: ApApi; clients: C
         <GapCard clients={clients} aps={aps} tpl={brand.tpl2} clinic={brand.clinic || brand.name} onNew={() => setAdding(true)} />
 
         <Hours api={api} />
+        </div>
       </div>
       {copied && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg" role="status">{copied}</div>}
     </>

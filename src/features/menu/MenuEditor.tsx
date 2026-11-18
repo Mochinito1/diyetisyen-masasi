@@ -238,6 +238,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
         </div>
       ) : (
         <>
+          <div className="grid items-start gap-4 xl:grid-cols-2">
           {MEALS.map((m) => {
             const rows = menu.map((it, i) => ({ it, i })).filter((x) => x.it.meal === m)
             if (!rows.length) return null
@@ -288,6 +289,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
               </div>
             )
           })}
+          </div>
 
           <div className="rounded-2xl border border-stone-200 bg-white p-5">
             <div className="flex items-center justify-between">

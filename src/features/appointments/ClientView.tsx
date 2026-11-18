@@ -76,8 +76,8 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
       </label>
       )}
 
-      <div className="space-y-4">
-        {done && <div className="rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800">{done}</div>}
+      <div className="grid items-start gap-4 lg:grid-cols-2">
+        {done && <div className="rounded-xl bg-emerald-100 p-3 text-sm text-emerald-800 lg:col-span-2">{done}</div>}
 
         <div className="rounded-2xl border border-stone-200 bg-white p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">

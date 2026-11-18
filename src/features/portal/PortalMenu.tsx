@@ -43,8 +43,8 @@ export default function PortalMenu() {
       {!food || !T ? <p className="text-stone-500">Yükleniyor…</p> : client.menu.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center text-stone-500">Diyetisyenin henüz menü hazırlamadı.</div>
       ) : (
-        <div className="space-y-4">
-          <div className={card}>
+        <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className={`${card} lg:col-span-2`}>
             <h2 className="font-display text-lg font-bold">Su takibi</h2>
             <p className="text-xs text-stone-500">Hedef: günde {GLASSES} bardak (yaklaşık 2 litre)</p>
             <div className="mt-3 flex flex-wrap gap-2">
@@ -80,7 +80,7 @@ export default function PortalMenu() {
               </div>
             )
           })}
-          {client.mnote.trim() && <div className={`${card} whitespace-pre-wrap text-sm`}><b>Diyetisyeninden not</b><div className="mt-1">{client.mnote}</div></div>}
+          {client.mnote.trim() && <div className={`${card} whitespace-pre-wrap text-sm lg:col-span-2`}><b>Diyetisyeninden not</b><div className="mt-1">{client.mnote}</div></div>}
         </div>
       )}
     </>

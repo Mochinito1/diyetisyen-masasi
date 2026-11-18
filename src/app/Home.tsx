@@ -52,7 +52,7 @@ function ClientHome() {
   return (
     <>
       {client ? <NextAppointment clientId={client.id} /> : <p className="mb-4 text-sm text-stone-500">Test için önce diyetisyen rolünde bir danışan ekleyin.</p>}
-      <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
         {tiles.map((n) => <Tile key={n.to} icon={n.icon} title={n.label} sub={n.desc} onClick={() => nav(n.to)} />)}
       </div>
     </>
@@ -120,7 +120,7 @@ function DietitianHome() {
         </div>
       )}
 
-      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
         {navFor(role).map((n) => <Tile key={n.to} icon={n.icon} title={n.label} sub={subOf(n.to)} onClick={() => nav(n.to)} />)}
       </div>
 
