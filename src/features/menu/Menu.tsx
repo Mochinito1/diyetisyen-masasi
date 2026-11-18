@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { useRole } from '../../app/role'
 import PageTitle from '../../components/ui/PageTitle'
 import { field } from '../../components/ui/styles'
-import { parseNum } from '../../lib/format'
+import { fmt, parseNum } from '../../lib/format'
 import { calculate } from '../../lib/formulas'
 import { useFoodData } from '../../lib/useFoodData'
 import { toCalcInput } from '../calculator/profile'
@@ -40,15 +40,22 @@ export default function Menu() {
   return (
     <>
       <PageTitle title="Menü" sub="Besin ekleyin, öğünlere dağıtın, hedefle karşılaştırın" />
-      <label className="mb-4 block max-w-xs text-sm font-semibold">
-        Danışan
-        <select className={`${field} mt-1 w-full`} value={client.id} onChange={(e) => choose(e.target.value)}>
-          {clients.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-      </label>
-      {!food || !evalr ? (
+      <div className="mb-4 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-stone-200 bg-white p-3">
+        <label className="flex items-center gap-2 text-sm font-semibold">
+          Danışan
+          <select className={`${field} py-1.5`} value={client.id} onChange={(e) => choose(e.target.value)}>
+            {clients.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-wrap gap-1.5 text-xs font-semibold">
+          {result?.target && <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-emerald-800">Hedef {fmt(result.target)} kcal</span>}
+          {result?.adult && result.category && <span className="rounded-full bg-stone-100 px-2.5 py-1">BKİ {fmt(result.bmi, 1)} · {result.category}</span>}
+          {evalr?.conds.map((c) => <span key={c.id} className="rounded-full bg-amber-100 px-2.5 py-1 text-amber-800">{c.short}</span>)}
+          {!result?.target && <span className="py-1 text-stone-500">Hedef için danışanın bilgilerini tamamlayın.</span>}
+        </div>
+      </div>      {!food || !evalr ? (
         <p className="text-stone-500">Besin listesi yükleniyor…</p>
       ) : (
         <MenuEditor
