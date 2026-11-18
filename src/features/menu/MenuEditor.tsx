@@ -218,7 +218,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             <h2 className="font-display text-lg font-bold">Besin ekle</h2>
             <p className="mb-3 mt-0.5 text-xs text-stone-500">Önce öğünü seç, sonra besin veya yemek ara.</p>
             <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Eklenecek öğün">
-              {MEALS.map((m) => (
+              {(['Kahvaltı', 'Öğle', 'Akşam', 'Ara öğün 1', 'Ara öğün 2', 'Ara öğün 3'] as const).map((m) => (
                 <button key={m} role="tab" aria-selected={meal === m} className={chip(meal === m)} onClick={() => setMeal(m)}>
                   <span className="block truncate">{m}</span>
                   <span className={`block text-[11px] font-semibold ${meal === m ? 'text-white/80' : 'text-stone-500'}`}>{mealCount(m) > 0 ? `${mealCount(m)} besin` : 'boş'}</span>

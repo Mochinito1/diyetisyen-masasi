@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { apDay, isBusy, todayStr, type Appointment } from '../lib/appointments'
 import { cloudEnabled } from '../lib/cloud'
@@ -50,7 +51,8 @@ function DietitianHome() {
   const { role } = useRole()
   const nav = useNavigate()
   const { clients, upsert } = useClients()
-  const { client } = useSelectedClient(clients)
+  const { client, choose } = useSelectedClient(clients)
+  const [picking, setPicking] = useState(false)
   const food = useFoodData()
   const removed = useRemovedFoods()
   const evalr = useEvaluation(food, client, removed.set)
@@ -73,8 +75,28 @@ function DietitianHome() {
           </button>
           <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex">
             <button className={primary} onClick={() => open(client.id)}>Danışanı aç</button>
-            <button className={btn} onClick={() => nav('/danisanlar')}>Danışan değiştir</button>
+            <button className={btn} aria-expanded={picking} onClick={() => setPicking(!picking)}>{picking ? 'Kapat' : 'Danışan değiştir'}</button>
           </div>
+          {picking && (
+            <div className="border-t border-stone-100 pt-3 sm:basis-full" role="listbox" aria-label="Danışan seç">
+              <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.08em] text-stone-500">Danışan seç ({clients.length})</div>
+              <div className="grid max-h-72 gap-1.5 overflow-y-auto sm:grid-cols-2 lg:grid-cols-3">
+                {[...clients].sort((a, b) => a.name.localeCompare(b.name, 'tr')).map((c) => {
+                  const on = c.id === client.id
+                  const k = calculate(toCalcInput(c.profile))?.target
+                  return (
+                    <button key={c.id} role="option" aria-selected={on} onClick={() => { choose(c.id); setPicking(false) }}
+                      className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition ${on ? 'border-brand-500 bg-brand-50' : 'border-stone-200 hover:border-brand-500'}`}>
+                      <span className="min-w-0 flex-1 truncate font-semibold">{c.name || 'İsimsiz danışan'}</span>
+                      {k ? <span className="flex-none text-xs text-stone-500">{fmt(k)} kcal</span> : null}
+                      {on && <span className="flex-none font-bold text-brand-500" aria-hidden="true">✓</span>}
+                    </button>
+                  )
+                })}
+              </div>
+              <button className="mt-2 text-sm font-semibold text-brand-500 hover:underline" onClick={() => nav('/danisanlar')}>Tüm danışanlar ve yeni kayıt →</button>
+            </div>
+          )}
         </div>
       ) : (
         <div className="grid gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex sm:flex-wrap sm:items-center">
