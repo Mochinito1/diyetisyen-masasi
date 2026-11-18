@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useAuth } from '../../app/auth'
-import { DEMO_DIETITIAN } from '../../lib/dietitians'
+import { ownerOfClient } from '../../lib/dietitians'
 import { EMPTY_ANAMNESIS } from '../../lib/dossier'
 import { load, save } from '../../lib/storage'
 import type { Client } from './types'
@@ -26,7 +26,7 @@ export function useClients() {
     save(KEY, next)
   }, [])
 
-  const clients = session?.kind === 'diyetisyen' ? all.filter((c) => (c.dietitian ?? DEMO_DIETITIAN) === session.u) : all
+  const clients = session?.kind === 'diyetisyen' ? all.filter((c) => ownerOfClient(c) === session.u) : all
   const upsert = (c: Client) => {
     // Diyetisyenin eklediği yeni danışan ona bağlanır
     const mine = session?.kind === 'diyetisyen' && !c.dietitian ? { ...c, dietitian: session.u } : c

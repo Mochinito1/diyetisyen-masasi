@@ -28,6 +28,12 @@ describe('diyetisyen dizini', async () => {
     expect(d.ownerOf({ u: 'y', label: '', kind: 'danisan', clientId: 'c2' })).toBe('diyetisyen')
   })
 
+  it('danışan kaydı yalnızca seçtiği diyetisyene aittir', () => {
+    expect(d.ownerOfClient({ dietitian: 'dytbir' })).toBe('dytbir')
+    expect(d.ownerOfClient({ dietitian: '' })).toBe('')
+    expect(d.ownerOfClient({})).toBe('diyetisyen')
+  })
+
   it('saklama anahtarları: demo eski anahtarı korur', () => {
     expect(d.brandKey('diyetisyen')).toBe('dm.brand')
     expect(d.brandKey('dytbir')).toBe('dm.brand.dytbir')

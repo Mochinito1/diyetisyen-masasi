@@ -21,8 +21,11 @@ export function ownerOf(session: Session | null): string {
   if (!session || session.kind === 'admin') return DEMO_DIETITIAN
   if (session.kind === 'diyetisyen') return session.u
   const c = load<{ id: string; dietitian?: string }[]>('dm.clients', []).find((x) => x.id === session.clientId)
-  return c?.dietitian ?? DEMO_DIETITIAN
+  return c?.dietitian || DEMO_DIETITIAN
 }
+
+/** Danışan kaydının sahibi: seçtiği diyetisyen. Boş metin = henüz diyetisyen seçmedi (hiçbir diyetisyen göremez); alan yoksa eski kayıt, demo diyetisyene aittir. */
+export const ownerOfClient = (c: { dietitian?: string }) => (c.dietitian === undefined ? DEMO_DIETITIAN : c.dietitian)
 
 /** Diyetisyene özel klinik ayarlarının saklama anahtarı (demo diyetisyen eski anahtarı kullanır) */
 export const brandKey = (owner: string) => (owner === DEMO_DIETITIAN ? 'dm.brand' : `dm.brand.${owner}`)

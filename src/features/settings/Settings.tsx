@@ -3,6 +3,7 @@ import PageTitle from '../../components/ui/PageTitle'
 import { btn, card, field } from '../../components/ui/styles'
 import { exportData, importData } from '../../lib/backup'
 import { kvkkAydinlatma, kvkkRiza, type Brand } from '../../lib/brand'
+import { useAuth } from '../../app/auth'
 import { useRole } from '../../app/role'
 import PortalSettings from '../portal/PortalSettings'
 import { useBrand } from './useBrand'
@@ -33,6 +34,8 @@ export default function Settings() {
 
 function DietitianSettings() {
   const { brand, update } = useBrand()
+  const { session } = useAuth()
+  const scope = session?.kind === 'diyetisyen' ? session.u : undefined
   const [msg, setMsg] = useState('')
   const flash = (t: string) => { setMsg(t); setTimeout(() => setMsg(''), 2500) }
 
@@ -52,7 +55,7 @@ function DietitianSettings() {
   }
 
   const download = () => {
-    const blob = new Blob([exportData()], { type: 'application/json' })
+    const blob = new Blob([exportData(scope)], { type: 'application/json' })
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `diyetisyen-masasi-yedek-${new Date().toISOString().slice(0, 10)}.json`
@@ -62,7 +65,7 @@ function DietitianSettings() {
   const restore = async (f: File | undefined) => {
     if (!f) return
     if (!confirm('Yedek geri yüklenecek. Aynı anahtarlı mevcut veriler (danışanlar, randevular, ayarlar) üzerine yazılır. Devam edilsin mi?')) return
-    const r = importData(await f.text())
+    const r = importData(await f.text(), scope)
     if (!r.ok) return flash(r.error)
     flash(`${r.keys} veri grubu geri yüklendi. Sayfa yenileniyor…`)
     setTimeout(() => location.reload(), 900)

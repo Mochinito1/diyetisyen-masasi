@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../../app/auth'
 import { DEFAULT_AVAILABILITY, type Appointment, type Availability } from '../../lib/appointments'
-import { DEMO_DIETITIAN, availabilityKey, ownerOf } from '../../lib/dietitians'
+import { DEMO_DIETITIAN, availabilityKey, ownerOf, ownerOfClient } from '../../lib/dietitians'
 import { load, save } from '../../lib/storage'
 
 const KEY = 'dm.appointments'
@@ -20,7 +20,9 @@ export function useAppointments() {
     setAll(next)
     save(KEY, next)
   }
-  const aps = session?.kind === 'admin' ? all : all.filter((a) => (a.dietitian ?? DEMO_DIETITIAN) === owner)
+  // Diyetisyen yalnızca şu an kendisini seçmiş danışanların randevularını görür (danışan diyetisyen değiştirince eskisi göremez)
+  const mine = session?.kind === 'diyetisyen' ? new Set(load<{ id: string; dietitian?: string }[]>('dm.clients', []).filter((c) => ownerOfClient(c) === owner).map((c) => c.id)) : null
+  const aps = session?.kind === 'admin' ? all : all.filter((a) => (a.dietitian ?? DEMO_DIETITIAN) === owner && (!mine || mine.has(a.clientId)))
   return {
     aps,
     av,

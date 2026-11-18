@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const r = await doRegister({ ...i, kind: 'danisan', clientId })
       if (!r.ok) return r.error
       // KVKK onayı hesap açılırken alınır; danışan formlarında tekrar sorulmaz
-      const created = { ...makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), kvkk: { ay: todayStr(), riza: todayStr() } }
+      const created = { ...makeClient(i.ad.trim().replace(/\s+/g, ' '), clientId), dietitian: '', kvkk: { ay: todayStr(), riza: todayStr() } }
       save('dm.clients', [created, ...load<Client[]>('dm.clients', [])])
       start(r.session)
       return ''
