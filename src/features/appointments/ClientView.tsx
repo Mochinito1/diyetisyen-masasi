@@ -125,15 +125,15 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
                         const hs = hours.filter((h) => test(+h))
                         if (!hs.length) return null
                         return (
-                          <div key={label} className="mt-2.5">
-                            <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500">{label}</div>
-                            <div className="grid grid-cols-4 gap-2" role="group" aria-label={`Saat, ${label}`}>
+                          <div key={label} className="mt-3 rounded-xl border border-stone-200 bg-white/60 p-3">
+                            <div className="mb-2.5 flex items-center justify-between text-[11px] font-bold uppercase tracking-wider text-stone-500"><span>{label}</span><span className="font-semibold normal-case tracking-normal">{hs.filter((h) => all.some((s) => s.startsWith(h + ':') && isFree(s))).length} saat müsait</span></div>
+                            <div className="grid grid-cols-3 gap-2.5 sm:grid-cols-4" role="group" aria-label={`Saat, ${label}`}>
                               {hs.map((h) => {
                                 const opts = all.filter((s) => s.startsWith(`${h}:`))
                                 const freeOpts = opts.filter(isFree)
                                 const full = freeOpts.length === 0
                                 return (
-                                  <button key={h} disabled={full} title={full ? 'Bu saat dolu' : undefined} aria-pressed={hour === h} className={`${tile} py-2 ${hour === h ? on : off}`}
+                                  <button key={h} disabled={full} title={full ? 'Bu saat dolu' : undefined} aria-pressed={hour === h} className={`${tile} px-1 py-3 ${hour === h ? on : off}`}
                                     onClick={() => { setHour(h); setSlot(freeOpts.length === 1 ? freeOpts[0] : null) }}>
                                     <span className="block font-display text-lg font-bold leading-tight tabular-nums">{h}<span className="text-xs font-semibold opacity-60">:00</span></span>
                                     <span className={`block text-[11px] font-semibold ${hour === h ? 'text-white/80' : 'text-stone-500'}`}>{full ? 'dolu' : `${freeOpts.length} boş`}</span>
