@@ -61,6 +61,20 @@ const newSalt = () => crypto.randomUUID().replace(/-/g, '')
 export const UNVANLAR = ['Dyt.', 'Uzm. Dyt.', 'Dr. Dyt.', 'Doç. Dr.', 'Prof. Dr.'] as const
 export const withTitle = (a: { ad: string; unvan?: string }) => (a.unvan ? `${a.unvan} ${a.ad}` : a.ad)
 
+/** Demo diyetisyenin unvanı yönetimce değiştirilebilir */
+export const demoTitle = () => load<string>('dm.demoTitle', 'Dyt.')
+export const demoLabel = () => `${demoTitle()} Demo Diyetisyen`
+
+/** Yönetim: bir diyetisyenin unvanını değiştirir (demo diyetisyen dahil) */
+export function setDietitianTitle(u: string, unvan: string) {
+  if (u === DEMO.dyt[0]) { save('dm.demoTitle', unvan); return }
+  const acc = loadAccounts()[u]
+  if (!acc) return
+  putAccount({ ...acc, unvan })
+  const apps = load<Application[]>(APPS_KEY, [])
+  save(APPS_KEY, apps.map((x) => (x.u === u ? { ...x, unvan } : x)))
+}
+
 export const normUser = (u: string) => u.trim().toLowerCase()
 export const userError = (u: string) =>
   /^[a-z0-9._-]{3,20}$/.test(u) ? '' : 'Kullanıcı adı 3-20 karakter olmalı; yalnızca harf, rakam, nokta, alt çizgi ve tire.'
@@ -94,7 +108,7 @@ export async function authenticate(userRaw: string, pw: string): Promise<Result>
   if (!u || !pw) return { ok: false, error: 'Kullanıcı adı ve şifre yazın.' }
   fails = Math.min(fails, 4)
   if (u === DEMO.adm[0]) return pw === DEMO.adm[1] ? { ok: true, session: { u, label: 'Yönetici', kind: 'admin' } } : failed('Kullanıcı adı veya şifre hatalı.')
-  if (u === DEMO.dyt[0]) return pw === DEMO.dyt[1] ? { ok: true, session: { u, label: 'Dyt. Demo Diyetisyen', kind: 'diyetisyen' } } : failed('Kullanıcı adı veya şifre hatalı.')
+  if (u === DEMO.dyt[0]) return pw === DEMO.dyt[1] ? { ok: true, session: { u, label: demoLabel(), kind: 'diyetisyen' } } : failed('Kullanıcı adı veya şifre hatalı.')
   if (u === DEMO.dan[0]) return pw === DEMO.dan[1] ? { ok: true, session: { u, label: 'Demo Danışan', kind: 'danisan', clientId: DEMO_CLIENT_ID } } : failed('Kullanıcı adı veya şifre hatalı.')
   const a = loadAccounts()[u]
   if (!a) return { ok: false, error: 'Bu kullanıcı adıyla kayıtlı hesap yok. “Hesap oluştur” ile yeni hesap açabilirsiniz.' }

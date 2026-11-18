@@ -4,7 +4,7 @@ import { btn, btnPrimary, card, field } from '../../components/ui/styles'
 import { fmtDay, lastVisit } from '../../lib/dossier'
 import { useRole } from '../../app/role'
 import { load, save } from '../../lib/storage'
-import { UNVANLAR, removeAccountsOfClient } from '../../lib/auth'
+import { DEMO, UNVANLAR, demoTitle, loadAccounts, removeAccountsOfClient, setDietitianTitle } from '../../lib/auth'
 import type { Appointment } from '../../lib/appointments'
 import { parseFoodCsv } from '../../lib/customFoods'
 import { parseNum } from '../../lib/format'
@@ -45,6 +45,9 @@ function Dietitians({ apps }: { apps: Application[] }) {
   const { setRole } = useRole()
   const aps = load<Appointment[]>('dm.appointments', [])
   const approved = apps.filter((a) => a.status === 'approved')
+  const [, setTick] = useState(0)
+  const bump = () => setTick((t) => t + 1)
+  const accs = Object.values(loadAccounts()).filter((a) => a.kind === 'diyetisyen' && !a.status)
   return (
     <div className="grid items-start gap-3 md:grid-cols-2">
       <div className={card}>
@@ -56,9 +59,31 @@ function Dietitians({ apps }: { apps: Application[] }) {
           <button className={btn} onClick={() => setRole('diyetisyen')}>Hesabına gir</button>
         </div>
       </div>
-      {approved.map((a) => (
-        <div key={a.id} className={card}><b>{a.unvan ? `${a.unvan} ` : ''}{a.name}</b><div className="text-xs text-stone-500">{a.title} · onaylı diyetisyen adayı. Eğitim sürümünde tek diyetisyen verisi bulunur; gerçek çok hesaplı kullanım için sunucu gerekir.</div></div>
+      <TitleRow name="Demo Diyetisyen" sub="Demo hesap" unvan={demoTitle()} onSave={(t) => { setDietitianTitle(DEMO.dyt[0], t); bump() }} />
+      {accs.map((a) => (
+        <TitleRow key={a.u} name={a.ad} sub={`${approved.find((x) => x.u === a.u)?.title ?? 'Onaylı diyetisyen'} · @${a.u}`} unvan={a.unvan} onSave={(t) => { setDietitianTitle(a.u, t); bump() }} />
       ))}
+    </div>
+  )
+}
+
+/** Diyetisyen kartı: yönetim unvanı istediği zaman değiştirir */
+function TitleRow({ name, sub, unvan, onSave }: { name: string; sub: string; unvan?: string; onSave: (t: string) => void }) {
+  const [t, setT] = useState(unvan ?? '')
+  const cur = unvan ?? ''
+  return (
+    <div className={card}>
+      <b>{cur ? `${cur} ` : ''}{name}</b>
+      <div className="text-xs text-stone-500">{sub}</div>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <label className="text-sm font-semibold">Unvan
+          <select className={`${field} ml-2 w-auto`} value={t} onChange={(e) => setT(e.target.value)}>
+            <option value="">(unvansız)</option>
+            {UNVANLAR.map((u) => <option key={u} value={u}>{u}</option>)}
+          </select>
+        </label>
+        <button className={btn} disabled={t === cur} onClick={() => onSave(t)}>Unvanı kaydet</button>
+      </div>
     </div>
   )
 }
