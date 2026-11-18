@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import { C, type Food } from '../../lib/foods'
 import { fmt, parseNum } from '../../lib/format'
 import { macros, type CalcResult } from '../../lib/formulas'
@@ -28,7 +28,7 @@ interface Props {
   result: CalcResult | null
   age: number | null
   food: FoodCtx
-  /** Besin kodu -> danÄ±ÅŸana uygunluk */
+  /** Besin kodu -> danışana uygunluk */
   ev: Map<string, Evaluation>
   onChange: (patch: Partial<Client>) => void
 }
@@ -39,7 +39,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   const [picked, setPicked] = useState<Food | null>(null)
   const [qty, setQty] = useState('1')
   const [unit, setUnit] = useState('g')
-  const [meal, setMeal] = useState<Meal>('Ã–ÄŸle')
+  const [meal, setMeal] = useState<Meal>('Öğle')
   const [micro, setMicro] = useState(false)
   const [tplOpen, setTplOpen] = useState(false)
   const [swapIdx, setSwapIdx] = useState<number | null>(null)
@@ -57,7 +57,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   const warns = warnList(result, age, T, menu.length)
   const badItems = menu.filter((it) => ev.get(it.code)?.st === 'hide')
   if (badItems.length)
-    warns.push({ tone: 'bad', text: `Bu danÄ±ÅŸan iÃ§in uygun olmayan ${badItems.length} Ã¼rÃ¼n var: ${badItems.map((it) => shortName(food.byCode.get(it.code)?.name ?? '')).join(', ')}` })
+    warns.push({ tone: 'bad', text: `Bu danışan için uygun olmayan ${badItems.length} ürün var: ${badItems.map((it) => shortName(food.byCode.get(it.code)?.name ?? '')).join(', ')}` })
   const ready = result && !result.infant && result.target != null
 
   const setMenu = (next: MenuItem[]) => onChange({ menu: next })
@@ -81,7 +81,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
     const nextRecent = [picked.code, ...recent.filter((x) => x !== picked.code)].slice(0, 8)
     setRecent(nextRecent)
     save('dm.recentFoods', nextRecent)
-    flash(` Ã¶ÄŸÃ¼nÃ¼ne eklendi: ${shortName(picked.name)}`)
+    flash(` öğününe eklendi: ${shortName(picked.name)}`)
     setPicked(null)
     setQ('')
   }
@@ -104,7 +104,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
           ['Enerji', T.kcal, result.target!, 'kcal'],
           ['Protein', T.p, m.proteinG, 'g'],
           ['Karb.', T.c, m.carbG, 'g'],
-          ['YaÄŸ', T.f, m.fatG, 'g'],
+          ['Yağ', T.f, m.fatG, 'g'],
         ] as const
       })()
     : null
@@ -115,11 +115,11 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   return (
     <>
     <div className="space-y-4">
-      {/* Ã–zet: hedefler, uyarÄ±lar ve hÄ±zlÄ± iÅŸlemler tek kartta */}
-      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:sticky lg:top-[112px] lg:z-[5]" aria-label="GÃ¼nlÃ¼k Ã¶zet">
+      {/* Özet: hedefler, uyarılar ve hızlı işlemler tek kartta */}
+      <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:sticky lg:top-[112px] lg:z-[5]" aria-label="Günlük özet">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto font-display text-lg font-bold">GÃ¼nlÃ¼k Ã¶zet</h2>
-          <button className={actBtn} onClick={() => setTplOpen(true)}>Åablon uygula</button>
+          <h2 className="mr-auto font-display text-lg font-bold">Günlük özet</h2>
+          <button className={actBtn} onClick={() => setTplOpen(true)}>Şablon uygula</button>
           <button className={actBtn} disabled={!menu.length} onClick={() => setPrinting(true)}>PDF liste</button>
           <button
             className={actBtn}
@@ -127,15 +127,15 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(menuTSV(menu, food.byCode))
-                flash('MenÃ¼ panoya kopyalandÄ±')
+                flash('Menü panoya kopyalandı')
               } catch {
-                flash('KopyalanamadÄ±')
+                flash('Kopyalanamadı')
               }
             }}
           >
             Kopyala
           </button>
-          <button className={`${actBtn} hover:!border-red-300 hover:!text-red-700`} disabled={!menu.length} onClick={() => confirm('TÃ¼m menÃ¼ boÅŸaltÄ±lsÄ±n mÄ±?') && setMenu([])}>BoÅŸalt</button>
+          <button className={`${actBtn} hover:!border-red-300 hover:!text-red-700`} disabled={!menu.length} onClick={() => confirm('Tüm menü boşaltılsın mı?') && setMenu([])}>Boşalt</button>
         </div>
         {goals ? (
           <div className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">
@@ -159,19 +159,19 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
         ) : (
           <>
             <div className="mt-3 grid grid-cols-2 gap-4 text-sm sm:grid-cols-4">
-              {[['Enerji', T.kcal, 'kcal'], ['Protein', T.p, 'g'], ['Karb.', T.c, 'g'], ['YaÄŸ', T.f, 'g']].map(([l, v, u]) => (
+              {[['Enerji', T.kcal, 'kcal'], ['Protein', T.p, 'g'], ['Karb.', T.c, 'g'], ['Yağ', T.f, 'g']].map(([l, v, u]) => (
                 <div key={l as string}><div className="text-xs text-stone-500">{l}</div><b className="font-display text-xl">{fmt(v as number)}</b> {u}</div>
               ))}
             </div>
-            <p className="mt-2 text-xs text-stone-500">Hedefle karÅŸÄ±laÅŸtÄ±rmak iÃ§in danÄ±ÅŸanÄ±n cinsiyet, yaÅŸ, boy ve kilosunu tamamlayÄ±n.</p>
+            <p className="mt-2 text-xs text-stone-500">Hedefle karşılaştırmak için danışanın cinsiyet, yaş, boy ve kilosunu tamamlayın.</p>
           </>
         )}
         {warns.length > 0 && (
           <div className="mt-3 border-t border-stone-100 pt-2">
             <button onClick={() => setWarnOpen(!warnOpen)} aria-expanded={warnOpen} className="flex w-full items-center gap-2 text-left text-sm">
-              <span className={`flex-none rounded-full px-2.5 py-0.5 text-xs font-bold ${warns.some((w) => w.tone === 'bad') ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{warns.length} uyarÄ±</span>
+              <span className={`flex-none rounded-full px-2.5 py-0.5 text-xs font-bold ${warns.some((w) => w.tone === 'bad') ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}`}>{warns.length} uyarı</span>
               <span className="min-w-0 flex-1 truncate text-stone-500">{warns[0].text}</span>
-              <span aria-hidden="true" className="text-stone-500">{warnOpen ? 'â–´' : 'â–¾'}</span>
+              <span aria-hidden="true" className="text-stone-500">{warnOpen ? '▴' : '▾'}</span>
             </button>
             {warnOpen && (
               <ul className="mt-2 space-y-1.5">
@@ -192,7 +192,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
           onApply={(next) => {
             setMenu(menu.map((x, k) => (k === swapIdx ? next : x)))
             setSwapIdx(null)
-            flash('Besin deÄŸiÅŸtirildi')
+            flash('Besin değiştirildi')
           }}
         />
       )}
@@ -210,12 +210,12 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
       )}
 
       <div className="grid items-start gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,380px)]">
-        {/* SaÄŸ (mobilde Ã¼stte): besin ekleme */}
+        {/* Sağ (mobilde üstte): besin ekleme */}
         <aside className="xl:sticky xl:top-[112px] xl:order-2 xl:max-h-[calc(100vh-128px)] xl:overflow-y-auto" aria-label="Besin ekle">
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
             <h2 className="font-display text-lg font-bold">Besin ekle</h2>
-            <p className="mb-3 mt-0.5 text-xs text-stone-500">Ã–nce Ã¶ÄŸÃ¼nÃ¼ seÃ§, sonra besin veya yemek ara.</p>
-            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Eklenecek Ã¶ÄŸÃ¼n">
+            <p className="mb-3 mt-0.5 text-xs text-stone-500">Önce öğünü seç, sonra besin veya yemek ara.</p>
+            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Eklenecek öğün">
               {MEALS.map((m) => (
                 <button key={m} role="tab" aria-selected={meal === m} className={chip(meal === m)} onClick={() => setMeal(m)}>
                   {m}{mealCount(m) > 0 && <span className="ml-1 opacity-75">({mealCount(m)})</span>}
@@ -224,14 +224,14 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             </div>
             <input
               className={`${field} mt-3 w-full`}
-              placeholder="Besin ara: beyaz peynir, mercimek, simitâ€¦"
+              placeholder="Besin ara: beyaz peynir, mercimek, simit…"
               value={q}
               onChange={(e) => { setQ(e.target.value); setPicked(null) }}
               onKeyDown={(e) => { if (e.key === 'Enter' && results[0] && !picked) pick(results[0]) }}
             />
             <label className="mt-2 flex cursor-pointer items-center gap-2 text-xs text-stone-600">
               <input type="checkbox" className="accent-brand-500" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
-              Bu danÄ±ÅŸan iÃ§in uygun olmayanlarÄ± da gÃ¶ster
+              Bu danışan için uygun olmayanları da göster
             </label>
             {!q.trim() && !picked && recent.length > 0 && (
               <div className="mt-3">
@@ -245,11 +245,11 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             )}
             {q.trim() && !picked && (
               <div className="mt-3 space-y-1.5">
-                {results.length === 0 && <p className="text-sm text-stone-500">EÅŸleÅŸen besin yok.</p>}
+                {results.length === 0 && <p className="text-sm text-stone-500">Eşleşen besin yok.</p>}
                 {results.map((f) => (
                   <button key={f.id} onClick={() => pick(f)} className="flex w-full flex-wrap items-baseline gap-x-3 rounded-xl border border-stone-200 px-3 py-2 text-left hover:border-brand-500 hover:bg-brand-50">
                     <b className="w-full text-sm">{shortName(f.name)}</b>
-                    <span className="text-xs text-stone-500">{f.portion ? `${f.cat} Â· 1 porsiyon â‰ˆ ${fmt(((f.v[C.kcal] ?? 0) * f.portion) / 100)} kcal` : `${food.groups[f.groups[0]]} Â· ${fmt(f.v[C.kcal] ?? 0)} kcal/100 g`}</span>
+                    <span className="text-xs text-stone-500">{f.portion ? `${f.cat} · 1 porsiyon ≈ ${fmt(((f.v[C.kcal] ?? 0) * f.portion) / 100)} kcal` : `${food.groups[f.groups[0]]} · ${fmt(f.v[C.kcal] ?? 0)} kcal/100 g`}</span>
                     {ev.get(f.code)!.st !== 'ok' && <span className="w-full"><ReasonChips ev={ev.get(f.code)!} max={2} /></span>}
                   </button>
                 ))}
@@ -267,7 +267,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                       onKeyDown={(e) => e.key === 'Enter' && add()} />
                   </label>
                   <label className="block text-xs font-semibold">
-                    Ã–lÃ§Ã¼
+                    Ölçü
                     <select className={`${field} mt-1 w-full`} value={unit} onChange={(e) => { setUnit(e.target.value); setQty(e.target.value === 'g' ? '100' : '1') }}>
                       {foodUnits(picked, food.groups).map((x) => (
                         <option key={x.u} value={x.u}>{x.u === 'g' ? 'gram' : `${x.u} (${x.g} g)`}</option>
@@ -276,21 +276,21 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                   </label>
                 </div>
                 <p className="mt-2 text-sm">
-                  <b>{fmt(draft.g)} g</b> Â· {fmt(draftT.kcal)} kcal Â· P {fmt(draftT.p, 1)} Â· K {fmt(draftT.c, 1)} Â· Y {fmt(draftT.f, 1)}
+                  <b>{fmt(draft.g)} g</b> · {fmt(draftT.kcal)} kcal · P {fmt(draftT.p, 1)} · K {fmt(draftT.c, 1)} · Y {fmt(draftT.f, 1)}
                 </p>
                 <div className="mt-3 flex gap-2">
-                  <button className="h-10 flex-1 rounded-xl bg-brand-500 px-4 font-semibold text-white" onClick={add}>{meal} Ã¶ÄŸÃ¼nÃ¼ne ekle</button>
-                  <button className="h-10 rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold hover:bg-stone-100" onClick={() => setPicked(null)}>VazgeÃ§</button>
+                  <button className="h-10 flex-1 rounded-xl bg-brand-500 px-4 font-semibold text-white" onClick={add}>{meal} öğününe ekle</button>
+                  <button className="h-10 rounded-xl border border-stone-300 bg-white px-4 text-sm font-semibold hover:bg-stone-100" onClick={() => setPicked(null)}>Vazgeç</button>
                 </div>
               </div>
             )}
             <p className="mt-3 text-xs text-stone-500">
-              Ev Ã¶lÃ§Ã¼leri yaklaÅŸÄ±k deÄŸerlerdir. Besinler TÃ¼rKomp'tan (Ã§iÄŸ/kuru), yemekler porsiyon listesinden gelir.
+              Ev ölçüleri yaklaşık değerlerdir. Besinler TürKomp'tan (çiğ/kuru), yemekler porsiyon listesinden gelir.
             </p>
           </section>
         </aside>
 
-        {/* Sol: Ã¶ÄŸÃ¼nler (hepsi aynÄ± kart yapÄ±sÄ±nda) */}
+        {/* Sol: öğünler (hepsi aynı kart yapısında) */}
         <div className="min-w-0 space-y-4 xl:order-1">
           {MEALS.map((m) => {
             const rows = menu.map((it, i) => ({ it, i })).filter((x) => x.it.meal === m)
@@ -304,10 +304,10 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                   <div className="min-w-0">
                     <h2 className="font-display text-lg font-bold leading-tight">{m}</h2>
                     <div className="text-xs text-stone-500">
-                      {rows.length ? `${rows.length} besin Â· ${fmt(mt.kcal)} kcal${share != null ? ` Â· gÃ¼nlÃ¼k hedefin %${Math.round(share)}` : ''}` : 'HenÃ¼z besin yok'}
+                      {rows.length ? `${rows.length} besin · ${fmt(mt.kcal)} kcal${share != null ? ` · günlük hedefin %${Math.round(share)}` : ''}` : 'Henüz besin yok'}
                     </div>
                   </div>
-                  <button className="ml-auto h-9 flex-none rounded-xl border border-brand-500 px-3.5 text-sm font-semibold text-brand-500 hover:bg-brand-50" onClick={focusAdd} aria-label={`${m} Ã¶ÄŸÃ¼nÃ¼ne besin ekle`}>+ Ekle</button>
+                  <button className="ml-auto h-9 flex-none rounded-xl border border-brand-500 px-3.5 text-sm font-semibold text-brand-500 hover:bg-brand-50" onClick={focusAdd} aria-label={`${m} öğününe besin ekle`}>+ Ekle</button>
                 </div>
                 {share != null && (
                   <div className="mx-4 h-1.5 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, share)}%` }} /></div>
@@ -323,7 +323,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                           <div className="min-w-0">
                             <b className="block truncate" title={shortName(F.name)}>{shortName(F.name)}</b>
                             {ev.get(F.code) && ev.get(F.code)!.st !== 'ok' && <ReasonChips ev={ev.get(F.code)!} max={2} />}
-                            <div className="text-xs text-stone-500">P {fmt(t.p, 1)} Â· K {fmt(t.c, 1)} Â· Y {fmt(t.f, 1)}{it.u !== 'g' && ` Â· ${fmt(it.g)} g`}</div>
+                            <div className="text-xs text-stone-500">P {fmt(t.p, 1)} · K {fmt(t.c, 1)} · Y {fmt(t.f, 1)}{it.u !== 'g' && ` · ${fmt(it.g)} g`}</div>
                           </div>
                           <div className="flex items-center gap-2">
                             <input
@@ -335,23 +335,23 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                               onBlur={(e) => edit(i, { q: e.target.value })}
                               onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
                             />
-                            <select className={`${field} h-10 min-w-0 max-w-28 flex-1 py-0 md:flex-none`} aria-label="Ã–lÃ§Ã¼" value={it.u} onChange={(e) => edit(i, { u: e.target.value })}>
+                            <select className={`${field} h-10 min-w-0 max-w-28 flex-1 py-0 md:flex-none`} aria-label="Ölçü" value={it.u} onChange={(e) => edit(i, { u: e.target.value })}>
                               {foodUnits(F, food.groups).map((x) => <option key={x.u} value={x.u}>{x.u === 'g' ? 'gram' : x.u}</option>)}
                             </select>
                             <span className="ml-auto w-16 text-right font-display text-base font-bold tabular-nums md:ml-0">{fmt(t.kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
-                            <button className="grid h-10 w-10 flex-none place-items-center rounded-xl border border-stone-300 font-bold hover:bg-stone-100" aria-label="DiÄŸer iÅŸlemler" aria-expanded={rowMenu === i} onClick={() => setRowMenu(rowMenu === i ? null : i)}>â‹¯</button>
+                            <button className="grid h-10 w-10 flex-none place-items-center rounded-xl border border-stone-300 font-bold hover:bg-stone-100" aria-label="Diğer işlemler" aria-expanded={rowMenu === i} onClick={() => setRowMenu(rowMenu === i ? null : i)}>⋯</button>
                           </div>
                           {rowMenu === i && (
                             <>
                               <div className="fixed inset-0 z-10" onClick={() => setRowMenu(null)} aria-hidden="true" />
                               <div className="absolute right-0 top-full z-20 mt-1 w-60 space-y-1 rounded-xl border border-stone-200 bg-white p-2 shadow-lg">
-                                <label className="block px-2 pt-1 text-xs font-semibold text-stone-500">BaÅŸka Ã¶ÄŸÃ¼ne taÅŸÄ±
+                                <label className="block px-2 pt-1 text-xs font-semibold text-stone-500">Başka öğüne taşı
                                   <select className={`${field} mt-1 w-full py-1.5 text-sm text-stone-900`} value={it.meal} onChange={(e) => { edit(i, { meal: e.target.value as Meal }); setRowMenu(null) }}>
                                     {MEALS.map((x) => <option key={x}>{x}</option>)}
                                   </select>
                                 </label>
-                                <button className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-stone-100" onClick={() => { setSwapIdx(i); setRowMenu(null) }}>â‡„ BaÅŸka besinle deÄŸiÅŸtir</button>
-                                <button className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => { setRowMenu(null); setSwapIdx(null); setMenu(menu.filter((_, k) => k !== i)) }}>KaldÄ±r</button>
+                                <button className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold hover:bg-stone-100" onClick={() => { setSwapIdx(i); setRowMenu(null) }}>⇄ Başka besinle değiştir</button>
+                                <button className="block w-full rounded-lg px-3 py-2 text-left text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => { setRowMenu(null); setSwapIdx(null); setMenu(menu.filter((_, k) => k !== i)) }}>Kaldır</button>
                               </div>
                             </>
                           )}
@@ -367,15 +367,15 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
 
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-display text-lg font-bold">Mikro besin toplamlarÄ±</h2>
-              <button className={actBtn} onClick={() => setMicro(!micro)}>{micro ? 'Gizle' : 'GÃ¶ster'}</button>
+              <h2 className="font-display text-lg font-bold">Mikro besin toplamları</h2>
+              <button className={actBtn} onClick={() => setMicro(!micro)}>{micro ? 'Gizle' : 'Göster'}</button>
             </div>
             {micro && <MicroTable T={T} result={result} age={age} sex={client.profile.sex} />}
           </section>
 
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
-            <h2 className="font-display text-lg font-bold">DanÄ±ÅŸana not</h2>
-            <p className="mb-2 text-xs text-stone-500">YazdÄ±rÄ±labilir listenin altÄ±nda gÃ¶rÃ¼nÃ¼r (su, hareket, piÅŸirme Ã¶nerileri gibi).</p>
+            <h2 className="font-display text-lg font-bold">Danışana not</h2>
+            <p className="mb-2 text-xs text-stone-500">Yazdırılabilir listenin altında görünür (su, hareket, pişirme önerileri gibi).</p>
             <textarea className={`${field} min-h-24 w-full`} value={client.mnote} onChange={(e) => onChange({ mnote: e.target.value })} />
           </section>
         </div>
@@ -397,7 +397,7 @@ function MicroTable({ T, result, age, sex }: { T: ReturnType<typeof totals>; res
       <table className="w-full text-sm tabular-nums">
         <thead className="text-xs uppercase tracking-wide text-stone-500">
           <tr>
-            <th className="py-1 text-left">BileÅŸen</th>
+            <th className="py-1 text-left">Bileşen</th>
             <th className="py-1 text-right">Toplam</th>
             {showRef && <><th className="py-1 text-right">Referans</th><th className="py-1 text-right">%</th></>}
           </tr>
@@ -412,8 +412,8 @@ function MicroTable({ T, result, age, sex }: { T: ReturnType<typeof totals>; res
                 <td className="py-1.5 text-right">{fmt(v, v < 10 ? 2 : 0)} {unit}</td>
                 {showRef && (
                   <>
-                    <td className="py-1.5 text-right">{rf ? `${fmt(rf, 1)} ${unit}` : 'â€“'}</td>
-                    <td className="py-1.5 text-right">{rf ? `%${fmt((v / rf) * 100)}` : 'â€“'}</td>
+                    <td className="py-1.5 text-right">{rf ? `${fmt(rf, 1)} ${unit}` : '–'}</td>
+                    <td className="py-1.5 text-right">{rf ? `%${fmt((v / rf) * 100)}` : '–'}</td>
                   </>
                 )}
               </tr>
@@ -422,8 +422,8 @@ function MicroTable({ T, result, age, sex }: { T: ReturnType<typeof totals>; res
         </tbody>
       </table>
       <p className="mt-2 text-xs text-stone-500">
-        TÃ¼rKomp'ta Ã¶lÃ§Ã¼lmemiÅŸ (boÅŸ) deÄŸerler 0 sayÄ±lÄ±r, toplamlar eksik kalabilir.{' '}
-        {showRef ? 'Referans deÄŸerler yetiÅŸkinler iÃ§in yaklaÅŸÄ±k EFSA dÃ¼zeyleridir; kiÅŸisel ihtiyaÃ§ farklÄ± olabilir.' : 'Gebelik, emzirme ve 18 yaÅŸ altÄ±nda referans karÅŸÄ±laÅŸtÄ±rmasÄ± gÃ¶sterilmez.'}
+        TürKomp'ta ölçülmemiş (boş) değerler 0 sayılır, toplamlar eksik kalabilir.{' '}
+        {showRef ? 'Referans değerler yetişkinler için yaklaşık EFSA düzeyleridir; kişisel ihtiyaç farklı olabilir.' : 'Gebelik, emzirme ve 18 yaş altında referans karşılaştırması gösterilmez.'}
       </p>
     </div>
   )
