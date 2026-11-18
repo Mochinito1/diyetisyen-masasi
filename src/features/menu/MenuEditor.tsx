@@ -20,7 +20,7 @@ type FoodCtx = NonNullable<ReturnType<typeof useFoodData>>
 
 const field =
   'rounded-xl border border-stone-300 bg-white px-3 py-2 focus:border-brand-500 focus:outline-none'
-const actBtn = 'h-9 rounded-xl border border-stone-300 bg-white px-3.5 text-sm font-semibold hover:border-brand-500 hover:text-brand-500 disabled:opacity-40 disabled:hover:border-stone-300 disabled:hover:text-inherit'
+const actBtn = 'h-10 rounded-xl border border-stone-300 bg-white px-1.5 text-sm sm:h-9 sm:px-3.5 font-semibold hover:border-brand-500 hover:text-brand-500 disabled:opacity-40 disabled:hover:border-stone-300 disabled:hover:text-inherit'
 const TONE = { warn: 'bg-amber-100 text-amber-800', bad: 'bg-red-100 text-red-800' } as const
 
 interface Props {
@@ -117,9 +117,10 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
     <div className="space-y-4">
       {/* Özet: hedefler, uyarılar ve hızlı işlemler tek kartta */}
       <section className="rounded-2xl border border-stone-200 bg-white p-4 shadow-sm lg:sticky lg:top-[112px] lg:z-[5]" aria-label="Günlük özet">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="mr-auto font-display text-lg font-bold">Günlük özet</h2>
-          <button className={actBtn} onClick={() => setTplOpen(true)}>Şablon uygula</button>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-3">
+          <h2 className="font-display text-lg font-bold sm:mr-auto">Günlük özet</h2>
+          <div className="grid w-full grid-cols-4 gap-1.5 sm:flex sm:w-auto">
+          <button className={actBtn} onClick={() => setTplOpen(true)}>Şablon</button>
           <button className={actBtn} disabled={!menu.length} onClick={() => setPrinting(true)}>PDF liste</button>
           <button
             className={actBtn}
@@ -136,6 +137,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             Kopyala
           </button>
           <button className={`${actBtn} hover:!border-red-300 hover:!text-red-700`} disabled={!menu.length} onClick={() => confirm('Tüm menü boşaltılsın mı?') && setMenu([])}>Boşalt</button>
+          </div>
         </div>
         {goals ? (
           <div className="mt-3 grid grid-cols-2 gap-x-5 gap-y-3 sm:grid-cols-4">

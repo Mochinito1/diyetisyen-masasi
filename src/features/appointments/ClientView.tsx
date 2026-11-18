@@ -6,6 +6,7 @@ import {
 } from '../../lib/appointments'
 import { load, save } from '../../lib/storage'
 import { useAuth } from '../../app/auth'
+import type { ApType } from '../../lib/appointments'
 import type { Client } from '../clients/types'
 import MonthCalendar from './MonthCalendar'
 import type { ApApi } from './useAppointments'
@@ -24,6 +25,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
   const [slot, setSlot] = useState<string | null>(null)
   const [hour, setHour] = useState<string | null>(null)
   const [note, setNote] = useState('')
+  const [type, setType] = useState<ApType>('yuz')
   const [done, setDone] = useState('')
 
   if (clients.length === 0)
@@ -58,7 +60,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
     if (!day || !slot || noDyt) return
     const id = crypto.randomUUID()
     api.add({
-      id, clientId: me.id, clientName: me.name, dt: `${day}T${slot}`, type: 'yuz', link: '',
+      id, clientId: me.id, clientName: me.name, dt: `${day}T${slot}`, type, link: '',
       note: note.trim(), status: 'pending', by: 'danisan', dietitian: me.dietitian, created: Date.now(),
     })
     setDone(`${longDate(day)} ${slot} için randevu talebin iletildi.`)
@@ -139,7 +141,17 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
                       )}
                     </>
                   )
-                })()}                <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
+                })()}                <div className="mt-4 text-xs font-semibold text-stone-500">3. Görüşme şeklini seç</div>
+                <div className="mt-1.5 grid grid-cols-2 gap-2" role="group" aria-label="Görüşme şekli">
+                  {([['yuz', 'Yüz yüze', 'Klinikte'], ['online', 'Uzaktan', 'Online görüşme']] as const).map(([t, label, sub]) => (
+                    <button key={t} aria-pressed={type === t} onClick={() => setType(t)}
+                      className={`rounded-xl border px-3 py-2 text-left transition ${type === t ? 'border-brand-500 bg-brand-50 ring-1 ring-brand-500' : 'border-stone-300 bg-white hover:border-brand-500'}`}>
+                      <span className="block text-sm font-bold">{label}</span>
+                      <span className="block text-xs text-stone-500">{sub}</span>
+                    </button>
+                  ))}
+                </div>
+                <label className="mt-3 block text-xs font-semibold">Not (isteğe bağlı)
                   <input className={`${field} mt-1 w-full`} maxLength={200} value={note} onChange={(e) => setNote(e.target.value)} />
                 </label>
               </>
@@ -148,7 +160,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
             )}
           </div>
           <button className="mt-3 w-full rounded-lg bg-brand-500 px-4 py-2.5 font-semibold text-white disabled:opacity-40" disabled={!day || !slot || noDyt} onClick={book}>
-            {day && slot ? `${longDate(day)} ${slot} için randevu oluştur` : 'Randevu oluştur'}
+            {day && slot ? `${longDate(day)} ${slot} · ${type === 'online' ? 'Uzaktan' : 'Yüz yüze'} randevu oluştur` : 'Randevu oluştur'}
           </button>
         </section>
 
@@ -180,7 +192,7 @@ export default function ClientView({ api, clients }: { api: ApApi; clients: Clie
                 <DateBadge day={apDay(a)} muted />
                 <div className="min-w-0 flex-1">
                   <b className="capitalize">{longDate(apDay(a))}</b>
-                  <div className="text-sm text-stone-500">Saat {apTime(a)}</div>
+                  <div className="text-sm text-stone-500">Saat {apTime(a)} · {a.type === 'online' ? 'Uzaktan' : 'Yüz yüze'}</div>
                 </div>
                 <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${a.status === 'done' ? 'bg-emerald-100 text-emerald-800' : a.status === 'miss' ? 'bg-red-100 text-red-800' : 'bg-stone-100 text-stone-600'}`}>
                   {{ done: 'Geldi', miss: 'Gelmedi', cancel: 'İptal', plan: 'Planlandı', pending: 'Onay bekliyor' }[a.status]}
@@ -217,7 +229,7 @@ function MyRow({ a, now, fresh, onCancel }: { a: Appointment; now: number; fresh
         <DateBadge day={apDay(a)} />
         <div className="min-w-0 flex-1">
           <b className="capitalize">{longDate(apDay(a))}</b>
-          <div className="text-sm text-stone-500">Saat {apTime(a)}{a.note ? ` · ${a.note}` : ''}</div>
+          <div className="text-sm text-stone-500">Saat {apTime(a)} · {a.type === 'online' ? 'Uzaktan' : 'Yüz yüze'}{a.note ? ` · ${a.note}` : ''}</div>
         </div>
         <span className={`rounded-full px-3 py-0.5 text-xs font-semibold ${st === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800'}`}>
           {st === 'pending' ? 'Onay bekleniyor' : 'Onaylandı'}

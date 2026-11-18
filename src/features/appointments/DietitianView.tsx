@@ -276,26 +276,64 @@ function AddForm({ clients, day, onSave, onClose }: { clients: Client[]; day: st
 function Hours({ api }: { api: ApApi }) {
   const { av, setAv } = api
   const toggle = (d: number) => setAv({ ...av, days: av.days.includes(d) ? av.days.filter((x) => x !== d) : [...av.days, d] })
+  const mins = (t: string) => { const [h, m] = t.split(':').map(Number); return h * 60 + (m || 0) }
+  const perDay = av.step > 0 ? Math.max(0, Math.floor((mins(av.end) - mins(av.start)) / av.step)) : 0
+  const dayLabel = DAYS.filter(([, d]) => av.days.includes(d)).map(([l]) => l).join(', ')
+  const presets: [string, number[]][] = [['Hafta içi', [1, 2, 3, 4, 5]], ['Her gün', [1, 2, 3, 4, 5, 6, 0]], ['Hafta sonu', [6, 0]]]
+  const same = (a: number[], b: number[]) => a.length === b.length && a.every((x) => b.includes(x))
+  const lbl = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-stone-500'
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white p-5">
-      <h2 className="font-display text-lg font-bold">Çalışma saatleri</h2>
-      <p className="text-xs text-stone-500">Danışanlar yalnızca burada açtığınız gün ve saatlere randevu alabilir.</p>
-      <div className="mt-3 flex flex-wrap gap-1.5">
-        {DAYS.map(([label, d]) => (
-          <button key={d} aria-pressed={av.days.includes(d)} onClick={() => toggle(d)}
-            className={`rounded-full border px-3 py-1 text-sm font-semibold ${av.days.includes(d) ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-300 bg-white text-stone-600'}`}>{label}</button>
-        ))}
+    <section className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5" aria-label="Çalışma saatleri">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="font-display text-lg font-bold">Çalışma saatleri</h2>
+          <p className="text-xs text-stone-500">Danışanlar yalnızca burada açtığın gün ve saatlere randevu alabilir.</p>
+        </div>
+        <div className="flex gap-1.5">
+          {presets.map(([n, list]) => (
+            <button key={n} onClick={() => setAv({ ...av, days: list })} aria-pressed={same(av.days, list)}
+              className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${same(av.days, list) ? 'border-brand-500 bg-brand-50 text-brand-500' : 'border-stone-200 text-stone-600 hover:border-brand-500'}`}>{n}</button>
+          ))}
+        </div>
       </div>
-      <div className="mt-3 flex flex-wrap gap-3">
-        <label className="text-xs font-semibold">Başlangıç<input type="time" className={`${field} mt-1 block`} value={av.start} onChange={(e) => setAv({ ...av, start: e.target.value })} /></label>
-        <label className="text-xs font-semibold">Bitiş<input type="time" className={`${field} mt-1 block`} value={av.end} onChange={(e) => setAv({ ...av, end: e.target.value })} /></label>
-        <label className="text-xs font-semibold">Süre
-          <select className={`${field} mt-1 block`} value={av.step} onChange={(e) => setAv({ ...av, step: +e.target.value })}>
-            {[20, 30, 45, 60].map((n) => <option key={n} value={n}>{n} dk</option>)}
-          </select>
-        </label>
+
+      <div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+        <div>
+          <span className={lbl}>Günler</span>
+          <div className="grid grid-cols-7 gap-1.5">
+            {DAYS.map(([label, d]) => {
+              const on = av.days.includes(d)
+              return (
+                <button key={d} aria-pressed={on} onClick={() => toggle(d)}
+                  className={`h-11 rounded-xl border text-sm font-bold transition ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-500 hover:border-brand-500'}`}>{label}</button>
+              )
+            })}
+          </div>
+        </div>
+        <div>
+          <span className={lbl}>Saat aralığı</span>
+          <div className="flex items-center gap-2">
+            <input type="time" aria-label="Başlangıç" className={`${field} h-11 min-w-0 flex-1 rounded-xl`} value={av.start} onChange={(e) => setAv({ ...av, start: e.target.value })} />
+            <span className="text-stone-400" aria-hidden="true">–</span>
+            <input type="time" aria-label="Bitiş" className={`${field} h-11 min-w-0 flex-1 rounded-xl`} value={av.end} onChange={(e) => setAv({ ...av, end: e.target.value })} />
+          </div>
+        </div>
       </div>
-    </div>
+
+      <div className="mt-4">
+        <span className={lbl}>Randevu süresi</span>
+        <div className="grid grid-cols-4 gap-1.5 sm:max-w-sm" role="group" aria-label="Randevu süresi">
+          {[20, 30, 45, 60].map((n) => (
+            <button key={n} aria-pressed={av.step === n} onClick={() => setAv({ ...av, step: n })}
+              className={`h-10 rounded-xl border text-sm font-bold transition ${av.step === n ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`}>{n} dk</button>
+          ))}
+        </div>
+      </div>
+
+      <p className="mt-4 rounded-xl bg-brand-50 px-3 py-2 text-sm text-stone-700">
+        {av.days.length === 0 ? 'Hiç gün seçilmedi; danışanlar randevu alamaz.' : <><b>{dayLabel}</b> · {av.start}–{av.end} · günde en fazla <b>{perDay}</b> randevu</>}
+      </p>
+    </section>
   )
 }
 
