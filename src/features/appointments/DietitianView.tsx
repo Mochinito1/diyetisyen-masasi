@@ -296,12 +296,10 @@ function Hours({ api }: { api: ApApi }) {
   const lbl = 'mb-1.5 block text-[11px] font-bold uppercase tracking-wider text-stone-500'
   return (
     <section className="rounded-2xl border border-stone-200 bg-white p-4 sm:p-5" aria-label="Çalışma saatleri">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="font-display text-lg font-bold">Çalışma saatleri</h2>
-          <p className="text-xs text-stone-500">Danışanlar yalnızca burada açtığın gün ve saatlere randevu alabilir.</p>
-        </div>
-        <div className="flex gap-1.5">
+      <div>
+        <h2 className="font-display text-lg font-bold">Çalışma saatleri</h2>
+        <p className="text-xs text-stone-500">Danışanlar yalnızca burada açtığın gün ve saatlere randevu alabilir.</p>
+        <div className="mt-3 flex flex-wrap gap-1.5">
           {presets.map(([n, list]) => (
             <button key={n} onClick={() => setAv({ ...av, days: list })} aria-pressed={same(av.days, list)}
               className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${same(av.days, list) ? 'border-brand-500 bg-brand-50 text-brand-500' : 'border-stone-200 text-stone-600 hover:border-brand-500'}`}>{n}</button>
@@ -309,32 +307,31 @@ function Hours({ api }: { api: ApApi }) {
         </div>
       </div>
 
-      <div className="mt-4 grid gap-5 md:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)]">
+      <div className="mt-4 space-y-4">
         <div>
           <span className={lbl}>Günler</span>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1">
             {DAYS.map(([label, d]) => {
               const on = av.days.includes(d)
               return (
                 <button key={d} aria-pressed={on} onClick={() => toggle(d)}
-                  className={`h-11 rounded-xl border text-sm font-bold transition ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-500 hover:border-brand-500'}`}>{label}</button>
+                  className={`h-11 min-w-0 rounded-xl border px-0 text-xs font-bold transition ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-500 hover:border-brand-500'}`}>{label}</button>
               )
             })}
           </div>
         </div>
         <div>
           <span className={lbl}>Saat aralığı</span>
-          <div className="flex items-center gap-2">
-            <input type="time" aria-label="Başlangıç" className={`${field} h-11 min-w-0 flex-1 rounded-xl`} value={av.start} onChange={(e) => setAv({ ...av, start: e.target.value })} />
-            <span className="text-stone-400" aria-hidden="true">–</span>
-            <input type="time" aria-label="Bitiş" className={`${field} h-11 min-w-0 flex-1 rounded-xl`} value={av.end} onChange={(e) => setAv({ ...av, end: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2">
+            <label className="block text-xs font-semibold text-stone-500">Başlangıç<input type="time" aria-label="Başlangıç" className={`${field} mt-1 h-11 w-full min-w-0 rounded-xl px-2 text-sm text-stone-900`} value={av.start} onChange={(e) => setAv({ ...av, start: e.target.value })} /></label>
+            <label className="block text-xs font-semibold text-stone-500">Bitiş<input type="time" aria-label="Bitiş" className={`${field} mt-1 h-11 w-full min-w-0 rounded-xl px-2 text-sm text-stone-900`} value={av.end} onChange={(e) => setAv({ ...av, end: e.target.value })} /></label>
           </div>
         </div>
       </div>
 
-      <div className="mt-4">
+      <div>
         <span className={lbl}>Randevu süresi</span>
-        <div className="grid grid-cols-4 gap-1.5 sm:max-w-sm" role="group" aria-label="Randevu süresi">
+        <div className="grid grid-cols-4 gap-1.5" role="group" aria-label="Randevu süresi">
           {[20, 30, 45, 60].map((n) => (
             <button key={n} aria-pressed={av.step === n} onClick={() => setAv({ ...av, step: n })}
               className={`h-10 rounded-xl border text-sm font-bold transition ${av.step === n ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`}>{n} dk</button>
