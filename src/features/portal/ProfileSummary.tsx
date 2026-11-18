@@ -75,7 +75,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
         </div>
       </Card>
 
-      <div className="grid items-stretch gap-4 xl:grid-cols-[1.1fr_1fr]">
+      <div className="space-y-4">
       <Card>
         <h2 className="font-display text-lg font-bold">Kilo/boy indeksi</h2>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">

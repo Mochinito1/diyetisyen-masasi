@@ -12,10 +12,10 @@ const COLORS = {
   y: { bar: 'bg-rose-400', dot: 'bg-rose-400', text: 'text-stone-900' },
 } as const
 const PRESETS: [string, Macro][] = [
-  ['Dengeli 50/20/30', { c: 50, p: 20 }],
-  ['Düşük karbonhidrat 35/25/40', { c: 35, p: 25 }],
-  ['Yüksek protein 40/30/30', { c: 40, p: 30 }],
-  ['Yüksek karbonhidrat 60/15/25', { c: 60, p: 15 }],
+  ['Dengeli', { c: 50, p: 20 }],
+  ['Düşük karbonhidrat', { c: 35, p: 25 }],
+  ['Yüksek protein', { c: 40, p: 30 }],
+  ['Yüksek karbonhidrat', { c: 60, p: 15 }],
 ]
 
 const snap = (pct: number) => Math.round(pct / STEP) * STEP
@@ -112,12 +112,15 @@ export default function MacroEditor({ target, value, onChange }: { target: numbe
       {edit && (
         <div className="mt-4">
           <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wider text-stone-500">Hazır dağılımlar</div>
-          <div className="flex flex-wrap gap-1.5">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {PRESETS.map(([label, p]) => {
               const on = p.c === value.c && p.p === value.p
               return (
                 <button key={label} aria-pressed={on} onClick={() => onChange!(p)}
-                  className={`h-9 rounded-full border px-3 text-xs font-semibold transition ${on ? 'border-brand-500 bg-brand-50 text-brand-500' : 'border-stone-300 bg-white text-stone-600 hover:border-brand-500'}`}>{label}</button>
+                  className={`min-w-0 rounded-xl border px-2 py-2 text-center transition ${on ? 'border-brand-500 bg-brand-50 text-brand-500 ring-1 ring-brand-500' : 'border-stone-200 bg-stone-50 text-stone-700 hover:border-brand-500'}`}>
+                  <span className="block truncate text-xs font-bold">{label}</span>
+                  <span className="block text-[11px] font-semibold tabular-nums opacity-70">{p.c} / {p.p} / {100 - p.c - p.p}</span>
+                </button>
               )
             })}
           </div>
