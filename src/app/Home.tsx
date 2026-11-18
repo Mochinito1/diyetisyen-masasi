@@ -14,8 +14,7 @@ import { useRemovedFoods } from '../features/foods/useRemovedFoods'
 import NextAppointment from '../features/portal/NextAppointment'
 import { usePortalClient } from '../features/portal/usePortalClient'
 import { useBrand } from '../features/settings/useBrand'
-import NavIcon from './NavIcon'
-import { navFor } from './nav'
+import PhotoShowcase from './PhotoShowcase'
 import { useRole } from './role'
 
 const TONE = { ok: 'bg-emerald-100 text-emerald-800', warn: 'bg-amber-100 text-amber-800', bad: 'bg-red-100 text-red-800' } as const
@@ -30,31 +29,18 @@ export default function Home() {
         <h1 className="font-display text-[26px] font-bold leading-tight md:text-[32px]">Diyetisyen Masası</h1>
         <p className="mt-2 text-sm text-stone-500">Eğitim amaçlı: veriler yalnızca bu tarayıcıda saklanır, gerçek danışan verisi girmeyin.</p>
       </div>
-      {role === 'danisan' ? <ClientHome /> : <DietitianHome />}
+      <PhotoShowcase />
+      <div className="mt-4">{role === 'danisan' ? <ClientHome /> : <DietitianHome />}</div>
     </div>
-  )
-}
-
-function Tile({ icon, title, sub, onClick }: { icon: Parameters<typeof NavIcon>[0]['name']; title: string; sub: string; onClick: () => void }) {
-  return (
-    <button onClick={onClick} className="flex min-h-[158px] flex-col items-start gap-1 rounded-[16px] border border-stone-200 bg-white p-4 text-left shadow-sm transition hover:border-brand-500">
-      <span className="mb-auto grid h-12 w-12 place-items-center rounded-[14px] bg-brand-50 text-brand-500"><NavIcon name={icon} className="h-[26px] w-[26px]" /></span>
-      <b className="mt-3 font-display text-[17px]">{title}</b>
-      <span className="text-[12.5px] text-stone-500">{sub}</span>
-    </button>
   )
 }
 
 function ClientHome() {
   const { client } = usePortalClient()
   const nav = useNavigate()
-  const tiles = navFor('danisan')
   return (
     <>
       {client ? <NextAppointment clientId={client.id} /> : <p className="mb-4 text-sm text-stone-500">Test için önce diyetisyen rolünde bir danışan ekleyin.</p>}
-      <div className="mt-2 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
-        {tiles.map((n) => <Tile key={n.to} icon={n.icon} title={n.label} sub={n.desc} onClick={() => nav(n.to)} />)}
-      </div>
     </>
   )
 }
@@ -64,29 +50,12 @@ function DietitianHome() {
   const nav = useNavigate()
   const { clients, upsert } = useClients()
   const { client } = useSelectedClient(clients)
-  const { brand } = useBrand()
   const food = useFoodData()
   const removed = useRemovedFoods()
   const evalr = useEvaluation(food, client, removed.set)
-  const ids = new Set(clients.map((c) => c.id))
-  const aps = load<Appointment[]>('dm.appointments', []).filter((a) => ids.has(a.clientId))
-  const today = todayStr()
-  const todayN = aps.filter((a) => apDay(a) === today && isBusy(a)).length
   const r = client ? calculate(toCalcInput(client.profile)) : null
-  const okCount = evalr ? [...evalr.map.values()].filter((e) => e.st === 'ok').length : null
   const open = (id: string) => { save('dm.menuClient', id); save('dm.openClient', id); nav('/danisanlar') }
   const recent = [...clients].sort((a, b) => b.updated - a.updated).slice(0, 4)
-
-  const sub = {
-    danisan: clients.length ? `${clients.length} kayıtlı danışan` : 'Danışan ekle',
-    hesap: r?.target ? `${fmt(r.target)} kcal · BKİ ${fmt(r.bmi, 1)}` : client ? 'Bilgi eksik' : 'Danışan seçin',
-    besinler: okCount != null && client ? `${okCount} uygun besin` : food ? `${food.foods.length} besin` : 'TürKomp listesi',
-    menu: client ? `${client.menu.length} ürün` : 'Danışan seçin',
-    randevu: todayN ? `Bugün ${todayN} randevu` : 'Bugün randevu yok',
-    ayarlar: brand.clinic || 'Logo, PDF ve mesaj ayarları',
-    yonetim: 'Hesaplar ve başvurular',
-  }
-  const subOf = (to: string) => (({ '/danisanlar': sub.danisan, '/hesaplama': sub.hesap, '/besinler': sub.besinler, '/menu': sub.menu, '/randevu': sub.randevu, '/ayarlar': sub.ayarlar, '/yonetim': sub.yonetim }) as Record<string, string>)[to] ?? ''
 
   return (
     <>
@@ -119,10 +88,6 @@ function DietitianHome() {
           </div>
         </div>
       )}
-
-      <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-6">
-        {navFor(role).map((n) => <Tile key={n.to} icon={n.icon} title={n.label} sub={subOf(n.to)} onClick={() => nav(n.to)} />)}
-      </div>
 
       <div className="mt-4 rounded-xl border border-stone-200 bg-white p-4">
         <div className="flex items-center gap-2.5">
