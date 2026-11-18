@@ -19,8 +19,8 @@ import PhotoShowcase from './PhotoShowcase'
 import { useRole } from './role'
 
 const TONE = { ok: 'bg-emerald-100 text-emerald-800', warn: 'bg-amber-100 text-amber-800', bad: 'bg-red-100 text-red-800' } as const
-const btn = 'rounded-lg border border-stone-300 bg-white px-3 py-1.5 text-sm font-semibold hover:bg-stone-100'
-const primary = 'rounded-lg bg-brand-500 px-3 py-1.5 text-sm font-semibold text-white hover:brightness-110'
+const btn = 'inline-flex h-10 items-center justify-center rounded-xl border border-stone-300 bg-white px-3.5 text-sm font-semibold hover:border-brand-500 hover:text-brand-500'
+const primary = 'inline-flex h-10 items-center justify-center rounded-xl bg-brand-500 px-3.5 text-sm font-semibold text-white hover:brightness-110'
 
 export default function Home() {
   const { role } = useRole()
@@ -61,8 +61,8 @@ function DietitianHome() {
   return (
     <>
       {client ? (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-200 bg-white p-4 shadow-sm">
-          <button className="min-w-0 flex-1 basis-56 text-left" onClick={() => open(client.id)} title="Danışan bilgilerini aç">
+        <div className="grid gap-3 rounded-2xl border border-stone-200 bg-white p-4 shadow-sm sm:flex sm:flex-wrap sm:items-center">
+          <button className="min-w-0 text-left sm:flex-1 sm:basis-56" onClick={() => open(client.id)} title="Danışan bilgilerini aç">
             <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-stone-500">Aktif danışan</div>
             <h2 className="mt-0.5 font-display text-lg font-bold hover:text-brand-500">{client.name || 'İsimsiz danışan'}</h2>
             <div className="mt-2 flex flex-wrap gap-1.5 text-xs font-semibold">
@@ -71,30 +71,30 @@ function DietitianHome() {
               {evalr?.conds.map((c) => <span key={c.id} className="rounded-full border border-stone-200 bg-stone-100 px-2.5 py-0.5">{c.short}</span>)}
             </div>
           </button>
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex">
             <button className={primary} onClick={() => open(client.id)}>Danışanı aç</button>
             <button className={btn} onClick={() => nav('/danisanlar')}>Danışan değiştir</button>
           </div>
         </div>
       ) : (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-stone-200 bg-white p-4">
+        <div className="grid gap-3 rounded-2xl border border-stone-200 bg-white p-4 sm:flex sm:flex-wrap sm:items-center">
           <div>
             <div className="text-[11px] font-bold uppercase tracking-[0.08em] text-stone-500">Aktif danışan</div>
             <h2 className="mt-0.5 font-display text-lg font-bold">Seçili danışan yok</h2>
             <p className="mt-1 text-stone-500">Başlamak için bir danışan açın veya yeni danışan kaydedin.</p>
           </div>
-          <div className="ml-auto flex flex-wrap gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:ml-auto sm:flex">
             <button className={primary} onClick={() => { save('dm.openClient', 'new'); nav('/danisanlar') }}>Yeni danışan</button>
             <button className={btn} onClick={() => nav('/danisanlar')}>Danışanlar</button>
           </div>
         </div>
       )}
 
-      <div className="mt-4 rounded-xl border border-stone-200 bg-white p-4">
-        <div className="flex items-center gap-2.5">
-          <h2 className="font-display text-lg font-bold">Son danışanlar</h2>
-          <button className={`${btn} ml-auto`} onClick={() => nav('/danisanlar')}>Tümü</button>
-          <button className={btn} onClick={() => sampleClients().forEach(upsert)}>Örnek danışan ekle</button>
+      <div className="mt-4 rounded-2xl border border-stone-200 bg-white p-4">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-2">
+          <h2 className="mr-auto font-display text-lg font-bold">Son danışanlar</h2>
+          <button className={`${btn} h-9`} onClick={() => nav('/danisanlar')}>Tümü</button>
+          <button className={`${btn} h-9`} onClick={() => sampleClients().forEach(upsert)}>+ Örnek danışan</button>
         </div>
         {recent.length === 0 ? <p className="mt-2 text-stone-500">Henüz kayıtlı danışan yok.</p> : (
           <div className="mt-2">

@@ -110,7 +110,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
     : null
 
   const mealCount = (m: Meal) => menu.filter((x) => x.meal === m).length
-  const chip = (on: boolean) => `rounded-full border px-3 py-1 text-sm font-semibold ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`
+  const chip = (on: boolean) => `min-w-0 rounded-xl border px-1.5 py-2 text-center text-[13px] font-semibold leading-tight transition ${on ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`
 
   return (
     <>
@@ -217,10 +217,11 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
           <section className="rounded-2xl border border-stone-200 bg-white p-4">
             <h2 className="font-display text-lg font-bold">Besin ekle</h2>
             <p className="mb-3 mt-0.5 text-xs text-stone-500">Önce öğünü seç, sonra besin veya yemek ara.</p>
-            <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Eklenecek öğün">
+            <div className="grid grid-cols-3 gap-1.5" role="tablist" aria-label="Eklenecek öğün">
               {MEALS.map((m) => (
                 <button key={m} role="tab" aria-selected={meal === m} className={chip(meal === m)} onClick={() => setMeal(m)}>
-                  {m}{mealCount(m) > 0 && <span className="ml-1 opacity-75">({mealCount(m)})</span>}
+                  <span className="block truncate">{m}</span>
+                  <span className={`block text-[11px] font-semibold ${meal === m ? 'text-white/80' : 'text-stone-500'}`}>{mealCount(m) > 0 ? `${mealCount(m)} besin` : 'boş'}</span>
                 </button>
               ))}
             </div>
