@@ -54,15 +54,15 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
     <div className={card}>
       <h2 className="font-display text-lg font-bold">Antropometri takibi</h2>
 
-      <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:items-start">
-      <div className="min-w-0">
+      <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:items-stretch">
+      <div className="flex min-w-0 flex-col">
       {/* Grafik: ölçüt seçimi eşit genişlikte düğmeler */}
       <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-5" role="group" aria-label="Grafik ölçütü">
         {(Object.keys(METRICS) as MetricKey[]).map((k, i) => (
           <button key={k} aria-pressed={chart === k} onClick={() => setChart(k)} className={`${i < 3 ? 'col-span-2' : 'col-span-3'} h-9 truncate sm:col-span-1 rounded-xl border px-1 text-sm font-semibold transition ${chart === k ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`}>{METRICS[k].label}</button>
         ))}
       </div>
-      <div className="mt-2 rounded-xl border border-stone-200 p-2">
+      <div className="mt-2 flex flex-1 items-center rounded-xl border border-stone-200 p-2">
         {series.length ? <LineChart points={series} digits={mt.digits} unit={mt.unit} /> : <p className="p-4 text-center text-sm text-stone-500">Bu ölçüt için henüz veri yok.</p>}
       </div>
 
@@ -70,8 +70,8 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
       {/* Yeni ölçüm */}
       <section className="rounded-xl border border-stone-200 bg-stone-50 p-3 sm:p-4" aria-label="Yeni ölçüm">
         <h3 className="text-sm font-bold">Yeni ölçüm</h3>
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
-          <label className="col-span-2 block text-xs font-semibold sm:col-span-3">Tarih
+        <div className="mt-2 grid grid-cols-2 gap-3">
+          <label className="col-span-2 block text-xs font-semibold">Tarih
             <input type="date" className={`${field} mt-1 w-full`} value={d} onChange={(e) => setD(e.target.value)} />
           </label>
           {input('w', 'Kilo (kg)')}{input('b', 'Bel (cm)')}{input('k', 'Kalça (cm)')}{input('y', 'Yağ oranı (%)')}
