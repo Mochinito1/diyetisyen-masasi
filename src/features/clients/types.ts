@@ -11,7 +11,9 @@ export interface DaySwap {
   it: MenuItem
 }
 /** Danışanın bir günlük takibi: yenen öğünler, su ve menüden farklı yedikleri (planı değiştirmez, yalnızca o gün için) */
-export interface DayTrack { m: string[]; su: number; sw?: DaySwap[] }
+export interface DayTrack { m: string[]; su: number; sw?: DaySwap[]; ph?: MealPhoto[] }
+/** Danışanın öğün fotoğrafı. Eklendikten 4 saat sonra silinir. Bulutta path (Storage yolu), yerel modda data (küçültülmüş JPEG) tutulur. */
+export interface MealPhoto { id: string; meal: string; ts: number; path?: string; data?: string }
 
 export interface Client {
   id: string

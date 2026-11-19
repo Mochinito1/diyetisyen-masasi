@@ -43,3 +43,14 @@ Yönetim → Diyetisyenler listesinde her diyetisyenin yanında **Pasife al / Ak
 ## Tahlil sonuçlarının korunması
 
 Kan tahlili sonuçlarını yalnızca danışan ekler. Diyetisyen danışan dosyasını açık tutup kaydederken eski kopyası danışanın sonradan eklediği sonuçları silmesin diye `supabase/schema.sql` dosyasının en altındaki `keep_client_labs` fonksiyonunu ve `clients_keep_labs` tetikleyicisini SQL Editor'da bir kez çalıştırın (tekrar çalıştırmak güvenlidir).
+
+## Öğün fotoğrafları
+
+Danışan menüde her öğüne (en fazla 3) fotoğraf ekleyebilir. Fotoğraf tarayıcıda küçültülür (yaklaşık 100 KB) ve Supabase Storage'daki özel `meal-photos` kovasına yazılır. Danışan yalnızca kendi klasörüne yazar; diyetisyen yalnızca kendi danışanlarının fotoğraflarını görür. Kurulum için `supabase/schema.sql` dosyasının en altındaki "Öğün fotoğrafları (Storage)" bölümünü SQL Editor'da bir kez çalıştırın (tekrar çalıştırmak güvenlidir).
+
+**4 saat kuralı:** Eklendikten 4 saat sonra fotoğraf hem danışanda hem diyetisyende gösterilmez. Dosyanın depodan silinmesi, danışan uygulamayı açtığında (menü sayfası açıkken dakikada bir) yapılır. Danışan uygulamayı hiç açmazsa dosya depoda kalabilir, ama kimse göremez. İsterseniz depoyu kendiliğinden temizlemek için Database → Extensions bölümünden `pg_cron` eklentisini açıp şunu çalıştırabilirsiniz (isteğe bağlı):
+
+```sql
+select cron.schedule('meal-photos-cleanup', '*/15 * * * *',
+  $$ delete from storage.objects where bucket_id = 'meal-photos' and created_at < now() - interval '4 hours' $$);
+```

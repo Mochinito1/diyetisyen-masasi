@@ -357,6 +357,31 @@ export async function cloudClientLabs(clientId: string): Promise<unknown[] | nul
   } catch { return null }
 }
 
+// ───────────── Öğün fotoğrafları (Supabase Storage, özel kova) ─────────────
+const PHOTO_BUCKET = 'meal-photos'
+
+/** Fotoğrafı yükler; yol "danisanId/fotoId.jpg". Kova kurulmadıysa anlaşılır bir hata verir. */
+export async function cloudUploadPhoto(clientId: string, id: string, blob: Blob): Promise<string> {
+  const path = `${clientId}/${id}.jpg`
+  const { error } = await db().storage.from(PHOTO_BUCKET).upload(path, blob, { contentType: 'image/jpeg', upsert: false })
+  if (error) throw new Error(/bucket|not found/i.test(error.message) ? 'Fotoğraf yüklenemedi: sunucu ayarı eksik (docs/SUPABASE.md, "Öğün fotoğrafları").' : `Fotoğraf yüklenemedi: ${error.message}`)
+  return path
+}
+
+/** Resmi göstermek için 1 saatlik imzalı bağlantı üretir */
+export async function cloudPhotoUrl(path: string): Promise<string | null> {
+  try {
+    const { data, error } = await db().storage.from(PHOTO_BUCKET).createSignedUrl(path, 3600)
+    return error ? null : data.signedUrl
+  } catch { return null }
+}
+
+/** Süresi dolan fotoğrafları depodan siler (yalnızca danışan kendi klasöründekileri silebilir) */
+export async function cloudDeletePhotos(paths: string[]) {
+  if (!paths.length) return
+  try { await db().storage.from(PHOTO_BUCKET).remove(paths) } catch (e) { console.warn('[bulut] fotoğraf silinemedi', e) }
+}
+
 export async function cloudSetActive(username: string, active: boolean) {
   try {
     const p = await db().from('profiles').update({ status: active ? null : 'inactive' }).eq('username', username)

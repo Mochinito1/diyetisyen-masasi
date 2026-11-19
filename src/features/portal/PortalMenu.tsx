@@ -1,14 +1,19 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { todayStr } from '../../lib/appointments'
 import { fmt } from '../../lib/format'
 import { MEALS, portion, shortName, totals, type Meal, type MenuItem } from '../../lib/menu'
+import { load } from '../../lib/storage'
 import { useFoodData } from '../../lib/useFoodData'
 import { useEvaluation } from '../foods/useEvaluation'
 import { useRemovedFoods } from '../foods/useRemovedFoods'
 import PortalRowEditor from './PortalRowEditor'
 import PortalFoodPicker from './PortalFoodPicker'
-import type { DaySwap, DayTrack } from '../clients/types'
+import PortalPhotos from './PortalPhotos'
+import { cloudDeletePhotos, cloudEnabled, cloudUploadPhoto } from '../../lib/cloud'
+import { MAX_PHOTOS_PER_MEAL, blobToDataUrl, compressImage, isFresh } from '../../lib/photos'
+import type { MealPhoto } from '../clients/types'
+import type { Client, DaySwap, DayTrack } from '../clients/types'
 import ClientPicker from './ClientPicker'
 import NextAppointment from './NextAppointment'
 import { usePortalClient } from './usePortalClient'
@@ -27,7 +32,34 @@ export default function PortalMenu() {
   const evalr = useEvaluation(food, client, removed.set)
   const [editing, setEditing] = useState<string | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
+  const [photoBusy, setPhotoBusy] = useState<string | null>(null)
+  const [photoErr, setPhotoErr] = useState<{ meal: string; msg: string } | null>(null)
   const T = useMemo(() => (client && food ? totals(client.menu, food.byCode, food.idx) : null), [client, food])
+
+  // Eklendikten 4 saat geçen fotoğrafları kayıttan ve (bulutta) depodan sil
+  const clientId = client?.id
+  useEffect(() => {
+    if (!clientId) return
+    const purge = () => {
+      const cur = load<Client[]>('dm.clients', []).find((c) => c.id === clientId)
+      if (!cur) return
+      const gone: MealPhoto[] = []
+      const nextTrk = Object.fromEntries(Object.entries(cur.trk).map(([d, t]) => {
+        if (!t.ph?.length) return [d, t]
+        const keep = t.ph.filter((p) => isFresh(p))
+        gone.push(...t.ph.filter((p) => !isFresh(p)))
+        return [d, { ...t, ph: keep }]
+      }))
+      if (gone.length) {
+        void cloudDeletePhotos(gone.map((p) => p.path).filter((x): x is string => !!x))
+        update({ trk: nextTrk })
+      }
+    }
+    purge()
+    const t = setInterval(purge, 60000)
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clientId])
 
   if (!client)
     return (
@@ -54,6 +86,29 @@ export default function PortalMenu() {
   const mealKcal = (m: string) => (food ? Math.round(totals(effective(m), food.byCode, food.idx).kcal) : 0)
   const addSwap = (x: Omit<DaySwap, 'id'>) => save({ ...trk, sw: [...sw.filter((y) => !(x.from && y.meal === x.meal && y.from === x.from)), { ...x, id: crypto.randomUUID() }] })
   const setSwapIt = (id: string, it: MenuItem) => save({ ...trk, sw: sw.map((y) => (y.id === id ? { ...y, it } : y)) })
+  const photosOf = (m: string) => (trk.ph ?? []).filter((p) => p.meal === m && isFresh(p))
+  const addPhoto = async (m: string, file: File) => {
+    if (photosOf(m).length >= MAX_PHOTOS_PER_MEAL) return
+    setPhotoBusy(m)
+    setPhotoErr(null)
+    try {
+      const blob = await compressImage(file)
+      const id = crypto.randomUUID()
+      const rec: MealPhoto = cloudEnabled
+        ? { id, meal: m, ts: Date.now(), path: await cloudUploadPhoto(client.id, id, blob) }
+        : { id, meal: m, ts: Date.now(), data: await blobToDataUrl(blob) }
+      save({ ...trk, ph: [...(trk.ph ?? []), rec] })
+    } catch (e) {
+      setPhotoErr({ meal: m, msg: e instanceof Error ? e.message : 'Fotoğraf eklenemedi.' })
+    } finally {
+      setPhotoBusy(null)
+    }
+  }
+  const removePhoto = (id: string) => {
+    const p = (trk.ph ?? []).find((x) => x.id === id)
+    if (p?.path) void cloudDeletePhotos([p.path])
+    save({ ...trk, ph: (trk.ph ?? []).filter((x) => x.id !== id) })
+  }
   const dropSwap = (id: string) => save({ ...trk, sw: sw.filter((y) => y.id !== id) })
   const meals = MEALS.filter((m) => client.menu.some((it) => it.meal === m) || sw.some((x) => x.meal === m))
   const doneCount = meals.filter((m) => trk.m.includes(m)).length
@@ -170,6 +225,7 @@ export default function PortalMenu() {
                     })}
                   </ul>
                   <div className="px-4 pb-3">
+                    <PortalPhotos photos={photosOf(m)} busy={photoBusy === m} error={photoErr?.meal === m ? photoErr.msg : ''} onPick={(f) => void addPhoto(m, f)} onRemove={removePhoto} />
                     {adding === m ? (
                       <PortalFoodPicker food={food} hidden={hidden} meal={m as Meal} onClose={() => setAdding(null)}
                         onAdd={(it) => { addSwap({ meal: m, it }); setAdding(null) }} />
