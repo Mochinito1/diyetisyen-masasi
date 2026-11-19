@@ -5,6 +5,9 @@ import { todayStr } from '../../../lib/appointments'
 import { METRICS, fmtDay, mergeMeas, parseCsv, pnum, seriesOf, waistHip, type Measurement, type MetricKey } from '../../../lib/dossier'
 import { fmt } from '../../../lib/format'
 
+/** Ölçüm geçmişinde gösterilen son ölçüm sayısı (grafik tüm ölçümleri kullanır) */
+const HISTORY_LIMIT = 3
+
 interface Props {
   meas: Measurement[]
   sex: string
@@ -89,14 +92,14 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
 
       </div>
       {/* Geçmiş */}
-      <h3 className="mt-5 text-sm font-bold">Ölçüm geçmişi</h3>
+      <h3 className="mt-5 text-sm font-bold">Ölçüm geçmişi <span className="font-normal text-stone-500">· son {HISTORY_LIMIT} ölçüm</span></h3>
       {meas.length === 0 ? (
         <p className="mt-2 rounded-xl border border-dashed border-stone-300 p-6 text-center text-stone-500">Henüz ölçüm yok.</p>
       ) : (
         <>
           {/* Telefon: zaman çizgisi, en yeni üstte; tarih belirgin, tüm değerler tek satırda */}
           <ol className="relative mt-3 sm:hidden">
-            {meas.map((m, i) => ({ m, i })).reverse().map(({ m, i }, n, arr) => {
+            {meas.map((m, i) => ({ m, i })).reverse().slice(0, HISTORY_LIMIT).map(({ m, i }, n, arr) => {
               const prev = [...meas.slice(0, i)].reverse().find((x) => x.w != null)
               const dl = m.w != null && prev?.w != null ? m.w - prev.w : null
               const wh = waistHip(m, sex)
@@ -143,7 +146,7 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
                 <tr>{['Tarih', 'Kilo', 'BKİ', 'Bel', 'Kalça', 'B/K', 'Yağ %', 'Kilo değ.', ''].map((h, i) => <th key={i} className={`py-1 ${i ? 'text-right' : 'text-left'}`}>{h}</th>)}</tr>
               </thead>
               <tbody>
-                {meas.map((m, i) => ({ m, i })).reverse().map(({ m, i }) => {
+                {meas.map((m, i) => ({ m, i })).reverse().slice(0, HISTORY_LIMIT).map(({ m, i }) => {
                   const prev = [...meas.slice(0, i)].reverse().find((x) => x.w != null)
                   const dl = m.w != null && prev?.w != null ? m.w - prev.w : null
                   const wh = waistHip(m, sex)
