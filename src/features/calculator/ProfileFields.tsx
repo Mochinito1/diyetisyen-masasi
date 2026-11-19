@@ -1,3 +1,5 @@
+import { autoGoal, validTarget } from '../../lib/goalPlan'
+import { parseNum } from '../../lib/format'
 import type { Profile } from './profile'
 
 const field =
@@ -5,7 +7,10 @@ const field =
 
 export default function ProfileFields({ value, onChange, hideFormula }: { value: Profile; onChange: (p: Profile) => void; hideFormula?: boolean }) {
   const set = <K extends keyof Profile>(k: K, v: Profile[K]) => onChange({ ...value, [k]: v })
-  const num = (k: 'age' | 'h' | 'w') => (e: React.ChangeEvent<HTMLInputElement>) =>
+  const w = parseNum(value.w)
+  const tw = value.tw ? parseNum(value.tw) : null
+  const auto = w != null && validTarget(tw) ? autoGoal(w, tw) : null
+  const num = (k: 'age' | 'h' | 'w' | 'tw') => (e: React.ChangeEvent<HTMLInputElement>) =>
     set(k, e.target.value.replace(/[^0-9.,]/g, ''))
 
   return (
@@ -38,6 +43,10 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
         <input className={field} inputMode="decimal" maxLength={5} placeholder="Yazın" value={value.w} onChange={num('w')} />
       </label>
       <label className="block text-sm font-semibold">
+        Hedef kilo (kg, isteğe bağlı)
+        <input className={field} inputMode="decimal" maxLength={5} placeholder="Boş bırakılabilir" value={value.tw ?? ''} onChange={num('tw')} />
+      </label>
+      <label className="block text-sm font-semibold">
         Fiziksel aktivite
         <select className={field} value={value.act} onChange={(e) => set('act', e.target.value)}>
           <option value="1.2">Hareketsiz (1,2)</option>
@@ -49,7 +58,7 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
       </label>
       <label className="block text-sm font-semibold">
         Hedef
-        <select className={field} value={value.goal} onChange={(e) => set('goal', e.target.value)}>
+        <select className={field} value={auto ? auto.goal : value.goal} disabled={!!auto} onChange={(e) => set('goal', e.target.value)}>
           <option value="0">Kiloyu koru</option>
           <option value="-250">Yavaş ver (−250 kcal)</option>
           <option value="-500">Kilo ver (−500 kcal)</option>
@@ -57,6 +66,7 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
           <option value="250">Yavaş al (+250 kcal)</option>
           <option value="500">Kilo al (+500 kcal)</option>
         </select>
+        {auto && <span className="mt-1 block text-xs font-normal text-stone-500">Hedef kiloya göre otomatik: {auto.phase === 'stabilize' ? 'stabilizasyon (kiloyu koru)' : auto.phase === 'lose' ? 'kilo verme' : 'kilo alma'}. Elle seçmek için hedef kiloyu boşaltın.</span>}
       </label>
       <label className="block text-sm font-semibold">
         Fizyolojik durum
