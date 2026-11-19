@@ -2,6 +2,17 @@ import type { Anamnesis, LabResult, Measurement, SessionNote } from '../../lib/d
 import type { MenuItem } from '../../lib/menu'
 import type { Profile } from '../calculator/profile'
 
+/** Danışanın o gün menüden farklı yediği bir şey. from doluysa o öğündeki plan kaleminin yerine geçer; boşsa plan dışı ek besindir. */
+export interface DaySwap {
+  id: string
+  meal: string
+  /** Yerine yenen planlı besinin kodu */
+  from?: string
+  it: MenuItem
+}
+/** Danışanın bir günlük takibi: yenen öğünler, su ve menüden farklı yedikleri (planı değiştirmez, yalnızca o gün için) */
+export interface DayTrack { m: string[]; su: number; sw?: DaySwap[] }
+
 export interface Client {
   id: string
   name: string
@@ -18,7 +29,7 @@ export interface Client {
   /** KVKK onay tarihleri (boşsa onaylanmadı) */
   kvkk: { ay: string; riza: string }
   /** Danışan portalı takibi: gün -> yenen öğünler ve su (bardak) */
-  trk: Record<string, { m: string[]; su: number }>
+  trk: Record<string, DayTrack>
   /** Diyetisyenin belirlediği makro dağılımı: karbonhidrat ve protein yüzdesi (yağ kalan). Yoksa 50/20/30 */
   macro?: { c: number; p: number }
   /** Danışanın bağlı olduğu diyetisyenin kullanıcı adı (boşsa demo diyetisyen) */

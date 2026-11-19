@@ -138,7 +138,7 @@ export default function Clients() {
               onClick={() => {
                 // Tahlil sonuçlarını yalnızca danışan ekler: açık dosyadaki eski kopya, danışanın sonradan eklediklerini ezmesin
                 const stored = load<Client[]>('dm.clients', []).find((c) => c.id === editing.id)
-                const saved = { ...editing, lab: stored?.lab ?? editing.lab, name: editing.name.trim(), updated: Date.now() }
+                const saved = { ...editing, lab: stored?.lab ?? editing.lab, trk: stored?.trk ?? editing.trk, name: editing.name.trim(), updated: Date.now() }
                 upsert(saved)
                 save('dm.menuClient', saved.id) // kaydedilen danışan aktif danışan olur
                 // Kaydettikten sonra aynı danışan dosyasında kal; listeye dönmek için üstteki bağlantı kullanılır

@@ -231,12 +231,12 @@ alter table public.profiles add constraint profiles_status_check check (status i
 -- ───────────── Tahlil sonuçlarını koruma ─────────────
 -- Tahlil sonuçlarını yalnızca danışan ekler/siler. Diyetisyen ya da yönetici danışan kaydını kaydederken
 -- elindeki eski kopya danışanın sonradan eklediği tahlilleri ezmesin diye, danışan dışındaki güncellemelerde
--- veritabanındaki tahlil listesi aynen korunur. Tekrar çalıştırmak güvenlidir.
+-- veritabanındaki tahlil listesi ve danışanın günlük takibi (öğün işaretleri, menüden farklı yedikleri) aynen korunur. Tekrar çalıştırmak güvenlidir.
 create or replace function public.keep_client_labs() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
   if old.owner_user is not null and auth.uid() is distinct from old.owner_user then
-    new.data := jsonb_set(new.data, '{lab}', coalesce(old.data->'lab', '[]'::jsonb));
+    new.data := jsonb_set(jsonb_set(new.data, '{lab}', coalesce(old.data->'lab', '[]'::jsonb)), '{trk}', coalesce(old.data->'trk', '{}'::jsonb));
   end if;
   return new;
 end $$;

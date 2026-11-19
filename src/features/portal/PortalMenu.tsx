@@ -1,9 +1,14 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import PageTitle from '../../components/ui/PageTitle'
 import { todayStr } from '../../lib/appointments'
 import { fmt } from '../../lib/format'
-import { MEALS, portion, shortName, totals } from '../../lib/menu'
+import { MEALS, portion, shortName, totals, type Meal, type MenuItem } from '../../lib/menu'
 import { useFoodData } from '../../lib/useFoodData'
+import { useEvaluation } from '../foods/useEvaluation'
+import { useRemovedFoods } from '../foods/useRemovedFoods'
+import SwapPanel from '../menu/SwapPanel'
+import PortalFoodPicker from './PortalFoodPicker'
+import type { DaySwap, DayTrack } from '../clients/types'
 import ClientPicker from './ClientPicker'
 import NextAppointment from './NextAppointment'
 import { usePortalClient } from './usePortalClient'
@@ -17,7 +22,11 @@ export default function PortalMenu() {
   const { clients, client, choose, update } = usePortalClient()
   const food = useFoodData()
   const day = todayStr()
-  const trk = client?.trk[day] ?? { m: [], su: 0 }
+  const trk: DayTrack = client?.trk[day] ?? { m: [], su: 0 }
+  const removed = useRemovedFoods()
+  const evalr = useEvaluation(food, client, removed.set)
+  const [swapping, setSwapping] = useState<{ meal: string; code: string } | null>(null)
+  const [adding, setAdding] = useState<string | null>(null)
   const T = useMemo(() => (client && food ? totals(client.menu, food.byCode, food.idx) : null), [client, food])
 
   if (!client)
@@ -28,22 +37,31 @@ export default function PortalMenu() {
       </>
     )
 
-  const save = (next: { m: string[]; su: number }) => {
+  const save = (next: DayTrack) => {
     const all = { ...client.trk, [day]: next }
     const keep = Object.keys(all).sort().slice(-KEEP_DAYS)
     update({ trk: Object.fromEntries(keep.map((k) => [k, all[k]])) })
   }
   const toggle = (meal: string) => save({ ...trk, m: trk.m.includes(meal) ? trk.m.filter((x) => x !== meal) : [...trk.m, meal] })
 
-  const meals = MEALS.filter((m) => client.menu.some((it) => it.meal === m))
+  const hidden = (f: { code: string }) => evalr?.map.get(f.code)?.st === 'hide'
+  const sw = trk.sw ?? []
+  /** O gün gerçekte yenen kalemler: planın değiştirilen kalemleri yerine yenenler + plan dışı eklenenler */
+  const effective = (m: string): MenuItem[] => [
+    ...client.menu.filter((it) => it.meal === m && !sw.some((x) => x.meal === m && x.from === it.code)),
+    ...sw.filter((x) => x.meal === m).map((x) => x.it),
+  ]
+  const mealKcal = (m: string) => (food ? Math.round(totals(effective(m), food.byCode, food.idx).kcal) : 0)
+  const addSwap = (x: Omit<DaySwap, 'id'>) => save({ ...trk, sw: [...sw.filter((y) => !(x.from && y.meal === x.meal && y.from === x.from)), { ...x, id: crypto.randomUUID() }] })
+  const dropSwap = (id: string) => save({ ...trk, sw: sw.filter((y) => y.id !== id) })
+  const meals = MEALS.filter((m) => client.menu.some((it) => it.meal === m) || sw.some((x) => x.meal === m))
   const doneCount = meals.filter((m) => trk.m.includes(m)).length
-  const mealKcal = (m: string) => (food ? Math.round(totals(client.menu.filter((it) => it.meal === m), food.byCode, food.idx).kcal) : 0)
   const eaten = meals.filter((m) => trk.m.includes(m)).reduce((a, m) => a + mealKcal(m), 0)
   const pct = meals.length ? (doneCount / meals.length) * 100 : 0
 
   return (
     <>
-      <PageTitle title="Menü" sub="Bugünkü öğünlerini işaretle, suyunu takip et" />
+      <PageTitle title="Menü" sub="Bugünkü öğünlerini işaretle; menüden farklı yediysen değiştir ya da ekle" />
       <ClientPicker clients={clients} value={client.id} onChange={choose} />
       <NextAppointment clientId={client.id} />
       {!food || !T ? <p className="text-stone-500">Yükleniyor…</p> : client.menu.length === 0 ? (
@@ -92,7 +110,7 @@ export default function PortalMenu() {
                     <span className="h-10 w-1.5 flex-none rounded-full bg-brand-500" aria-hidden="true" />
                     <div className="min-w-0">
                       <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight">{m}</h2>
-                      <div className="text-xs font-semibold text-stone-500">{rows.length} besin · {fmt(mealKcal(m))} kcal</div>
+                      <div className="text-xs font-semibold text-stone-500">{effective(m).length} besin · {fmt(mealKcal(m))} kcal</div>
                     </div>
                     <button
                       onClick={() => toggle(m)}
@@ -102,21 +120,74 @@ export default function PortalMenu() {
                       <span aria-hidden="true">{done ? '✓' : '○'}</span> Yedim
                     </button>
                   </div>
-                  <ul className="px-4 pb-2">
+                  <ul className="px-4 pb-1">
                     {rows.map((it, i) => {
                       const F = food.byCode.get(it.code)
                       if (!F) return null
+                      const rep = sw.find((x) => x.meal === m && x.from === it.code)
+                      const RF = rep ? food.byCode.get(rep.it.code) : null
                       return (
-                        <li key={i} className="flex items-center justify-between gap-3 border-t border-stone-100 py-2.5 text-sm first:border-t-0">
-                          <div className="min-w-0">
-                            <b className="block truncate font-semibold" title={shortName(F.name)}>{shortName(F.name)}</b>
-                            <span className="text-xs text-stone-500">{it.u === 'g' ? `${fmt(it.g)} g` : `${fmt(it.q, 1)} ${it.u}`}</span>
+                        <li key={i} className="border-t border-stone-100 py-2.5 text-sm first:border-t-0">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <b className={`block truncate font-semibold ${rep ? 'text-stone-400 line-through' : ''}`} title={shortName(F.name)}>{shortName(F.name)}</b>
+                              <span className="text-xs text-stone-500">{it.u === 'g' ? `${fmt(it.g)} g` : `${fmt(it.q, 1)} ${it.u}`}</span>
+                            </div>
+                            {rep ? (
+                              <span className="flex-none text-xs font-semibold text-stone-400 line-through">{fmt(portion(F, it.g).kcal)} kcal</span>
+                            ) : (
+                              <span className="flex flex-none items-center gap-2">
+                                <button className="h-8 rounded-lg border border-stone-300 px-2.5 text-xs font-semibold text-stone-600 hover:border-brand-500 hover:text-brand-500" onClick={() => { setAdding(null); setSwapping({ meal: m, code: it.code }) }}>⇄ Değiştir</button>
+                                <span className="font-display text-base font-bold tabular-nums">{fmt(portion(F, it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+                              </span>
+                            )}
                           </div>
-                          <span className="flex-none font-display text-base font-bold tabular-nums">{fmt(portion(F, it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+                          {rep && RF && (
+                            <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg bg-brand-500/10 px-3 py-2">
+                              <div className="min-w-0">
+                                <b className="block truncate font-semibold">{shortName(RF.name)}</b>
+                                <span className="text-xs text-stone-500">Bugün bunu yedim · {rep.it.u === 'g' ? `${fmt(rep.it.g)} g` : `${fmt(rep.it.q, 1)} ${rep.it.u}`}</span>
+                              </div>
+                              <span className="flex flex-none items-center gap-2">
+                                <button className="h-8 rounded-lg px-2 text-xs font-semibold text-red-700 hover:bg-red-50" onClick={() => dropSwap(rep.id)}>Geri al</button>
+                                <span className="font-display text-base font-bold tabular-nums">{fmt(portion(RF, rep.it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+                              </span>
+                            </div>
+                          )}
+                          {swapping?.meal === m && swapping.code === it.code && (
+                            <div className="mt-2">
+                              <SwapPanel food={food} hidden={hidden} item={it} onClose={() => setSwapping(null)}
+                                onApply={(next) => { addSwap({ meal: m, from: it.code, it: { ...next, meal: m as Meal } }); setSwapping(null) }} />
+                            </div>
+                          )}
+                        </li>
+                      )
+                    })}
+                    {sw.filter((x) => x.meal === m && !x.from).map((x) => {
+                      const XF = food.byCode.get(x.it.code)
+                      if (!XF) return null
+                      return (
+                        <li key={x.id} className="flex items-center justify-between gap-3 border-t border-stone-100 py-2.5 text-sm">
+                          <div className="min-w-0">
+                            <b className="block truncate font-semibold">{shortName(XF.name)} <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-800">Plan dışı</span></b>
+                            <span className="text-xs text-stone-500">{x.it.u === 'g' ? `${fmt(x.it.g)} g` : `${fmt(x.it.q, 1)} ${x.it.u}`}</span>
+                          </div>
+                          <span className="flex flex-none items-center gap-2">
+                            <button className="h-8 rounded-lg px-2 text-xs font-semibold text-red-700 hover:bg-red-50" onClick={() => dropSwap(x.id)}>Sil</button>
+                            <span className="font-display text-base font-bold tabular-nums">{fmt(portion(XF, x.it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+                          </span>
                         </li>
                       )
                     })}
                   </ul>
+                  <div className="px-4 pb-3">
+                    {adding === m ? (
+                      <PortalFoodPicker food={food} hidden={hidden} meal={m as Meal} onClose={() => setAdding(null)}
+                        onAdd={(it) => { addSwap({ meal: m, it }); setAdding(null) }} />
+                    ) : (
+                      <button className="h-9 w-full rounded-xl border border-dashed border-stone-300 text-sm font-semibold text-stone-600 hover:border-brand-500 hover:text-brand-500" onClick={() => { setSwapping(null); setAdding(m) }}>+ Menüde olmayan bir şey yedim</button>
+                    )}
+                  </div>
                 </section>
               )
             })}
