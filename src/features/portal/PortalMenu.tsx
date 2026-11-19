@@ -49,10 +49,10 @@ export default function PortalMenu() {
       {!food || !T ? <p className="text-stone-500">Yükleniyor…</p> : client.menu.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-stone-300 bg-white p-10 text-center text-stone-500">Diyetisyenin henüz menü hazırlamadı.</div>
       ) : (
-        <div className="space-y-4">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
           {/* Bugünün özeti: öğün ilerlemesi, kalori ve su */}
-          <section className={`${box} border-stone-200 p-4 shadow-sm`} aria-label="Bugünün özeti">
-            <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:items-center">
+          <section className={`${box} border-stone-200 p-4 shadow-sm lg:sticky lg:top-[112px] lg:order-2`} aria-label="Bugünün özeti">
+            <div className="grid gap-5">
               <div>
                 <div className="flex items-baseline justify-between gap-3">
                   <h2 className="font-display text-lg font-bold">Bugün</h2>
@@ -82,7 +82,7 @@ export default function PortalMenu() {
             </div>
           </section>
 
-          <div className="grid items-start gap-4 lg:grid-cols-2">
+          <div className="min-w-0 space-y-4 lg:order-1">
             {meals.map((m) => {
               const rows = client.menu.filter((it) => it.meal === m)
               const done = trk.m.includes(m)
@@ -119,7 +119,6 @@ export default function PortalMenu() {
                 </section>
               )
             })}
-          </div>
 
           {client.mnote.trim() && (
             <section className={`${box} border-stone-200 p-4`}>
@@ -127,6 +126,7 @@ export default function PortalMenu() {
               <p className="mt-1 whitespace-pre-wrap text-sm">{client.mnote}</p>
             </section>
           )}
+          </div>
         </div>
       )}
     </>
