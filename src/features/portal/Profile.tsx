@@ -38,11 +38,11 @@ export default function Profile() {
       ) : (
         <>
           <NextAppointment clientId={client.id} />
-          <div className="grid items-stretch gap-4 lg:grid-cols-[340px_1fr]">
+          <div className="grid items-stretch gap-4 lg:grid-cols-[360px_minmax(0,1fr)]">
             <div className="flex flex-col rounded-xl border border-stone-200 bg-white p-4 md:p-5">
-              <h2 className="font-display text-lg font-bold">Diyetisyeninizin belirlediği değerler</h2>
-              <p className="mb-2 text-xs text-stone-500">Hedefiniz diyetisyeniniz tarafından hesaplanır ve güncellenir. Fiziksel aktivite düzeyini ve hedef kilonuzu siz yazabilirsiniz; günlük kalori hedefiniz buna göre yeniden hesaplanır.</p>
-              <dl className="flex flex-1 flex-col text-sm">
+              <h2 className="font-display text-lg font-bold">Değerlerin</h2>
+              <p className="mb-2 text-xs text-stone-500">Fiziksel aktivite ve hedef kilonu sen yazabilirsin; günlük kalori hedefin buna göre yeniden hesaplanır.</p>
+              <dl className="text-sm">
                 {([
                   ['Cinsiyet', p.sex === 'K' ? 'Kadın' : p.sex === 'E' ? 'Erkek' : '–'],
                   ['Yaş', p.age || '–'],
@@ -74,7 +74,7 @@ export default function Profile() {
                   )],
                   ...(p.phys !== 'none' ? [['Fizyolojik durum', PHYS[p.phys]] as const] : []),
                 ] as const).map(([k, v]) => (
-                  <div key={k} className="flex flex-1 items-center justify-between gap-3 border-b border-stone-200 py-2.5 last:border-0">
+                  <div key={k} className="flex min-h-[2.75rem] items-center justify-between gap-3 border-b border-stone-200 py-1.5 last:border-0">
                     <dt className="text-stone-500">{k}</dt><dd className="text-right font-semibold">{v}</dd>
                   </div>
                 ))}
@@ -102,12 +102,12 @@ export default function Profile() {
     </>
   )
 }
-/** Hedef kilo girildiyse: kalan kilo, önerilen tempo, tahmini süre ve hedefe ulaşınca stabilizasyon kalorisi */
+/** Hedef kilo girildiyse: kalan kilo, tempo, tahmini süre ve hedefe ulaşınca stabilizasyon kalorisi */
 function GoalPlan({ p }: { p: ProfileData }) {
   const w = parseNum(p.w)
   const tw = p.tw ? parseNum(p.tw) : null
   const h = parseNum(p.h)
-  if (p.tw && !validTarget(tw)) return <p className="mt-2 text-xs text-amber-800">Hedef kilo 30 ile 300 kg arasında olmalı.</p>
+  if (p.tw && !validTarget(tw)) return <p className="mt-3 text-xs text-amber-800">Hedef 30 ile 300 kg arasında olmalı.</p>
   if (w == null || !validTarget(tw)) return null
   const ag = autoGoal(w, tw)
   const now = calculate(toCalcInput(p))
@@ -116,24 +116,33 @@ function GoalPlan({ p }: { p: ProfileData }) {
   const weeks = weeksToGoal(ag.gapKg, now.adj ?? 0)
   const perWeek = now.weeklyKg ? Math.abs(now.weeklyKg) : 0
   const low = h && tw / ((h / 100) * (h / 100)) < 18.5
+  const stab = ag.phase === 'stabilize'
+  const Tile = ({ label, value, unit }: { label: string; value: string; unit: string }) => (
+    <div className="rounded-xl bg-white/60 px-2 py-2 text-center dark:bg-black/20">
+      <div className="text-[10px] font-bold uppercase tracking-wide text-stone-500">{label}</div>
+      <div className="mt-0.5 text-base font-bold leading-tight">{value}</div>
+      <div className="text-[11px] text-stone-500">{unit}</div>
+    </div>
+  )
   return (
-    <div className="mt-3 rounded-xl border border-brand-500/40 bg-brand-500/10 p-3 text-sm" aria-label="Hedef kilo planı">
-      {ag.phase === 'stabilize' ? (
-        <>
-          <b>Hedef kilondasın: stabilizasyon dönemi</b>
-          <p className="mt-0.5 text-xs text-stone-600">Kilonu korumak için günlük yaklaşık <b>{fmt(now.target)} kcal</b> yeterli. Kilon hedefinden ±{fmt(0.5, 1)} kg uzaklaşırsa plan otomatik güncellenir.</p>
-        </>
-      ) : (
-        <>
-          <b>Hedefine {fmt(Math.abs(ag.gapKg), 1)} kg var</b> <span className="text-stone-500">({fmt(w, 1)} → {fmt(tw, 1)} kg)</span>
-          <ul className="mt-1 space-y-0.5 text-xs text-stone-600">
-            <li>Şimdiki tempo: günlük <b>{fmt(now.target)} kcal</b>, haftada yaklaşık {fmt(perWeek, 2)} kg{weeks ? <> · tahmini <b>{weeks} hafta</b></> : null}</li>
-            {keep?.target ? <li>Hedefe ulaşınca stabilizasyon: günlük yaklaşık <b>{fmt(keep.target)} kcal</b> ile kilonu korursun</li> : null}
-            <li>Kilon değiştikçe tempo kendiliğinden güncellenir; hedefe yaklaşınca stabilizasyona geçilir.</li>
-          </ul>
-        </>
-      )}
-      {low && <p className="mt-1.5 text-xs font-semibold text-amber-800">Bu hedef kilo BKİ 18,5'in altında kalıyor; diyetisyeninle konuşmanı öneririz.</p>}
+    <div className="mt-auto pt-4" aria-label="Hedef planı">
+      <div className="rounded-2xl border border-brand-500/40 bg-brand-500/10 p-3">
+        <div className="flex items-center justify-between gap-2">
+          <b className="text-sm">{stab ? 'Hedefindesin' : 'Hedef planın'}</b>
+          <span className="rounded-full bg-brand-500/20 px-2 py-0.5 text-[11px] font-semibold">{stab ? 'Stabilizasyon' : `${fmt(w, 1)} → ${fmt(tw, 1)} kg`}</span>
+        </div>
+        <div className="mt-2.5 grid grid-cols-3 gap-2">
+          <Tile label={stab ? 'Fark' : 'Kalan'} value={fmt(Math.abs(ag.gapKg), 1)} unit="kg" />
+          <Tile label="Günlük" value={fmt(now.target)} unit="kcal" />
+          <Tile label={stab ? 'Tempo' : 'Süre'} value={stab ? 'Koru' : weeks ? `~${weeks}` : '–'} unit={stab ? 'kilonu' : 'hafta'} />
+        </div>
+        <ul className="mt-2.5 space-y-1.5 text-xs text-stone-600">
+          {!stab && perWeek > 0 && <li className="flex gap-2"><span aria-hidden>•</span><span>Haftada yaklaşık <b>{fmt(perWeek, 2)} kg</b> değişim</span></li>}
+          {!stab && keep?.target ? <li className="flex gap-2"><span aria-hidden>•</span><span>Hedefe ulaşınca günlük <b>{fmt(keep.target)} kcal</b> ile kilonu korursun</span></li> : null}
+          <li className="flex gap-2"><span aria-hidden>•</span><span>Kilon değiştikçe plan kendiliğinden güncellenir</span></li>
+        </ul>
+        {low && <p className="mt-2 rounded-lg bg-amber-500/15 px-2 py-1.5 text-xs font-semibold text-amber-800">Bu hedef BKİ 18,5'in altında; diyetisyeninle konuşmanı öneririz.</p>}
+      </div>
     </div>
   )
 }
