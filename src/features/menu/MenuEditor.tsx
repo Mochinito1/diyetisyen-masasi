@@ -303,9 +303,10 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
             const share = ready && result.target && rows.length ? (mt.kcal / result.target) * 100 : null
             return (
               <section key={m} className={`rounded-2xl border bg-white ${active ? 'border-brand-500 ring-1 ring-brand-500' : 'border-stone-200'}`} aria-label={m}>
-                <div className="flex items-center gap-3 px-4 py-3">
+                <div className="flex items-center gap-3 rounded-t-2xl border-b border-stone-200 bg-stone-100 px-4 py-3.5">
+                  <span className="h-10 w-1.5 flex-none rounded-full bg-brand-500" aria-hidden="true" />
                   <div className="min-w-0">
-                    <h2 className="font-display text-lg font-bold leading-tight">{m}</h2>
+                    <h2 className="font-display text-2xl font-extrabold leading-tight tracking-tight">{m}</h2>
                     <div className="text-xs text-stone-500">
                       {rows.length ? `${rows.length} besin · ${fmt(mt.kcal)} kcal${share != null ? ` · günlük hedefin %${Math.round(share)}` : ''}` : 'Henüz besin yok'}
                     </div>
@@ -313,7 +314,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                   <button className="ml-auto h-9 flex-none rounded-xl border border-brand-500 px-3.5 text-sm font-semibold text-brand-500 hover:bg-brand-50" onClick={focusAdd} aria-label={`${m} öğününe besin ekle`}>+ Ekle</button>
                 </div>
                 {share != null && (
-                  <div className="mx-4 h-1.5 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, share)}%` }} /></div>
+                  <div className="mx-4 mt-3 h-1.5 overflow-hidden rounded-full bg-stone-100"><div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.min(100, share)}%` }} /></div>
                 )}
                 {rows.length > 0 && (
                   <ul className="mt-1 px-4 pb-2">
