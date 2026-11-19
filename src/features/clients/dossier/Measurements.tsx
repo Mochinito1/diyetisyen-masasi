@@ -54,21 +54,24 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
     <div className={card}>
       <h2 className="font-display text-lg font-bold">Antropometri takibi</h2>
 
+      <div className="mt-3 grid gap-4 lg:grid-cols-2 lg:items-start">
+      <div className="min-w-0">
       {/* Grafik: ölçüt seçimi eşit genişlikte düğmeler */}
-      <div className="mt-3 grid grid-cols-6 gap-1.5 sm:grid-cols-5" role="group" aria-label="Grafik ölçütü">
+      <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-5" role="group" aria-label="Grafik ölçütü">
         {(Object.keys(METRICS) as MetricKey[]).map((k, i) => (
-          <button key={k} aria-pressed={chart === k} onClick={() => setChart(k)} className={`${i < 3 ? 'col-span-2' : 'col-span-3'} h-10 truncate sm:col-span-1 rounded-xl border px-1 text-sm font-semibold transition ${chart === k ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`}>{METRICS[k].label}</button>
+          <button key={k} aria-pressed={chart === k} onClick={() => setChart(k)} className={`${i < 3 ? 'col-span-2' : 'col-span-3'} h-9 truncate sm:col-span-1 rounded-xl border px-1 text-sm font-semibold transition ${chart === k ? 'border-brand-500 bg-brand-500 text-white' : 'border-stone-200 bg-stone-50 text-stone-600 hover:border-brand-500'}`}>{METRICS[k].label}</button>
         ))}
       </div>
-      <div className="mt-3 rounded-xl border border-stone-200 p-2">
+      <div className="mt-2 rounded-xl border border-stone-200 p-2">
         {series.length ? <LineChart points={series} digits={mt.digits} unit={mt.unit} /> : <p className="p-4 text-center text-sm text-stone-500">Bu ölçüt için henüz veri yok.</p>}
       </div>
 
+      </div>
       {/* Yeni ölçüm */}
-      <section className="mt-4 rounded-xl border border-stone-200 bg-stone-50 p-3 sm:p-4" aria-label="Yeni ölçüm">
+      <section className="rounded-xl border border-stone-200 bg-stone-50 p-3 sm:p-4" aria-label="Yeni ölçüm">
         <h3 className="text-sm font-bold">Yeni ölçüm</h3>
-        <div className="mt-2 grid grid-cols-2 gap-3 lg:grid-cols-5">
-          <label className="col-span-2 block text-xs font-semibold lg:col-span-1">Tarih
+        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          <label className="col-span-2 block text-xs font-semibold sm:col-span-3">Tarih
             <input type="date" className={`${field} mt-1 w-full`} value={d} onChange={(e) => setD(e.target.value)} />
           </label>
           {input('w', 'Kilo (kg)')}{input('b', 'Bel (cm)')}{input('k', 'Kalça (cm)')}{input('y', 'Yağ oranı (%)')}
@@ -84,6 +87,7 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
         <p className="mt-2 text-xs text-stone-500">Tartı uygulamasından dışa aktarılan CSV alınabilir. Sütun adları: tarih, kilo, bel, kalça, yağ. Tarih 2026-11-16 veya 16.11.2026 olabilir.</p>
       </section>
 
+      </div>
       {/* Geçmiş */}
       <h3 className="mt-5 text-sm font-bold">Ölçüm geçmişi</h3>
       {meas.length === 0 ? (

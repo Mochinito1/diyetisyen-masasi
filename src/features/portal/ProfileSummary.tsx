@@ -75,7 +75,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
         </div>
       </Card>
 
-      <div className="max-w-2xl space-y-3">
+      <div className={`space-y-3 ${editable ? 'max-w-2xl' : ''}`}>
       <Card>
         <h2 className="font-display text-base font-bold">Kilo/boy indeksi</h2>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
