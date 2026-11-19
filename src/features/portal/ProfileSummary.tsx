@@ -104,7 +104,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
             {([
               ['Mevcut kilo', `${fmt(w, 1)} kg`, ''],
               ['Sağlıklı aralık', `${fmt(r.idealLo, 1)}–${fmt(r.idealHi, 1)}`, 'kg'],
-              [gap === 0 ? 'Durum' : gap > 0 ? 'Verilecek' : 'Alınacak', gap === 0 ? 'Aralıkta' : `${fmt(Math.abs(gap), 1)} kg`, ''],
+              [gap === 0 ? 'Durum' : 'Aralığa fark', gap === 0 ? 'Aralıkta' : `${fmt(Math.abs(gap), 1)} kg`, ''],
             ] as const).map(([l, v, u]) => (
               <div key={l} className="min-w-0 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5">
                 <div className="truncate text-[11px] font-semibold text-stone-500">{l}</div>
