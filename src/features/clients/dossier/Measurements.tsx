@@ -100,28 +100,47 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
               const prev = [...meas.slice(0, i)].reverse().find((x) => x.w != null)
               const dl = m.w != null && prev?.w != null ? m.w - prev.w : null
               const wh = waistHip(m, sex)
-              const cells: [string, string, boolean?][] = [
-                ['Kilo', m.w != null ? fmt(m.w, 1) : '–'],
-                ['BKİ', m.w != null && hm > 0.5 ? fmt(m.w / (hm * hm), 1) : '–'],
-                ['Değişim', dl == null ? '–' : `${dl > 0 ? '+' : dl < 0 ? '−' : ''}${fmt(Math.abs(dl), 1)}`],
-                ['Bel', m.b != null ? fmt(m.b, 1) : '–'],
-                ['Kalça', m.k != null ? fmt(m.k, 1) : '–'],
-                ['B/K', wh ? fmt(wh.ratio, 2) : '–', !!wh?.high],
-                ['Yağ %', m.y != null ? fmt(m.y, 1) : '–'],
-              ]
+              const cells = ([
+                ['BKİ', m.w != null && hm > 0.5 ? fmt(m.w / (hm * hm), 1) : null, ''],
+                ['Bel', m.b != null ? fmt(m.b, 1) : null, 'cm'],
+                ['Kalça', m.k != null ? fmt(m.k, 1) : null, 'cm'],
+                ['Bel/kalça', wh ? fmt(wh.ratio, 2) : null, ''],
+                ['Yağ', m.y != null ? fmt(m.y, 1) : null, '%'],
+              ] as [string, string | null, string][]).filter((c) => c[1] != null)
+              const down = dl != null && dl < 0
               return (
-                <div key={m.d} className="rounded-xl border border-stone-200 p-3">
-                  <div className="flex items-center justify-between">
-                    <b>{fmtDay(m.d)}</b>
-                    <button className="h-8 rounded-lg px-2.5 text-sm font-semibold text-red-700 hover:bg-red-50" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>Sil</button>
+                <div key={m.d} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
+                  <div className="flex items-center gap-3 border-b border-stone-100 bg-stone-50 px-3.5 py-2">
+                    <span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-brand-50 text-brand-500" aria-hidden="true">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
+                    </span>
+                    <b className="min-w-0 flex-1 truncate text-sm">{fmtDay(m.d)}</b>
+                    <button aria-label={`${fmtDay(m.d)} ölçümünü sil`} title="Sil" className="grid h-8 w-8 flex-none place-items-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-700" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5" /></svg>
+                    </button>
                   </div>
-                  <div className="mt-2 grid grid-cols-4 gap-x-2 gap-y-2 text-center">
-                    {cells.map(([l, v, warn]) => (
-                      <div key={l} className="rounded-lg bg-stone-50 px-1 py-1.5">
-                        <div className="text-[10px] font-semibold uppercase tracking-wide text-stone-500">{l}</div>
-                        <div className={`font-display text-base font-bold tabular-nums ${warn ? 'text-amber-800' : ''}`}>{v}</div>
+                  <div className="px-3.5 py-3">
+                    <div className="flex items-end justify-between gap-2">
+                      <div>
+                        <div className="text-[10px] font-bold uppercase tracking-wide text-stone-500">Kilo</div>
+                        <div className="font-display text-3xl font-bold leading-none tabular-nums">{m.w != null ? fmt(m.w, 1) : '–'}{m.w != null && <small className="ml-1 font-sans text-sm font-semibold text-stone-500">kg</small>}</div>
                       </div>
-                    ))}
+                      {dl != null && dl !== 0 && (
+                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${down ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-800'}`} title="Önceki ölçüme göre kilo değişimi">
+                            <span aria-hidden="true">{down ? '▼' : '▲'}</span>{fmt(Math.abs(dl), 1)} kg
+                        </span>
+                      )}
+                    </div>
+                    {cells.length > 0 && (
+                      <div className="mt-3 grid grid-cols-3 gap-2">
+                        {cells.map(([l, v, u]) => (
+                          <div key={l} className="min-w-0 rounded-xl bg-stone-100 px-2 py-1.5 text-center">
+                            <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-stone-500">{l}</div>
+                            <div className={`font-display text-[15px] font-bold tabular-nums ${l === 'Bel/kalça' && wh?.high ? 'text-amber-800' : ''}`}>{v}{u && <small className="ml-0.5 font-sans text-[10px] font-semibold text-stone-500">{u}</small>}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               )
