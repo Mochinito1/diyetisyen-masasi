@@ -39,7 +39,7 @@ export default function Profile() {
           <div className="grid items-stretch gap-4 lg:grid-cols-[340px_1fr]">
             <div className="flex flex-col rounded-xl border border-stone-200 bg-white p-4 md:p-5">
               <h2 className="font-display text-lg font-bold">Diyetisyeninizin belirlediği değerler</h2>
-              <p className="mb-2 text-xs text-stone-500">Hedefiniz diyetisyeniniz tarafından hesaplanır ve güncellenir. Fiziksel aktivite düzeyini siz değiştirebilirsiniz; günlük hedefiniz buna göre yeniden hesaplanır.</p>
+              <p className="mb-2 text-xs text-stone-500">Hedefiniz diyetisyeniniz tarafından hesaplanır ve güncellenir. Fiziksel aktivite düzeyini ve hedefinizi (kilo verme, koruma, alma) siz değiştirebilirsiniz; günlük kalori hedefiniz buna göre yeniden hesaplanır.</p>
               <dl className="flex flex-1 flex-col text-sm">
                 {([
                   ['Cinsiyet', p.sex === 'K' ? 'Kadın' : p.sex === 'E' ? 'Erkek' : '–'],
@@ -56,7 +56,16 @@ export default function Profile() {
                       {Object.entries(ACT).map(([k, label]) => <option key={k} value={k}>{label} ({k.replace('.', ',')})</option>)}
                     </select>
                   )],
-                  ['Hedef', GOAL[p.goal] ?? p.goal],
+                  ['Hedef', (
+                    <select
+                      aria-label="Hedef"
+                      className="h-9 max-w-[11.5rem] rounded-xl border border-stone-300 bg-white px-2.5 text-right text-sm font-semibold focus:border-brand-500 focus:outline-none"
+                      value={p.goal}
+                      onChange={(e) => update({ profile: { ...client.profile, goal: e.target.value } })}
+                    >
+                      {(['-750', '-500', '-250', '0', '250', '500'] as const).map((k) => <option key={k} value={k}>{GOAL[k]}</option>)}
+                    </select>
+                  )],
                   ...(p.phys !== 'none' ? [['Fizyolojik durum', PHYS[p.phys]] as const] : []),
                 ] as const).map(([k, v]) => (
                   <div key={k} className="flex flex-1 items-center justify-between gap-3 border-b border-stone-200 py-2.5 last:border-0">
