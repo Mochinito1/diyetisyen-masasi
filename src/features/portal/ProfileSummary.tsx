@@ -19,19 +19,19 @@ const TICKS = [18.5, 25, 30, 35, 40]
 const pos = (v: number) => ((Math.min(Math.max(v, MIN), MAX) - MIN) / (MAX - MIN)) * 100
 
 const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-stone-200 bg-white p-4">{children}</div>
+  <div className="rounded-xl border border-stone-200 bg-white p-3.5">{children}</div>
 )
 const Label = ({ children }: { children: React.ReactNode }) => (
-  <div className="text-[11px] font-bold uppercase tracking-[0.08em] opacity-70">{children}</div>
+  <div className="text-[10px] font-bold uppercase tracking-[0.06em] opacity-70">{children}</div>
 )
 
 function Kpi({ label, value, unit, sub, main, subClass = '' }: { label: string; value: string; unit?: string; sub?: string; main?: boolean; subClass?: string }) {
   return (
-    <div className={`flex h-full min-w-0 flex-col rounded-[9px] px-3.5 py-3 ${main ? 'bg-brand-500 text-white' : 'bg-stone-100'}`}>
+    <div className={`flex h-full min-w-0 flex-col rounded-lg px-3 py-2 ${main ? 'bg-brand-500 text-white' : 'bg-stone-100'}`}>
       <Label>{label}</Label>
-      <div className="mt-0.5 font-display text-[28px] font-bold leading-tight">
+      <div className="font-display text-[22px] font-bold leading-tight">
         {value}
-        {unit && <small className="ml-1 font-sans text-[13px] font-semibold opacity-70">{unit}</small>}
+        {unit && <small className="ml-1 font-sans text-xs font-semibold opacity-70">{unit}</small>}
       </div>
       {sub && <div className={`mt-auto pt-0.5 text-xs ${main ? 'opacity-85' : 'text-stone-500'} ${subClass}`}>{sub}</div>}
     </div>
@@ -67,7 +67,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
   return (
     <div className="space-y-4">
       <Card>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Kpi main label="Günlük hedef" value={fmt(r.target!)} unit="kcal" sub={adj === 0 ? 'BMH × aktivite' : `BMH × aktivite ${adj > 0 ? '+' : '−'} ${fmt(Math.abs(adj))} kcal`} />
           <Kpi label="Beden kitle indeksi" value={fmt(r.bmi, 1)} unit="kg/m²" sub={r.category} subClass="font-semibold" />
           <Kpi label="Bazal metabolizma" value={fmt(r.bmr!)} unit="kcal" sub={FORMULA[r.formula!]} />
@@ -75,17 +75,17 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
         </div>
       </Card>
 
-      <div className="space-y-4">
+      <div className="max-w-2xl space-y-3">
       <Card>
-        <h2 className="font-display text-lg font-bold">Kilo/boy indeksi</h2>
+        <h2 className="font-display text-base font-bold">Kilo/boy indeksi</h2>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="font-display text-3xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
+          <span className="font-display text-2xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
           <span className="text-sm text-stone-500">kg/m²</span>
           {r.category && <span className={`ml-auto rounded-full px-3 py-1 text-sm font-semibold ${r.tone ? PILL[r.tone] : ''}`}>{r.category}</span>}
         </div>
 
-        <div className="relative mb-9 mt-8">
-          <div className="flex h-3.5 gap-0.5">
+        <div className="relative mb-8 mt-7">
+          <div className="flex h-2.5 gap-0.5">
             {SEGMENTS.map(([a, b, cls], i) => (
               <i key={a} className={`block h-full ${cls} ${i === 0 ? 'rounded-l-full' : ''} ${i === SEGMENTS.length - 1 ? 'rounded-r-full' : ''}`} style={{ width: `${((b - a) / (MAX - MIN)) * 100}%` }} />
             ))}
@@ -93,7 +93,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
           {SEGMENT_NAMES.map(([a, b, name]) => (
             <span key={name} className="absolute -top-6 -translate-x-1/2 whitespace-nowrap text-[11px] font-semibold text-stone-500" style={{ left: `${(pos(a) + pos(b)) / 2}%` }}>{name}</span>
           ))}
-          <div className="absolute top-1/2 h-6 w-6 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-stone-50 bg-stone-900 shadow-md transition-[left] duration-300" style={{ left: `${pos(r.bmi)}%` }} role="img" aria-label={`BKİ ${fmt(r.bmi, 1)}`} />
+          <div className="absolute top-1/2 h-5 w-5 -translate-x-1/2 -translate-y-1/2 rounded-full border-[3px] border-stone-50 bg-stone-900 shadow-md transition-[left] duration-300" style={{ left: `${pos(r.bmi)}%` }} role="img" aria-label={`BKİ ${fmt(r.bmi, 1)}`} />
           {TICKS.map((t) => (
             <span key={t} className="absolute top-6 -translate-x-1/2 text-[10.5px] text-stone-500" style={{ left: `${pos(t)}%` }}>{fmt(t, t % 1 ? 1 : 0)}</span>
           ))}
@@ -106,9 +106,9 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
               ['Sağlıklı aralık', `${fmt(r.idealLo, 1)}–${fmt(r.idealHi, 1)}`, 'kg'],
               [gap === 0 ? 'Durum' : gap > 0 ? 'Verilecek' : 'Alınacak', gap === 0 ? 'Aralıkta' : `${fmt(Math.abs(gap), 1)} kg`, ''],
             ] as const).map(([l, v, u]) => (
-              <div key={l} className="min-w-0 rounded-xl border border-stone-200 bg-stone-50 px-2 py-2">
+              <div key={l} className="min-w-0 rounded-lg border border-stone-200 bg-stone-50 px-2 py-1.5">
                 <div className="truncate text-[11px] font-semibold text-stone-500">{l}</div>
-                <div className="mt-0.5 font-display text-base font-bold tabular-nums">{v}{u && <small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">{u}</small>}</div>
+                <div className="font-display text-sm font-bold tabular-nums">{v}{u && <small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">{u}</small>}</div>
               </div>
             ))}
           </div>
@@ -124,7 +124,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
       </Card>
 
       <Card>
-        <h2 className="font-display text-lg font-bold">Makro dağılımı</h2>
+        <h2 className="font-display text-base font-bold">Makro dağılımı</h2>
         <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
         <MacroEditor target={r.target!} value={macroPct} onChange={onMacro} />
         {editable && (
