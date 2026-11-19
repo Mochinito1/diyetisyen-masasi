@@ -6,7 +6,7 @@ import { MEALS, portion, shortName, totals, type Meal, type MenuItem } from '../
 import { useFoodData } from '../../lib/useFoodData'
 import { useEvaluation } from '../foods/useEvaluation'
 import { useRemovedFoods } from '../foods/useRemovedFoods'
-import SwapPanel from '../menu/SwapPanel'
+import PortalRowEditor from './PortalRowEditor'
 import PortalFoodPicker from './PortalFoodPicker'
 import type { DaySwap, DayTrack } from '../clients/types'
 import ClientPicker from './ClientPicker'
@@ -25,7 +25,7 @@ export default function PortalMenu() {
   const trk: DayTrack = client?.trk[day] ?? { m: [], su: 0 }
   const removed = useRemovedFoods()
   const evalr = useEvaluation(food, client, removed.set)
-  const [swapping, setSwapping] = useState<{ meal: string; code: string } | null>(null)
+  const [editing, setEditing] = useState<string | null>(null)
   const [adding, setAdding] = useState<string | null>(null)
   const T = useMemo(() => (client && food ? totals(client.menu, food.byCode, food.idx) : null), [client, food])
 
@@ -53,6 +53,7 @@ export default function PortalMenu() {
   ]
   const mealKcal = (m: string) => (food ? Math.round(totals(effective(m), food.byCode, food.idx).kcal) : 0)
   const addSwap = (x: Omit<DaySwap, 'id'>) => save({ ...trk, sw: [...sw.filter((y) => !(x.from && y.meal === x.meal && y.from === x.from)), { ...x, id: crypto.randomUUID() }] })
+  const setSwapIt = (id: string, it: MenuItem) => save({ ...trk, sw: sw.map((y) => (y.id === id ? { ...y, it } : y)) })
   const dropSwap = (id: string) => save({ ...trk, sw: sw.filter((y) => y.id !== id) })
   const meals = MEALS.filter((m) => client.menu.some((it) => it.meal === m) || sw.some((x) => x.meal === m))
   const doneCount = meals.filter((m) => trk.m.includes(m)).length
@@ -121,44 +122,33 @@ export default function PortalMenu() {
                     </button>
                   </div>
                   <ul className="px-4 pb-1">
-                    {rows.map((it, i) => {
+                    {rows.map((it) => {
                       const F = food.byCode.get(it.code)
                       if (!F) return null
                       const rep = sw.find((x) => x.meal === m && x.from === it.code)
                       const RF = rep ? food.byCode.get(rep.it.code) : null
+                      const amt = (x: MenuItem) => (x.u === 'g' ? `${fmt(x.g)} g` : `${fmt(x.q, 1)} ${x.u}`)
                       return (
-                        <li key={i} className="border-t border-stone-100 py-2.5 text-sm first:border-t-0">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="min-w-0">
-                              <b className={`block truncate font-semibold ${rep ? 'text-stone-400 line-through' : ''}`} title={shortName(F.name)}>{shortName(F.name)}</b>
-                              <span className="text-xs text-stone-500">{it.u === 'g' ? `${fmt(it.g)} g` : `${fmt(it.q, 1)} ${it.u}`}</span>
-                            </div>
-                            {rep ? (
-                              <span className="flex-none text-xs font-semibold text-stone-400 line-through">{fmt(portion(F, it.g).kcal)} kcal</span>
-                            ) : (
-                              <span className="flex flex-none items-center gap-2">
-                                <button className="h-8 rounded-lg border border-stone-300 px-2.5 text-xs font-semibold text-stone-600 hover:border-brand-500 hover:text-brand-500" onClick={() => { setAdding(null); setSwapping({ meal: m, code: it.code }) }}>⇄ Değiştir</button>
-                                <span className="font-display text-base font-bold tabular-nums">{fmt(portion(F, it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
-                              </span>
-                            )}
-                          </div>
-                          {rep && RF && (
-                            <div className="mt-1.5 flex items-center justify-between gap-3 rounded-lg bg-brand-500/10 px-3 py-2">
-                              <div className="min-w-0">
-                                <b className="block truncate font-semibold">{shortName(RF.name)}</b>
-                                <span className="text-xs text-stone-500">Bugün bunu yedim · {rep.it.u === 'g' ? `${fmt(rep.it.g)} g` : `${fmt(rep.it.q, 1)} ${rep.it.u}`}</span>
-                              </div>
-                              <span className="flex flex-none items-center gap-2">
-                                <button className="h-8 rounded-lg px-2 text-xs font-semibold text-red-700 hover:bg-red-50" onClick={() => dropSwap(rep.id)}>Geri al</button>
-                                <span className="font-display text-base font-bold tabular-nums">{fmt(portion(RF, rep.it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
-                              </span>
-                            </div>
-                          )}
-                          {swapping?.meal === m && swapping.code === it.code && (
-                            <div className="mt-2">
-                              <SwapPanel food={food} hidden={hidden} item={it} onClose={() => setSwapping(null)}
-                                onApply={(next) => { addSwap({ meal: m, from: it.code, it: { ...next, meal: m as Meal } }); setSwapping(null) }} />
-                            </div>
+                        <li key={it.code} className="border-t border-stone-100 first:border-t-0">
+                          {rep && RF ? (
+                            <>
+                              <Line name={shortName(F.name)} sub={amt(it)} kcal={fmt(portion(F, it.g).kcal)} struck />
+                              <Line name={shortName(RF.name)} sub={`Bugün yediğim · ${amt(rep.it)}`} kcal={fmt(portion(RF, rep.it.g).kcal)} highlight
+                                action={<EditBtn open={editing === `s:${rep.id}`} onClick={() => setEditing(editing === `s:${rep.id}` ? null : `s:${rep.id}`)} />} />
+                              {editing === `s:${rep.id}` && (
+                                <PortalRowEditor food={food} hidden={hidden} item={rep.it} meal={m as Meal} revertLabel="Menüdeki hâline geri dön"
+                                  onApply={(next) => { setSwapIt(rep.id, next); setEditing(null) }} onRevert={() => { dropSwap(rep.id); setEditing(null) }} onClose={() => setEditing(null)} />
+                              )}
+                            </>
+                          ) : (
+                            <>
+                              <Line name={shortName(F.name)} sub={amt(it)} kcal={fmt(portion(F, it.g).kcal)}
+                                action={<EditBtn open={editing === `p:${it.code}`} onClick={() => setEditing(editing === `p:${it.code}` ? null : `p:${it.code}`)} />} />
+                              {editing === `p:${it.code}` && (
+                                <PortalRowEditor food={food} hidden={hidden} item={it} meal={m as Meal}
+                                  onApply={(next) => { addSwap({ meal: m, from: it.code, it: next }); setEditing(null) }} onClose={() => setEditing(null)} />
+                              )}
+                            </>
                           )}
                         </li>
                       )
@@ -166,16 +156,15 @@ export default function PortalMenu() {
                     {sw.filter((x) => x.meal === m && !x.from).map((x) => {
                       const XF = food.byCode.get(x.it.code)
                       if (!XF) return null
+                      const amt = x.it.u === 'g' ? `${fmt(x.it.g)} g` : `${fmt(x.it.q, 1)} ${x.it.u}`
                       return (
-                        <li key={x.id} className="flex items-center justify-between gap-3 border-t border-stone-100 py-2.5 text-sm">
-                          <div className="min-w-0">
-                            <b className="block truncate font-semibold">{shortName(XF.name)} <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-800">Plan dışı</span></b>
-                            <span className="text-xs text-stone-500">{x.it.u === 'g' ? `${fmt(x.it.g)} g` : `${fmt(x.it.q, 1)} ${x.it.u}`}</span>
-                          </div>
-                          <span className="flex flex-none items-center gap-2">
-                            <button className="h-8 rounded-lg px-2 text-xs font-semibold text-red-700 hover:bg-red-50" onClick={() => dropSwap(x.id)}>Sil</button>
-                            <span className="font-display text-base font-bold tabular-nums">{fmt(portion(XF, x.it.g).kcal)}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
-                          </span>
+                        <li key={x.id} className="border-t border-stone-100">
+                          <Line name={shortName(XF.name)} badge="Plan dışı" sub={amt} kcal={fmt(portion(XF, x.it.g).kcal)}
+                            action={<EditBtn open={editing === `x:${x.id}`} onClick={() => setEditing(editing === `x:${x.id}` ? null : `x:${x.id}`)} />} />
+                          {editing === `x:${x.id}` && (
+                            <PortalRowEditor food={food} hidden={hidden} item={x.it} meal={m as Meal} revertLabel="Bu kaydı sil"
+                              onApply={(next) => { setSwapIt(x.id, next); setEditing(null) }} onRevert={() => { dropSwap(x.id); setEditing(null) }} onClose={() => setEditing(null)} />
+                          )}
                         </li>
                       )
                     })}
@@ -185,7 +174,7 @@ export default function PortalMenu() {
                       <PortalFoodPicker food={food} hidden={hidden} meal={m as Meal} onClose={() => setAdding(null)}
                         onAdd={(it) => { addSwap({ meal: m, it }); setAdding(null) }} />
                     ) : (
-                      <button className="h-9 w-full rounded-xl border border-dashed border-stone-300 text-sm font-semibold text-stone-600 hover:border-brand-500 hover:text-brand-500" onClick={() => { setSwapping(null); setAdding(m) }}>+ Menüde olmayan bir şey yedim</button>
+                      <button className="h-9 w-full rounded-xl border border-dashed border-stone-300 text-sm font-semibold text-stone-600 hover:border-brand-500 hover:text-brand-500" onClick={() => { setEditing(null); setAdding(m) }}>+ Menüde olmayan bir şey yedim</button>
                     )}
                   </div>
                 </section>
@@ -202,5 +191,25 @@ export default function PortalMenu() {
         </div>
       )}
     </>
+  )
+}
+
+/** Tüm satırlar aynı ızgarayı kullanır: ad ve miktar solda, "Değiştir" düğmesi ve kcal sabit sütunlarda */
+function Line({ name, sub, kcal, struck, highlight, badge, action }: { name: string; sub: string; kcal: string; struck?: boolean; highlight?: boolean; badge?: string; action?: React.ReactNode }) {
+  return (
+    <div className={`grid grid-cols-[minmax(0,1fr)_5.5rem_4.25rem] items-center gap-x-2 py-2.5 text-sm ${highlight ? '-mx-2 my-1 rounded-lg bg-brand-500/10 px-2' : ''}`}>
+      <div className="min-w-0">
+        <b className={`block font-semibold leading-snug ${struck ? 'text-stone-400 line-through' : ''}`}>{name}{badge && <span className="ml-1.5 rounded-full bg-amber-100 px-2 py-0.5 align-middle text-[11px] font-semibold text-amber-800">{badge}</span>}</b>
+        <span className="text-xs text-stone-500">{sub}</span>
+      </div>
+      <div>{action}</div>
+      <span className={`text-right font-display text-base font-bold tabular-nums ${struck ? 'text-stone-400 line-through' : ''}`}>{kcal}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kcal</small></span>
+    </div>
+  )
+}
+
+function EditBtn({ onClick, open }: { onClick: () => void; open: boolean }) {
+  return (
+    <button className={`h-8 w-full rounded-lg border text-xs font-semibold transition ${open ? 'border-brand-500 bg-brand-50 text-brand-500' : 'border-stone-300 text-stone-600 hover:border-brand-500 hover:text-brand-500'}`} aria-expanded={open} onClick={onClick}>⇄ Değiştir</button>
   )
 }
