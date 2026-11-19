@@ -60,9 +60,9 @@ export default function Clients() {
           ← Danışan listesi
         </button>
         <PageTitle title={isNew ? 'Yeni danışan' : editing.name || 'Danışan'} />
-        <div className="grid gap-6 lg:grid-cols-[380px_1fr]">
-          <div className="space-y-4">
-            <div className="space-y-3 rounded-2xl border border-stone-200 bg-white p-5">
+        <div className="grid gap-4 lg:grid-cols-[380px_1fr] lg:gap-6">
+          <div className="contents lg:flex lg:flex-col lg:gap-4">
+            <div className="order-1 space-y-3 rounded-2xl border border-stone-200 bg-white p-5 lg:order-none">
               <label className="block text-sm font-semibold">
                 Ad soyad
                 <input className={field} value={editing.name} onChange={(e) => set({ name: e.target.value })} />
@@ -78,22 +78,22 @@ export default function Clients() {
                 </label>
               </div>
             </div>
-            <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <div className="order-2 rounded-2xl border border-stone-200 bg-white p-5 lg:order-none">
               <ProfileFields value={editing.profile} onChange={(p) => set({ profile: p })} />
             </div>
-            <ConditionsCard client={editing} onChange={(conds, condsDone) => set({ conds, condsDone })} />
-            <KvkkCard value={editing.kvkk} onChange={(kvkk) => set({ kvkk })} />
-            <AnamnesisCard value={editing.an} onChange={(an) => set({ an })} />
-            <div className="rounded-2xl border border-stone-200 bg-white p-5">
+            <div className="order-6 lg:order-none"><ConditionsCard client={editing} onChange={(conds, condsDone) => set({ conds, condsDone })} /></div>
+            <div className="order-last lg:order-none"><KvkkCard value={editing.kvkk} onChange={(kvkk) => set({ kvkk })} /></div>
+            <div className="order-7 lg:order-none"><AnamnesisCard value={editing.an} onChange={(an) => set({ an })} /></div>
+            <div className="order-8 rounded-2xl border border-stone-200 bg-white p-5 lg:order-none">
               <label className="block text-sm font-semibold">
                 Genel notlar (tarihsiz, kalıcı)
                 <textarea className={`${field} min-h-28`} value={editing.notes} onChange={(e) => set({ notes: e.target.value })} />
               </label>
             </div>
           </div>
-          <div className="space-y-4">
-            <CalcResults input={toCalcInput(editing.profile)} macro={editing.macro} onMacro={(macro) => set({ macro })} />
-            <MeasurementsCard
+          <div className="contents lg:flex lg:min-w-0 lg:flex-col lg:gap-4">
+            <div className="order-3 min-w-0 lg:order-none"><CalcResults input={toCalcInput(editing.profile)} macro={editing.macro} onMacro={(macro) => set({ macro })} /></div>
+            <div className="order-4 min-w-0 lg:order-none"><MeasurementsCard
               meas={editing.meas}
               sex={editing.profile.sex}
               heightCm={parseNum(editing.profile.h)}
@@ -101,10 +101,10 @@ export default function Clients() {
                 const w = latestWeight(meas)
                 set({ meas, ...(w != null ? { profile: { ...editing.profile, w: String(w) } } : {}) })
               }}
-            />
-            <LabsCard clientId={editing.id} labs={editing.lab} sex={editing.profile.sex} />
-            <SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} />
-            <PortalTrackCard client={editing} />
+            /></div>
+            <div className="order-5 lg:order-none"><LabsCard clientId={editing.id} labs={editing.lab} sex={editing.profile.sex} /></div>
+            <div className="order-9 lg:order-none"><SessionsCard sess={editing.sess} onChange={(sess) => set({ sess })} /></div>
+            <div className="order-10 lg:order-none"><PortalTrackCard client={editing} /></div>
           </div>
         </div>
         <div className="sticky bottom-3 mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">
