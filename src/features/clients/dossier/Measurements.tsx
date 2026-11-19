@@ -94,58 +94,44 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
         <p className="mt-2 rounded-xl border border-dashed border-stone-300 p-6 text-center text-stone-500">Henüz ölçüm yok.</p>
       ) : (
         <>
-          {/* Telefon: her ölçüm bir kart */}
-          <div className="mt-2 space-y-2.5 sm:hidden">
-            {meas.map((m, i) => ({ m, i })).reverse().map(({ m, i }) => {
+          {/* Telefon: zaman çizgisi, en yeni üstte */}
+          <ol className="relative mt-3 sm:hidden">
+            {meas.map((m, i) => ({ m, i })).reverse().map(({ m, i }, n, arr) => {
               const prev = [...meas.slice(0, i)].reverse().find((x) => x.w != null)
               const dl = m.w != null && prev?.w != null ? m.w - prev.w : null
               const wh = waistHip(m, sex)
-              const cells = ([
-                ['BKİ', m.w != null && hm > 0.5 ? fmt(m.w / (hm * hm), 1) : null, ''],
-                ['Bel', m.b != null ? fmt(m.b, 1) : null, 'cm'],
-                ['Kalça', m.k != null ? fmt(m.k, 1) : null, 'cm'],
-                ['Bel/kalça', wh ? fmt(wh.ratio, 2) : null, ''],
-                ['Yağ', m.y != null ? fmt(m.y, 1) : null, '%'],
-              ] as [string, string | null, string][]).filter((c) => c[1] != null)
+              const parts: [string, string, boolean?][] = []
+              if (m.w != null && hm > 0.5) parts.push(['BKİ', fmt(m.w / (hm * hm), 1)])
+              if (m.b != null) parts.push(['Bel', `${fmt(m.b, 1)} cm`])
+              if (m.k != null) parts.push(['Kalça', `${fmt(m.k, 1)} cm`])
+              if (wh) parts.push(['B/K', fmt(wh.ratio, 2), wh.high])
+              if (m.y != null) parts.push(['Yağ', `%${fmt(m.y, 1)}`])
               const down = dl != null && dl < 0
               return (
-                <div key={m.d} className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-                  <div className="flex items-center gap-3 border-b border-stone-100 bg-stone-50 px-3.5 py-2">
-                    <span className="grid h-8 w-8 flex-none place-items-center rounded-lg bg-brand-50 text-brand-500" aria-hidden="true">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></svg>
-                    </span>
-                    <b className="min-w-0 flex-1 truncate text-sm">{fmtDay(m.d)}</b>
-                    <button aria-label={`${fmtDay(m.d)} ölçümünü sil`} title="Sil" className="grid h-8 w-8 flex-none place-items-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-700" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14M10 11v5M14 11v5" /></svg>
-                    </button>
-                  </div>
-                  <div className="px-3.5 py-3">
-                    <div className="flex items-end justify-between gap-2">
-                      <div>
-                        <div className="text-[10px] font-bold uppercase tracking-wide text-stone-500">Kilo</div>
-                        <div className="font-display text-3xl font-bold leading-none tabular-nums">{m.w != null ? fmt(m.w, 1) : '–'}{m.w != null && <small className="ml-1 font-sans text-sm font-semibold text-stone-500">kg</small>}</div>
-                      </div>
-                      {dl != null && dl !== 0 && (
-                        <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold tabular-nums ${down ? 'bg-emerald-500/15 text-emerald-700' : 'bg-amber-500/15 text-amber-800'}`} title="Önceki ölçüme göre kilo değişimi">
-                            <span aria-hidden="true">{down ? '▼' : '▲'}</span>{fmt(Math.abs(dl), 1)} kg
-                        </span>
-                      )}
+                <li key={m.d} className="relative flex gap-3 pb-4 last:pb-0">
+                  {n < arr.length - 1 && <span className="absolute bottom-0 left-[9px] top-5 w-0.5 rounded bg-stone-200" aria-hidden="true" />}
+                  <span className={`relative z-[1] mt-1.5 h-5 w-5 flex-none rounded-full border-4 border-stone-50 ${n === 0 ? 'bg-brand-500 ring-2 ring-brand-500/30' : 'bg-stone-300'}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-semibold text-stone-500">{fmtDay(m.d)}{n === 0 ? ' · son ölçüm' : ''}</span>
+                      <button aria-label={`${fmtDay(m.d)} ölçümünü sil`} title="Sil" className="-my-1 ml-auto grid h-7 w-7 flex-none place-items-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-700" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
+                      </button>
                     </div>
-                    {cells.length > 0 && (
-                      <div className="mt-3 grid grid-cols-3 gap-2">
-                        {cells.map(([l, v, u]) => (
-                          <div key={l} className="min-w-0 rounded-xl bg-stone-100 px-2 py-1.5 text-center">
-                            <div className="truncate text-[10px] font-semibold uppercase tracking-wide text-stone-500">{l}</div>
-                            <div className={`font-display text-[15px] font-bold tabular-nums ${l === 'Bel/kalça' && wh?.high ? 'text-amber-800' : ''}`}>{v}{u && <small className="ml-0.5 font-sans text-[10px] font-semibold text-stone-500">{u}</small>}</div>
-                          </div>
-                        ))}
+                    <div className="mt-0.5 flex items-baseline gap-2">
+                      <span className="font-display text-2xl font-bold tabular-nums">{m.w != null ? fmt(m.w, 1) : '–'}{m.w != null && <small className="ml-1 font-sans text-xs font-semibold text-stone-500">kg</small>}</span>
+                      {dl != null && dl !== 0 && <span className={`text-xs font-bold tabular-nums ${down ? 'text-emerald-700' : 'text-amber-800'}`}>{down ? '▼' : '▲'} {fmt(Math.abs(dl), 1)}</span>}
+                    </div>
+                    {parts.length > 0 && (
+                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-stone-500">
+                        {parts.map(([l, v, warn]) => <span key={l}>{l} <b className={`font-semibold tabular-nums ${warn ? 'text-amber-800' : 'text-stone-900'}`}>{v}</b></span>)}
                       </div>
                     )}
                   </div>
-                </div>
+                </li>
               )
             })}
-          </div>
+          </ol>
 
           {/* Geniş ekran: tablo */}
           <div className="mt-2 hidden overflow-x-auto sm:block">
