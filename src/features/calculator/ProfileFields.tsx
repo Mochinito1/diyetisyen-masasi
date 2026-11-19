@@ -1,5 +1,5 @@
 import { autoGoal, validTarget } from '../../lib/goalPlan'
-import { parseNum } from '../../lib/format'
+import { fmt, parseNum } from '../../lib/format'
 import type { Profile } from './profile'
 
 const field =
@@ -43,10 +43,6 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
         <input className={field} inputMode="decimal" maxLength={5} placeholder="Yazın" value={value.w} onChange={num('w')} />
       </label>
       <label className="block text-sm font-semibold">
-        Hedef kilo (kg, isteğe bağlı)
-        <input className={field} inputMode="decimal" maxLength={5} placeholder="Boş bırakılabilir" value={value.tw ?? ''} onChange={num('tw')} />
-      </label>
-      <label className="block text-sm font-semibold">
         Fiziksel aktivite
         <select className={field} value={value.act} onChange={(e) => set('act', e.target.value)}>
           <option value="1.2">Hareketsiz (1,2)</option>
@@ -57,16 +53,15 @@ export default function ProfileFields({ value, onChange, hideFormula }: { value:
         </select>
       </label>
       <label className="block text-sm font-semibold">
-        Hedef
-        <select className={field} value={auto ? auto.goal : value.goal} disabled={!!auto} onChange={(e) => set('goal', e.target.value)}>
-          <option value="0">Kiloyu koru</option>
-          <option value="-250">Yavaş ver (−250 kcal)</option>
-          <option value="-500">Kilo ver (−500 kcal)</option>
-          <option value="-750">Hızlı ver (−750 kcal)</option>
-          <option value="250">Yavaş al (+250 kcal)</option>
-          <option value="500">Kilo al (+500 kcal)</option>
-        </select>
-        {auto && <span className="mt-1 block text-xs font-normal text-stone-500">Hedef kiloya göre otomatik: {auto.phase === 'stabilize' ? 'stabilizasyon (kiloyu koru)' : auto.phase === 'lose' ? 'kilo verme' : 'kilo alma'}. Elle seçmek için hedef kiloyu boşaltın.</span>}
+        Hedef (kg)
+        <input className={field} inputMode="decimal" maxLength={5} placeholder="Hedef kilo" value={value.tw ?? ''} onChange={num('tw')} />
+        <span className="mt-1 block text-xs font-normal text-stone-500">
+          {auto
+            ? auto.phase === 'stabilize'
+              ? 'Hedefe ulaşıldı: stabilizasyon, günlük kalori kiloyu korur.'
+              : `Hedefe ${fmt(Math.abs(auto.gapKg), 1)} kg var; günlük kalori ve tempo otomatik ayarlanır, hedefe yaklaşınca stabilizasyona geçilir.`
+            : 'Hedef kilo yazılınca günlük kalori, tempo ve stabilizasyon otomatik belirlenir.'}
+        </span>
       </label>
       <label className="block text-sm font-semibold">
         Fizyolojik durum
