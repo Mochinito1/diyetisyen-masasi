@@ -33,6 +33,7 @@ export default function Clients() {
     if (id) save('dm.openClient', '')
     return id
   })
+  const [savedMsg, setSavedMsg] = useState(false)
   const [editing, setEditing] = useState<Client | null>(() => (pending === 'new' ? blank() : (clients.find((c) => c.id === pending) ?? null)))
   const [isNew, setIsNew] = useState(pending === 'new')
   const [q, setQ] = useState('')
@@ -54,6 +55,9 @@ export default function Clients() {
   if (editing) {
     const set = (patch: Partial<Client>) => setEditing({ ...editing, ...patch })
     const valid = editing.name.trim().length > 0
+    // Kayıtlı hâlinden farklı mı? (tahlil ve güncelleme zamanı danışan/sistem tarafından değişir, karşılaştırmaya girmez)
+    const strip = (c: Client | undefined) => JSON.stringify({ ...c, lab: undefined, updated: undefined })
+    const dirty = isNew || strip(clients.find((c) => c.id === editing.id)) !== strip(editing)
     return (
       <>
         <button className="mb-3 text-sm font-semibold text-brand-500" onClick={() => setEditing(null)}>
@@ -109,6 +113,7 @@ export default function Clients() {
         </div>
         <div className="sticky bottom-3 mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">
           {!valid && <span className="text-sm text-amber-700">Kaydetmek için ad soyad girin.</span>}
+          {savedMsg && <span className="text-sm font-semibold text-emerald-700" role="status">✓ Kaydedildi</span>}
           {!isNew && (
             <button
               className="text-sm font-semibold text-red-700"
@@ -124,7 +129,7 @@ export default function Clients() {
           )}
           <span className="ml-auto flex gap-2">
             <button className="rounded-lg border border-stone-300 px-4 py-2 font-semibold" onClick={() => setEditing(null)}>
-              Kaydetmeden çık
+              {dirty ? 'Kaydetmeden çık' : 'Listeye dön'}
             </button>
             <button
               disabled={!valid}
@@ -132,8 +137,13 @@ export default function Clients() {
               onClick={() => {
                 // Tahlil sonuçlarını yalnızca danışan ekler: açık dosyadaki eski kopya, danışanın sonradan eklediklerini ezmesin
                 const stored = load<Client[]>('dm.clients', []).find((c) => c.id === editing.id)
-                upsert({ ...editing, lab: stored?.lab ?? editing.lab, name: editing.name.trim(), updated: Date.now() })
-                setEditing(null)
+                const saved = { ...editing, lab: stored?.lab ?? editing.lab, name: editing.name.trim(), updated: Date.now() }
+                upsert(saved)
+                // Kaydettikten sonra aynı danışan dosyasında kal; listeye dönmek için üstteki bağlantı kullanılır
+                setEditing(saved)
+                setIsNew(false)
+                setSavedMsg(true)
+                setTimeout(() => setSavedMsg(false), 2200)
               }}
             >
               Kaydet
