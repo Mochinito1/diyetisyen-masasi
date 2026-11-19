@@ -1,5 +1,5 @@
 // Diyetisyen Masası: basit çevrimdışı önbellek. Sadece kendi sitesinin dosyaları saklanır; Supabase ve diğer istekler doğrudan ağa gider.
-const CACHE = 'dm-shell-v1'
+const CACHE = 'dm-shell-v2'
 
 self.addEventListener('install', () => self.skipWaiting())
 
@@ -27,7 +27,17 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // Dosyalar (adı içeriğe göre değişen js/css, simgeler): önce önbellek, yoksa ağdan alıp sakla
+  // Adı içeriğe göre değişen dosyalar (assets/): önce önbellek. Manifest, simgeler gibi diğerleri: önce ağ, çevrimdışıysa önbellek
+  if (!url.pathname.includes('/assets/')) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)) }
+        return res
+      }).catch(() => caches.match(req)),
+    )
+    return
+  }
+
   e.respondWith(
     caches.match(req).then((hit) => hit || fetch(req).then((res) => {
       if (res.ok) { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)) }
