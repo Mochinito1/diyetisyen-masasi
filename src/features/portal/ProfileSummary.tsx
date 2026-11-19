@@ -18,8 +18,8 @@ const SEGMENTS: [from: number, to: number, cls: string][] = [
 const TICKS = [18.5, 25, 30, 35, 40]
 const pos = (v: number) => ((Math.min(Math.max(v, MIN), MAX) - MIN) / (MAX - MIN)) * 100
 
-const Card = ({ children }: { children: React.ReactNode }) => (
-  <div className="rounded-xl border border-stone-200 bg-white p-3.5">{children}</div>
+const Card = ({ children, className = '' }: { children: React.ReactNode; className?: string }) => (
+  <div className={`rounded-xl border border-stone-200 bg-white p-3.5 ${className}`}>{children}</div>
 )
 const Label = ({ children }: { children: React.ReactNode }) => (
   <div className="text-[10px] font-bold uppercase tracking-[0.06em] opacity-70">{children}</div>
@@ -65,7 +65,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
   const editable = !!onMacro
 
   return (
-    <div className="space-y-4">
+    <div className="flex h-full flex-col gap-4">
       <Card>
         <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <Kpi main label="Günlük hedef" value={fmt(r.target!)} unit="kcal" sub={adj === 0 ? 'BMH × aktivite' : `BMH × aktivite ${adj > 0 ? '+' : '−'} ${fmt(Math.abs(adj))} kcal`} />
@@ -75,8 +75,8 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
         </div>
       </Card>
 
-      <div className="space-y-3">
-      <Card>
+      <div className="flex flex-1 flex-col gap-3">
+      <Card className="flex-1">
         <h2 className="font-display text-base font-bold">Kilo/boy indeksi</h2>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1">
           <span className="font-display text-2xl font-bold tabular-nums">{fmt(r.bmi, 1)}</span>
@@ -123,7 +123,7 @@ export default function ProfileSummary({ input, macroPct = DEFAULT_MACRO, onMacr
         )}
       </Card>
 
-      <Card>
+      <Card className="flex-1">
         <h2 className="font-display text-base font-bold">Makro dağılımı</h2>
         <p className="mb-3 text-xs text-stone-500">Günlük {fmt(r.target!)} kcal hedefinin dağılımı</p>
         <MacroEditor target={r.target!} value={macroPct} onChange={onMacro} />
