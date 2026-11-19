@@ -94,39 +94,42 @@ export default function MeasurementsCard({ meas, sex, heightCm, onChange }: Prop
         <p className="mt-2 rounded-xl border border-dashed border-stone-300 p-6 text-center text-stone-500">Henüz ölçüm yok.</p>
       ) : (
         <>
-          {/* Telefon: zaman çizgisi, en yeni üstte */}
+          {/* Telefon: zaman çizgisi, en yeni üstte; tarih belirgin, tüm değerler tek satırda */}
           <ol className="relative mt-3 sm:hidden">
             {meas.map((m, i) => ({ m, i })).reverse().map(({ m, i }, n, arr) => {
               const prev = [...meas.slice(0, i)].reverse().find((x) => x.w != null)
               const dl = m.w != null && prev?.w != null ? m.w - prev.w : null
               const wh = waistHip(m, sex)
-              const parts: [string, string, boolean?][] = []
-              if (m.w != null && hm > 0.5) parts.push(['BKİ', fmt(m.w / (hm * hm), 1)])
-              if (m.b != null) parts.push(['Bel', `${fmt(m.b, 1)} cm`])
-              if (m.k != null) parts.push(['Kalça', `${fmt(m.k, 1)} cm`])
-              if (wh) parts.push(['B/K', fmt(wh.ratio, 2), wh.high])
-              if (m.y != null) parts.push(['Yağ', `%${fmt(m.y, 1)}`])
+              const cells: [string, string, boolean?][] = [
+                ['BKİ', m.w != null && hm > 0.5 ? fmt(m.w / (hm * hm), 1) : '–'],
+                ['Bel', m.b != null ? fmt(m.b, 1) : '–'],
+                ['Kalça', m.k != null ? fmt(m.k, 1) : '–'],
+                ['B/K', wh ? fmt(wh.ratio, 2) : '–', !!wh?.high],
+                ['Yağ %', m.y != null ? fmt(m.y, 1) : '–'],
+              ]
               const down = dl != null && dl < 0
               return (
-                <li key={m.d} className="relative flex gap-3 pb-4 last:pb-0">
-                  {n < arr.length - 1 && <span className="absolute bottom-0 left-[9px] top-5 w-0.5 rounded bg-stone-200" aria-hidden="true" />}
-                  <span className={`relative z-[1] mt-1.5 h-5 w-5 flex-none rounded-full border-4 border-stone-50 ${n === 0 ? 'bg-brand-500 ring-2 ring-brand-500/30' : 'bg-stone-300'}`} aria-hidden="true" />
-                  <div className="min-w-0 flex-1">
+                <li key={m.d} className="relative flex gap-2.5 pb-3 last:pb-0">
+                  {n < arr.length - 1 && <span className="absolute bottom-0 left-[7px] top-4 w-0.5 rounded bg-stone-200" aria-hidden="true" />}
+                  <span className={`relative z-[1] mt-1 h-4 w-4 flex-none rounded-full border-[3px] border-stone-50 ${n === 0 ? 'bg-brand-500 ring-2 ring-brand-500/30' : 'bg-stone-300'}`} aria-hidden="true" />
+                  <div className="min-w-0 flex-1 rounded-xl border border-stone-200 bg-white px-2.5 py-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-semibold text-stone-500">{fmtDay(m.d)}{n === 0 ? ' · son ölçüm' : ''}</span>
-                      <button aria-label={`${fmtDay(m.d)} ölçümünü sil`} title="Sil" className="-my-1 ml-auto grid h-7 w-7 flex-none place-items-center rounded-lg text-stone-400 hover:bg-red-50 hover:text-red-700" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
+                      <b className="text-sm">{fmtDay(m.d)}</b>
+                      {n === 0 && <span className="rounded-full bg-brand-50 px-1.5 py-px text-[10px] font-bold text-brand-500">son</span>}
+                      <span className="ml-auto font-display text-lg font-bold leading-none tabular-nums">{m.w != null ? fmt(m.w, 1) : '–'}<small className="ml-0.5 font-sans text-[11px] font-semibold text-stone-500">kg</small></span>
+                      {dl != null && dl !== 0 && <span className={`text-[11px] font-bold tabular-nums ${down ? 'text-emerald-700' : 'text-amber-800'}`}>{down ? '▼' : '▲'}{fmt(Math.abs(dl), 1)}</span>}
+                      <button aria-label={`${fmtDay(m.d)} ölçümünü sil`} title="Sil" className="-mr-1 grid h-6 w-6 flex-none place-items-center rounded-md text-stone-400 hover:bg-red-50 hover:text-red-700" onClick={() => onChange(meas.filter((x) => x.d !== m.d))}>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
                       </button>
                     </div>
-                    <div className="mt-0.5 flex items-baseline gap-2">
-                      <span className="font-display text-2xl font-bold tabular-nums">{m.w != null ? fmt(m.w, 1) : '–'}{m.w != null && <small className="ml-1 font-sans text-xs font-semibold text-stone-500">kg</small>}</span>
-                      {dl != null && dl !== 0 && <span className={`text-xs font-bold tabular-nums ${down ? 'text-emerald-700' : 'text-amber-800'}`}>{down ? '▼' : '▲'} {fmt(Math.abs(dl), 1)}</span>}
+                    <div className="mt-1.5 grid grid-cols-5 gap-1 border-t border-stone-100 pt-1.5 text-center">
+                      {cells.map(([l, v, warn]) => (
+                        <div key={l} className="min-w-0">
+                          <div className="truncate text-[9.5px] font-semibold uppercase tracking-wide text-stone-500">{l}</div>
+                          <div className={`text-[13px] font-bold tabular-nums ${warn ? 'text-amber-800' : v === '–' ? 'text-stone-400' : ''}`}>{v}</div>
+                        </div>
+                      ))}
                     </div>
-                    {parts.length > 0 && (
-                      <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-stone-500">
-                        {parts.map(([l, v, warn]) => <span key={l}>{l} <b className={`font-semibold tabular-nums ${warn ? 'text-amber-800' : 'text-stone-900'}`}>{v}</b></span>)}
-                      </div>
-                    )}
                   </div>
                 </li>
               )
