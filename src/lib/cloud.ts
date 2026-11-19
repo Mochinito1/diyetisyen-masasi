@@ -382,6 +382,17 @@ export async function cloudDeletePhotos(paths: string[]) {
   try { await db().storage.from(PHOTO_BUCKET).remove(paths) } catch (e) { console.warn('[bulut] fotoğraf silinemedi', e) }
 }
 
+/** Danışanın güncel günlük takibini sunucudan okur (diyetisyenin yerel önbelleği eski kalabilir); okunamazsa null */
+export async function cloudClientTrack(clientId: string): Promise<Record<string, import('../features/clients/types').DayTrack> | null> {
+  if (!cloudEnabled) return null
+  try {
+    const { data, error } = await db().from('clients').select('data').eq('id', clientId).maybeSingle()
+    if (error || !data) return null
+    const trk = (data as { data: { trk?: unknown } }).data?.trk
+    return trk && typeof trk === 'object' ? (trk as Record<string, import('../features/clients/types').DayTrack>) : {}
+  } catch { return null }
+}
+
 export async function cloudSetActive(username: string, active: boolean) {
   try {
     const p = await db().from('profiles').update({ status: active ? null : 'inactive' }).eq('username', username)

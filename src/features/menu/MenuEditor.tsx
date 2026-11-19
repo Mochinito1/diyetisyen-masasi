@@ -15,6 +15,10 @@ import SwapPanel from './SwapPanel'
 import PrintMenu from './PrintMenu'
 import TemplatePanel from './TemplatePanel'
 import { useBrand } from '../settings/useBrand'
+import { todayStr } from '../../lib/appointments'
+import { isFresh } from '../../lib/photos'
+import { PhotoThumb } from '../portal/PortalPhotos'
+import { useLiveTrack } from '../clients/useLiveTrack'
 
 type FoodCtx = NonNullable<ReturnType<typeof useFoodData>>
 
@@ -46,6 +50,8 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
   const [showHidden, setShowHidden] = useState(false)
   const [printing, setPrinting] = useState(false)
   const { brand } = useBrand()
+  const liveTrk = useLiveTrack(client.id, client.trk)
+  const todayPhotos = (liveTrk[todayStr()]?.ph ?? []).filter((p) => isFresh(p))
   const [toast, setToast] = useState('')
   const [warnOpen, setWarnOpen] = useState(false)
   const [rowMenu, setRowMenu] = useState<number | null>(null)
@@ -323,7 +329,7 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                       if (!F) return null
                       const t = portion(F, it.g)
                       return (
-                        <li key={i} className="relative grid items-center gap-x-3 gap-y-2 border-t border-stone-100 py-3 md:grid-cols-[minmax(0,1fr)_20rem]">
+                        <li key={i} className="relative grid items-center gap-x-3 gap-y-2 border-t border-stone-100 py-3 grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_20rem]">
                           <div className="min-w-0">
                             <b className="block truncate" title={shortName(F.name)}>{shortName(F.name)}</b>
                             {ev.get(F.code) && ev.get(F.code)!.st !== 'ok' && <ReasonChips ev={ev.get(F.code)!} max={2} />}
@@ -363,6 +369,12 @@ export default function MenuEditor({ client, result, age, food, ev, onChange }: 
                       )
                     })}
                   </ul>
+                )}
+                {todayPhotos.some((p) => p.meal === m) && (
+                  <div className="mx-4 mb-3 mt-1 rounded-xl bg-stone-100 p-2.5">
+                    <div className="mb-1.5 text-[11px] font-bold uppercase tracking-wide text-stone-500">Danışanın bugünkü fotoğrafları</div>
+                    <div className="flex flex-wrap gap-2">{todayPhotos.filter((p) => p.meal === m).map((p) => <PhotoThumb key={p.id} photo={p} size={72} />)}</div>
+                  </div>
                 )}
                 {rows.length === 0 && <div className="h-3" />}
               </section>
