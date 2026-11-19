@@ -6,6 +6,7 @@ import { ROLES, useRole } from './role'
 import { useAuth } from './auth'
 import ThemePicker from './ThemePicker'
 import CloudBanner from './CloudBanner'
+import PullToRefresh from './PullToRefresh'
 
 const item = ({ isActive }: { isActive: boolean }) =>
   `nav-link flex min-w-16 flex-1 shrink-0 snap-start flex-col items-center gap-0.5 px-0.5 py-1 text-[11.5px] font-semibold rounded-xl outline-none focus-visible:bg-brand-50 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-brand-500 ${isActive ? 'text-brand-500' : 'text-stone-500'}`
@@ -28,6 +29,7 @@ export default function Layout() {
   const navItems = role === 'danisan' ? [...items].sort((a, b) => ORDER.indexOf(a.to) - ORDER.indexOf(b.to)) : items
   return (
     <div className="min-h-screen">
+      <PullToRefresh />
       <CloudBanner />
       {imp && (
         <div className="bg-[#0a0f0d] text-[#e5eee8]">
