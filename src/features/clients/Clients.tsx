@@ -112,7 +112,7 @@ export default function Clients() {
             <div className="order-10 lg:order-none"><PortalTrackCard client={editing} /></div>
           </div>
         </div>
-        <div className="sticky bottom-3 mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">
+        <div className="sticky bottom-3 max-md:bottom-[calc(5rem+env(safe-area-inset-bottom))] mt-6 flex items-center gap-3 rounded-xl border border-stone-200 bg-white p-3 shadow">
           {!valid && <span className="text-sm text-amber-700">Kaydetmek için ad soyad girin.</span>}
           {savedMsg && <span className="text-sm font-semibold text-emerald-700" role="status">✓ Kaydedildi</span>}
           {!isNew && (

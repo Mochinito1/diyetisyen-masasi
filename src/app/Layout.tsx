@@ -70,7 +70,7 @@ export default function Layout() {
               <ThemePicker />
             </div>
           </div>
-          <nav ref={navRef} aria-label="Ana menü" className="max-md:sticky max-md:top-0 max-md:z-20 max-md:border-b max-md:border-stone-200 max-md:bg-stone-50 max-md:[mask-image:linear-gradient(to_right,transparent,#000_12px,#000_calc(100%-28px),transparent)] flex snap-x gap-0.5 overflow-x-auto px-3 pb-1.5 pt-0.5 [scrollbar-width:none] md:mx-auto md:max-w-4xl md:px-0 [&::-webkit-scrollbar]:hidden">
+          <nav ref={navRef} aria-label="Ana menü" className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:border-t max-md:border-stone-200 max-md:bg-stone-50 max-md:pb-[max(0.375rem,env(safe-area-inset-bottom))] max-md:pt-1.5 max-md:[mask-image:linear-gradient(to_right,transparent,#000_12px,#000_calc(100%-28px),transparent)] flex snap-x gap-0.5 overflow-x-auto px-3 pb-1.5 pt-0.5 [scrollbar-width:none] md:mx-auto md:max-w-4xl md:px-0 [&::-webkit-scrollbar]:hidden">
             {navItems.map((n) => (
               <NavLink key={n.to} to={n.to} end={n.to === '/'} className={item}>
                 {({ isActive }) => (<><span className={pill(isActive)}><NavIcon name={n.icon} /></span><span className="max-w-full truncate">{n.short}</span></>)}
@@ -79,7 +79,7 @@ export default function Layout() {
           </nav>
         </div>
       </header>
-      <main className="mx-auto max-w-[1600px] px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-8 lg:px-8">
+      <main className="mx-auto max-w-[1600px] px-4 py-5 pb-[max(2rem,env(safe-area-inset-bottom))] max-md:pb-[calc(5.5rem+env(safe-area-inset-bottom))] md:px-6 md:py-8 lg:px-8">
         <Outlet />
       </main>
     </div>

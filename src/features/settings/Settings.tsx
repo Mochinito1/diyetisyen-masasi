@@ -132,7 +132,7 @@ function DietitianSettings() {
           </div>
         </div>
       </div>
-      {msg && <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg" role="status">{msg}</div>}
+      {msg && <div className="fixed bottom-5 max-md:bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-lg bg-stone-900 px-4 py-2 text-sm font-semibold text-stone-50 shadow-lg" role="status">{msg}</div>}
     </>
   )
 }
