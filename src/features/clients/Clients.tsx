@@ -31,7 +31,8 @@ export default function Clients() {
   const [pending] = useState(() => {
     const id = load<string>('dm.openClient', '')
     if (id) save('dm.openClient', '')
-    return id
+    // Aktif (seçili) danışan varsa Danışan sekmesi onun dosyasıyla açılır; yoksa liste görünür
+    return id || load<string>('dm.menuClient', '')
   })
   const [savedMsg, setSavedMsg] = useState(false)
   const [editing, setEditing] = useState<Client | null>(() => (pending === 'new' ? blank() : (clients.find((c) => c.id === pending) ?? null)))
@@ -139,6 +140,7 @@ export default function Clients() {
                 const stored = load<Client[]>('dm.clients', []).find((c) => c.id === editing.id)
                 const saved = { ...editing, lab: stored?.lab ?? editing.lab, name: editing.name.trim(), updated: Date.now() }
                 upsert(saved)
+                save('dm.menuClient', saved.id) // kaydedilen danışan aktif danışan olur
                 // Kaydettikten sonra aynı danışan dosyasında kal; listeye dönmek için üstteki bağlantı kullanılır
                 setEditing(saved)
                 setIsNew(false)
@@ -193,7 +195,7 @@ export default function Clients() {
                 const h = parseNum(c.profile.h)
                 const w = parseNum(c.profile.w)
                 return (
-                  <tr key={c.id} className="cursor-pointer border-t border-stone-100 hover:bg-stone-50" onClick={() => { setEditing(c); setIsNew(false) }}>
+                  <tr key={c.id} className="cursor-pointer border-t border-stone-100 hover:bg-stone-50" onClick={() => { setEditing(c); setIsNew(false); save('dm.menuClient', c.id) }}>
                     <td className="px-3 py-3 font-semibold">{c.name}</td>
                     <td className="px-3 py-3 text-right tabular-nums">{c.profile.age || '—'}</td>
                     <td className="px-3 py-3 text-right tabular-nums">{h && w ? fmt(bmi(w, h), 1) : '—'}</td>

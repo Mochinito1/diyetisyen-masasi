@@ -225,7 +225,8 @@ function Row({ a, showName, onChange, onRemove, actions, remind }: {
 }
 
 function AddForm({ clients, day, onSave, onClose }: { clients: Client[]; day: string; onSave: (a: Appointment) => void; onClose: () => void }) {
-  const [cid, setCid] = useState(clients[0]?.id ?? '')
+  // Aktif danışan seçiliyse randevu formu onunla başlar
+  const [cid, setCid] = useState(() => { const a = load<string>('dm.menuClient', ''); return clients.some((c) => c.id === a) ? a : (clients[0]?.id ?? '') })
   const [date, setDate] = useState(day < todayStr() ? todayStr() : day)
   const [time, setTime] = useState('10:00')
   const [type, setType] = useState<ApType>('yuz')
